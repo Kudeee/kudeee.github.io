@@ -1,9 +1,4 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
+@import url('GENERAL-LAYOUT.css');
 
 body {
   min-height: 100vh;
@@ -16,7 +11,7 @@ body {
 }
 
 .image {
-  flex: 0 0 50%;
+  flex: 0 0 60%;
   border-top-left-radius: 20px;
   border-bottom-left-radius: 20px;
   background-image: url("../assests/images/gym-interior.webp");
@@ -36,10 +31,9 @@ body {
 .form-container {
   display: flex;
   flex-direction: column;
-  /* width: 500px; */
-  flex: 0 0 50%;
+  flex: 0 0 40%;
   margin: 0 auto;
-  padding: 30px;
+  padding: 80px;
 
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
   z-index: 2;
@@ -69,6 +63,7 @@ body {
   padding: 0 12px;
   border-radius: 8px;
   border: 1px solid #ddd;
+  margin-top: 7px;
   margin-bottom: 16px;
   outline: none;
 }
@@ -151,11 +146,12 @@ body {
   margin-top: 60px;
 }
 
-.already-have-account span {
+.already-have-account a{
   color: #ff6a2a;
   cursor: pointer;
+  text-decoration: none;
 }
 
-.already-have-account span:hover {
+.already-have-account a:hover {
   color:#1d1d4f;
 }
