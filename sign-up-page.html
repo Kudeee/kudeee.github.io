@@ -18,39 +18,40 @@
             <h3>Personal Info</h3>
 
             <div class="row">
-              <label>First Name</label>
-              <label>Last Name</label>
-            </div>
+              <div>
+                <label>First Name</label>
+                <input type="text" placeholder="First name" />
+              </div>
 
-            <div class="row">
-              <input type="text" placeholder="First name" />
-              <input type="text" placeholder="Last name" />
+              <div>
+                <label>Last Name</label>
+                <input type="text" placeholder="Last name" />
+              </div>
             </div>
 
             <label>Email Address</label>
             <input type="email" placeholder="youremail@example.com" />
 
             <div class="row">
-              <label>Phone Number</label>
+              <div>
+                <label>Phone Number</label>
+                <input type="tel" placeholder="0909xx-xxx-xxxx" />
+              </div>
 
-              <label>Age</label>
-            </div>
-
-            <div class="row">
-              <input type="tel" placeholder="0909xx-xxx-xxxx" />
-
-              <input type="number" placeholder="(Optional)" />
+              <div>
+                <label>Zip</label>
+                <input type="number" placeholder="(Optional)" />
+              </div>
             </div>
 
             <div class="form-btn">
-              <button style="opacity: 0;" disabled></button>
+              <button style="opacity: 0" disabled></button>
               <button class="btn" id="fnext-btn" type="button">Next</button>
             </div>
-          
-            <div class="already-have-account">
-              Already have an account? <span>Login Here</span>
-            </div>
 
+            <div class="already-have-account">
+              Already have an account? <a href="login-page.html">Login Here</a>
+            </div>
           </div>
 
           <div class="page" id="second-page" style="display: none">
@@ -74,7 +75,7 @@
             </div>
           </div>
 
-          <div class="page" id="last-page" style="display: none">
+          <div class="page" id="second-last-page" style="display: none">
             <h3>Choose your Membership Plan</h3>
             <div class="selection-cards">
               <label class="selection-card">
@@ -104,8 +105,90 @@
               </label>
             </div>
             <div class="form-btn">
+              <button class="btn" id="second-last-prev-btn" type="button">
+                Back
+              </button>
+              <button class="btn" id="second-last-next-btn" type="button">
+                Next
+              </button>
+            </div>
+          </div>
+
+          <div class="page" id="last-page" style="display: none">
+            <h3>Payments Method</h3>
+
+            <label class="payment-option">
+              <input type="radio" name="payment-method" />
+              <div class="payment-option-name">Gcash</div>
+            </label>
+
+            <label class="payment-option">
+              <input type="radio" name="payment-method" />
+              <div class="payment-option-name">GoTyme</div>
+            </label>
+
+            <label class="payment-option">
+              <input type="radio" name="payment-method" />
+              <div class="payment-option-name">Maya</div>
+            </label>
+
+            <label class="payment-option">
+              <input type="radio" name="payment-method" />
+              <div class="payment-option-name">Credit or debit card</div>
+
+              <div class="card-payment-info">
+                <label>Card Number</label>
+                <input type="number" placeholder="0000 0000 0000 0000" />
+
+                <div class="row">
+                  <div>
+                    <label>Expiry Date</label>
+                    <input type="text" placeholder="MM/YY" />
+                  </div>
+
+                  <div>
+                    <label>Security Code</label>
+                    <input type="number" placeholder="CVV" />
+                  </div>
+                </div>
+              </div>
+            </label>
+
+            <div class="form-btn">
               <button class="btn" id="last-prev-btn" type="button">Back</button>
-              <button class="btn" id="submit-btn">Next</button>
+              <button class="btn" id="last-next-btn" type="button">Next</button>
+            </div>
+          </div>
+
+          <div class="page" id="sub-page" style="display: none;">
+            <h2>Society Fit Membership</h2>
+
+            <div class="reciept-row">
+              <span>Subscription <br /><small>Billed monthly</small></span>
+              <span class="price">₱899</span>
+            </div>
+
+            <label class="discount-label">Apply Discount Code</label>
+            <div class="discount-box">
+              <input type="text" placeholder="Code" />
+            </div>
+
+            <div class="total">
+              <span>Total</span>
+              <span class="total-price">₱899</span>
+            </div>
+
+            <div class="terms">
+              <input type="checkbox" id="terms" />
+              <label for="terms">
+                I agree to the <a href="#">Terms and Conditions</a> and the
+                <a href="#">Automatic Renewal Terms</a> above
+              </label>
+            </div>
+
+            <div class="form-btn">
+              <button class="btn" id="sub-prev-btn" type="button">Back</button>
+            <button class="subscribe-btn" id="submit-btn" onclick="window.location.href='homepage.html'" type="button">SUBSCRIBE</button>
             </div>
           </div>
         </form>

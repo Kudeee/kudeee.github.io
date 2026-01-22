@@ -1,9 +1,4 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
+@import url("GENERAL-LAYOUT.css");
 
 body {
   min-height: 100vh;
@@ -12,7 +7,7 @@ body {
 
 .container {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .image {
@@ -36,10 +31,9 @@ body {
 .form-container {
   display: flex;
   flex-direction: column;
-  /* width: 500px; */
   flex: 0 0 50%;
   margin: 0 auto;
-  padding: 30px;
+  padding: 80px;
 
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
   z-index: 2;
@@ -69,6 +63,7 @@ body {
   padding: 0 12px;
   border-radius: 8px;
   border: 1px solid #ddd;
+  margin-top: 7px;
   margin-bottom: 16px;
   outline: none;
 }
@@ -80,7 +75,10 @@ body {
 .row {
   display: flex;
   gap: 12px;
-  justify-content: space-between;
+}
+
+.row > div {
+  flex: 1;
 }
 
 .form-btn {
@@ -117,6 +115,7 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .selection-card {
@@ -151,11 +150,159 @@ body {
   margin-top: 60px;
 }
 
-.already-have-account span {
+.already-have-account a {
   color: #ff6a2a;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.already-have-account a:hover {
+  color: #1d1d4f;
+}
+
+.payment-option {
+  display: block;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 16px;
   cursor: pointer;
 }
 
-.already-have-account span:hover {
-  color:#1d1d4f;
+.payment-option:hover {
+  border-color: #ff6a2a;
+}
+
+.payment-option input[type="radio"] {
+  display: none;
+}
+
+.payment-option-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.payment-option-name::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid #999;
+  border-radius: 50%;
+}
+
+.payment-option input[type="radio"]:checked + .payment-option-name::before {
+  border-color: #e85d21;
+  background: #ff6a2a;
+}
+
+.card-payment-info {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.payment-option input[type="radio"]:checked ~ .card-payment-info {
+  max-height: 300px;
+  opacity: 1;
+  margin-top: 16px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  /* display: block; */
+  margin-bottom: 6px;
+}
+
+h2 {
+  margin: 0 0 22px;
+  font-size: 22px;
+}
+
+.reciept-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px dotted #cfcfcf;
+}
+
+.reciept-row small {
+  color: #777;
+}
+
+.price {
+  color: #e85d21;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.discount-label {
+  display: block;
+  margin: 22px 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* .discount-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  background: #fff;
+} */
+
+.discount-box input {
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  background: #fff;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  margin: 22px 0;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.total-price {
+  color: #ff6a2a;
+}
+
+.terms {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+  margin-bottom: 18px;
+}
+
+.terms label {
+  font-size: 15px;
+}
+
+.terms input {
+  height: 20px;
+  width: 20px;
+}
+
+.terms a {
+  color: #ff6b35;
+  text-decoration: none;
+}
+
+.subscribe-btn{
+  flex: 1;
+  margin-left: 20px;
+}
+
+.subscribe-btn:hover {
+  background: #e85d21;
 }
