@@ -79,7 +79,7 @@ body {
 
 .row > div {
   flex: 1;
-} 
+}
 
 .form-btn {
   display: flex;
@@ -213,6 +213,96 @@ body {
 label {
   font-size: 13px;
   font-weight: 600;
-  display: block;
+  /* display: block; */
   margin-bottom: 6px;
+}
+
+h2 {
+  margin: 0 0 22px;
+  font-size: 22px;
+}
+
+.reciept-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px dotted #cfcfcf;
+}
+
+.reciept-row small {
+  color: #777;
+}
+
+.price {
+  color: #e85d21;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.discount-label {
+  display: block;
+  margin: 22px 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* .discount-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  background: #fff;
+} */
+
+.discount-box input {
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  background: #fff;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  margin: 22px 0;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.total-price {
+  color: #ff6a2a;
+}
+
+.terms {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+  margin-bottom: 18px;
+}
+
+.terms label {
+  font-size: 15px;
+}
+
+.terms input {
+  height: 20px;
+  width: 20px;
+}
+
+.terms a {
+  color: #ff6b35;
+  text-decoration: none;
+}
+
+.subscribe-btn{
+  flex: 1;
+  margin-left: 20px;
+}
+
+.subscribe-btn:hover {
+  background: #e85d21;
 }
