@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/payments-page.css" />
+    <title>Payments</title>
+  </head>
+  <body>
+    <header class="header">
+      <a href="homepage.html">
+        <img src="assests/logo/society-fit.png" alt="" />
+      </a>
+    </header>
+
+    <div class="container">
+       <h1>Payment History</h1>
+
+      <div class="filter-section">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">Payment Type</label>
+            <select class="filter-select" id="paymentTypeFilter">
+              <option value="all">All Payments</option>
+              <option value="membership">Membership</option>
+              <option value="class">Class Booking</option>
+              <option value="trainer">Trainer Session</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Date Range</label>
+            <select class="filter-select" id="dateRangeFilter">
+              <option value="all">All Time</option>
+              <option value="month">Last Month</option>
+              <option value="3months">Last 3 Months</option>
+              <option value="6months">Last 6 Months</option>
+              <option value="year">Last Year</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Status</label>
+            <select class="filter-select" id="statusFilter">
+              <option value="all">All Status</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="summary-info">
+            <div class="summary-label">Total Spent</div>
+            <div class="summary-value">₱12,487</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-info">
+            <div class="summary-label">Total Transactions</div>
+            <div class="summary-value">27</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-info">
+            <div class="summary-label">This Month</div>
+            <div class="summary-value">₱2,049</div>
+          </div>
+        </div>
+      </div>
+
+        <div class="payments-list">
+          <!-- Membership Payment -->
+          <div class="payment-item" data-type="membership">
+            <div class="payment-icon membership-icon">
+              <img src="assests/icons/credit-card-fill.svg" alt="" />
+            </div>
+            <div class="payment-details">
+              <div class="payment-title">Premium Membership</div>
+              <div class="payment-meta">
+                <span class="payment-date">Jan 16, 2026</span>
+                <span class="payment-separator">•</span>
+                <span class="payment-method">Credit Card (****4532)</span>
+                <span class="payment-separator">•</span>
+                <span class="payment-id">TXN-20260116-001</span>
+              </div>
+              <div class="payment-description">
+                Monthly subscription renewal
+              </div>
+            </div>
+            <div class="payment-status">
+              <span class="status-badge status-completed">✓ Completed</span>
+              <div class="payment-amount">₱899</div>
+            </div>
+          </div>
+
+          <!-- Class Booking Payment -->
+          <div class="payment-item" data-type="class">
+            <div class="payment-icon class-icon">
+              <img src="assests/icons/calendar2-plus-fill.svg" alt="" />
+            </div>
+            <div class="payment-details">
+              <div class="payment-title">HIIT Training Class</div>
+              <div class="payment-meta">
+                <span class="payment-date">Jan 15, 2026</span>
+                <span class="payment-separator">•</span>
+                <span class="payment-method">GCash</span>
+                <span class="payment-separator">•</span>
+                <span class="payment-id">TXN-20260115-012</span>
+              </div>
+              <div class="payment-description">
+                Single class booking - Jan 20, 2026 at 9:00 AM
+              </div>
+            </div>
+            <div class="payment-status">
+              <span class="status-badge status-completed">✓ Completed</span>
+              <div class="payment-amount">₱0</div>
+              <div class="payment-note">Included in plan</div>
+            </div>
+          </div>
+
+          <!-- Trainer Session Payment -->
+          <div class="payment-item" data-type="trainer">
+            <div class="payment-icon trainer-icon">
+              <img src="assests/icons/person-fill.svg" alt="" />
+            </div>
+            <div class="payment-details">
+              <div class="payment-title">Personal Training Session</div>
+              <div class="payment-meta">
+                <span class="payment-date">Jan 10, 2026</span>
+                <span class="payment-separator">•</span>
+                <span class="payment-method">Maya</span>
+                <span class="payment-separator">•</span>
+                <span class="payment-id">TXN-20260110-045</span>
+              </div>
+              <div class="payment-description">
+                60-min session with Mike Chen - HIIT & CrossFit
+              </div>
+            </div>
+            <div class="payment-status">
+              <span class="status-badge status-completed">✓ Completed</span>
+              <div class="payment-amount">₱1,200</div>
+            </div>
+          </div>
+    </div>
+  </body>
+</html>
