@@ -1,5 +1,5 @@
 const paymentMethod = `
-          <h3>Payments Method</h3>
+          <h3 id='head-title'>Payments Method</h3>
 
           <label class="payment-option">
             <input type="radio" name="payment-method" />
@@ -53,3 +53,7 @@ const paymentMethod = `
 `
 
 document.querySelector('.payment-method-js').innerHTML = paymentMethod;
+
+if(currentPage === 'book-class-page.html' || currentPage === 'book-trainer-page.html'){
+document.getElementById('head-title').style.display = 'none';
+}

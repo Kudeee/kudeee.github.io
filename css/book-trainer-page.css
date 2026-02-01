@@ -1,4 +1,5 @@
 @import url("general.css");
+@import url("payment-method.css");
 
 .header {
   background: #1a1a1a;
