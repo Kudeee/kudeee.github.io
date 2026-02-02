@@ -33,14 +33,14 @@ header {
 }
 
 .card-container {
-  display: flex;
-  justify-content: center;
-  /* align-content: center; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+  gap: 1px;
 }
 
 .card {
   padding: 50px 80px 50px;
-  margin: 0 60px;
+  margin: 0 60px 20px;
   border: 1px solid #ff6a2a;
   border-radius: 14px;
   box-shadow: 0 10px 25px rgba(255, 106, 42, 0.25);
