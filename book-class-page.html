@@ -169,14 +169,16 @@
             <div class="form-group">
               <label class="form-label">Special Requirements (Optional)</label>
               <textarea
+                id="specialRequirements"
                 class="form-textarea"
                 placeholder="Any injuries, limitations, or special requests..."
               ></textarea>
             </div>
             <div class="form-group">
               <label class="form-label">Emergency Contact</label>
-              <input type="text" class="form-input" placeholder="Name" />
+              <input type="text" class="form-input" id="emergencyName" placeholder="Name" />
               <input
+                id="emergencyPhone"
                 type="tel"
                 class="form-input"
                 placeholder="Phone Number"
@@ -213,7 +215,7 @@
             </div>
           </div>
         </div>
-
+1
         <div class="booking-summary">
           <h3 class="summary-title">Booking Summary</h3>
           <div class="summary-item">
@@ -243,8 +245,8 @@
       </div>
     </div>
 
-    <script src="js/header.js"></script>
+    <script type="module" src="js/header.js"></script>
     <script src="js/book-class-page.js"></script>
-    <script src="js/payment-methods.js"></script>
+    <script type="module" src="js/payment-methods.js"></script>
   </body>
 </html>

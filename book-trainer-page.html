@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -37,7 +37,9 @@
             <div class="trainer-select-grid">
               <div
                 class="trainer-option"
-                onclick="selectTrainer('Emma Rodriguez', 'HIIT & CrossFit', '75')"
+                onclick="
+                  selectTrainer('Emma Rodriguez', 'HIIT & CrossFit', '500')
+                "
               >
                 <div class="trainer-photo"></div>
                 <div class="trainer-details">
@@ -59,7 +61,9 @@
 
               <div
                 class="trainer-option"
-                onclick="selectTrainer('Mike Chen', 'Strength & Conditioning', '80')"
+                onclick="
+                  selectTrainer('Mike Chen', 'Strength & Conditioning', '600')
+                "
               >
                 <div class="trainer-photo"></div>
                 <div class="trainer-details">
@@ -79,7 +83,9 @@
 
               <div
                 class="trainer-option"
-                onclick="selectTrainer('Sarah Johnson', 'Yoga & Pilates', '70')"
+                onclick="
+                  selectTrainer('Sarah Johnson', 'Yoga & Pilates', '550')
+                "
               >
                 <div class="trainer-photo"></div>
                 <div class="trainer-details">
@@ -146,13 +152,13 @@
             </h3>
             <div class="form-group">
               <select class="form-select" id="focusArea">
-                <option>Select focus area...</option>
-                <option>Weight Loss</option>
-                <option>Muscle Building</option>
-                <option>Strength Training</option>
-                <option>Flexibility</option>
-                <option>Endurance</option>
-                <option>General Fitness</option>
+                <option value="">Select focus area...</option>
+                <option value="weight_loss">Weight Loss</option>
+                <option value="muscle_building">Muscle Building</option>
+                <option value="strength_training">Strength Training</option>
+                <option value="flexibility">Flexibility</option>
+                <option value="endurance">Endurance</option>
+                <option value="general_fitness">General Fitness</option>
               </select>
             </div>
 
@@ -263,6 +269,7 @@
             <div class="form-group">
               <label class="form-label">Fitness Goals</label>
               <textarea
+                id="fitnessGoals"
                 class="form-textarea"
                 placeholder="Describe your fitness goals and what you want to achieve..."
               ></textarea>
@@ -270,25 +277,25 @@
 
             <div class="form-group">
               <label class="form-label">Current Fitness Level</label>
-              <select class="form-select">
-                <option>Beginner</option>
-                <option>Intermediate</option>
-                <option>Advanced</option>
+              <select class="form-select" id="fitnessLevel">
+                <option value="">Select your level...</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
               </select>
             </div>
 
             <div class="form-group">
               <label class="form-label">Medical Conditions / Injuries</label>
               <textarea
+                id="medicalInfo"
                 class="form-textarea"
                 placeholder="Any medical conditions, injuries, or limitations we should know about..."
               ></textarea>
             </div>
 
             <h2 class="section-title">Payment Method</h2>
-            <div class="form-group payment-method-js">
-
-            </div>
+            <div class="form-group payment-method-js"></div>
 
             <div class="checkbox-group">
               <input type="checkbox" id="recurring" />
@@ -318,7 +325,7 @@
               </p>
               <button
                 class="btn btn-primary"
-                onclick="location.href='#home'"
+                onclick="location.href = '#home'"
                 style="flex: none; padding: 15px 40px"
               >
                 Back to Home
@@ -370,8 +377,8 @@
         </div>
       </div>
     </div>
-    <script src="js/header.js"></script>
+    <script type="module" src="js/header.js"></script>
     <script src="js/book-trainer-page.js"></script>
-    <script src="js/payment-methods.js"></script>
+    <script type="module" src="js/payment-methods.js"></script>
   </body>
 </html>
