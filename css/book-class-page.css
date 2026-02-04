@@ -421,8 +421,8 @@
   padding: 40px;
 }
 
-.success-icon {
-  font-size: 5rem;
+.success-icon img{
+  height: 80px;
   margin-bottom: 20px;
 }
 

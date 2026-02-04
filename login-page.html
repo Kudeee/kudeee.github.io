@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/login-page.css">
+    <link rel="stylesheet" href="components/css/loading-component.css">
     <title>Login</title>
 </head>
 <body>
@@ -12,13 +13,13 @@
     <div class="login-container">
         <div class="logo">
             <a href="index.html">
-            <img src="assests/logo/society-fit.png" alt="">
+            <img src="assests/logo/society-fit.png" alt="society-fit logo">
           </a>
         </div>
 
         <h1>Welcome Back!</h1>
 
-        <form action="#">
+        <form onsubmit="handleLogin(event)">
 
             <label for="">Email</label>
             <input type="email" placeholder="Enter your Email">
@@ -31,7 +32,7 @@
             </div>
 
             <div class="form-btn">
-                <button type="button" onclick="window.location.href='homepage.html'">Log In</button>
+                <button class="button" type="submit">Log In</button>
             </div>
 
             <div class="dont-have-acc">
@@ -41,6 +42,11 @@
     </div>
 
     <div class="image"></div>
-   </div> 
+    
+   </div>
+   <div id="loading"></div>
+
+   <script src="components/loading.js"></script>
+   <script src="js/login.js"></script>
 </body>
 </html>

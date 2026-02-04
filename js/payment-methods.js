@@ -4,7 +4,7 @@ const paymentMethod = `
           <label class="payment-option">
             <input type="radio" name="payment-method" />
             <div class="payment-option-name">
-              <img src="assests/icons/GCash.svg" alt="">
+              <img src="assests/icons/GCash.svg" alt="Gcash logo">
               Gcash
             </div>
           </label>
@@ -12,7 +12,7 @@ const paymentMethod = `
           <label class="payment-option">
             <input type="radio" name="payment-method" />
             <div class="payment-option-name">
-              <img src="assests/icons/GoTyme.svg" alt="">
+              <img src="assests/icons/GoTyme.svg" alt="gotyme logo">
               GoTyme
             </div>
           </label>
@@ -20,7 +20,7 @@ const paymentMethod = `
           <label class="payment-option">
             <input type="radio" name="payment-method" />
             <div class="payment-option-name">
-              <img src="assests/icons/maya.svg" alt="">
+              <img src="assests/icons/maya.svg" alt="maya logo">
               Maya
             </div>
           </label>
@@ -28,8 +28,8 @@ const paymentMethod = `
           <label class="payment-option">
             <input type="radio" name="payment-method" />
             <div class="payment-option-name">
-              <img src="assests/icons/visa.svg" alt="">
-              <img src="assests/icons/mastercard.svg" alt="">
+              <img src="assests/icons/visa.svg" alt="visa logo">
+              <img src="assests/icons/mastercard.svg" alt="mastercard logo">
               Credit or debit card
             </div>
 
@@ -50,12 +50,29 @@ const paymentMethod = `
               </div>
             </div>
           </label>
-`
+`;
 
-document.querySelector('.payment-method-js').innerHTML = paymentMethod;
+document.querySelector(".payment-method-js").innerHTML = paymentMethod;
 
-const currentPage = window.location.pathname.split('/').pop();
+const currentPage = window.location.pathname.split("/").pop();
 
-if(currentPage === 'book-class-page.html' || currentPage === 'book-trainer-page.html'){
-document.getElementById('head-title').style.display = 'none';
+if (
+  currentPage === "book-class-page.html" ||
+  currentPage === "book-trainer-page.html"
+) {
+  document.getElementById("head-title").style.display = "none";
+}
+
+async function handlePayment(event) {
+  showLoading("Processing Payment");
+
+  try {
+    await simulateLoading(9000);
+
+    hideLoading();
+  } catch (error) {
+    hideLoading();
+
+    alert("Something went wrong. Please try again.");
+  }
 }

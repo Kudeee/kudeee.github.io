@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/sign-up-page.css" />
+    <link rel="stylesheet" href="components/css/loading-component.css">
     <title>Sign Up</title>
   </head>
   <body>
@@ -11,13 +12,13 @@
       <div class="form-container">
         <header class="header">
           <a href="index.html">
-            <img src="assests/logo/society-fit.png" alt="">
+            <img src="assests/logo/society-fit.png" alt="society-fit logo" />
           </a>
         </header>
 
         <h1>Sign Up</h1>
 
-        <form id="form">
+        <form onsubmit="handleSignUp(event)" id="form">
           <div class="page" id="first-page" style="display: block">
             <h3>Personal Info</h3>
 
@@ -126,7 +127,7 @@
             </div>
           </div>
 
-          <div class="page" id="sub-page" style="display: none;">
+          <div class="page" id="sub-page" style="display: none">
             <h2>Society Fit Membership</h2>
 
             <div class="reciept-row">
@@ -154,16 +155,25 @@
 
             <div class="form-btn">
               <button class="btn" id="sub-prev-btn" type="button">Back</button>
-            <button class="subscribe-btn" id="submit-btn" onclick="window.location.href='homepage.html'" type="button">SUBSCRIBE</button>
+              <button
+                class="subscribe-btn button"
+                id="submit-btn"
+                type="submit"
+              >
+                SUBSCRIBE
+              </button>
             </div>
           </div>
         </form>
       </div>
 
       <div class="image"></div>
+
+      <div id="loading"></div>
     </div>
 
     <script src="js/sign-up-page.js"></script>
     <script src="js/payment-methods.js"></script>
+    <script src="components/loading.js"></script>
   </body>
 </html>

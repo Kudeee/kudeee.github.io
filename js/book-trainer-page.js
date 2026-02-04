@@ -170,7 +170,7 @@ function updateTotalPrice() {
 }
 
 // Confirm booking
-function confirmBooking() {
+async function confirmBooking() {
   // Get additional form data
   bookingData.fitnessGoals = document.getElementById("fitnessGoals").value;
   bookingData.fitnessLevel = document.getElementById("fitnessLevel").value;
@@ -193,22 +193,34 @@ function confirmBooking() {
     }
   }
 
-  // Hide step 4
-  document.getElementById("step4").classList.remove("active");
+  showLoading("Booking Trainer");
 
-  // Show success message
-  document.getElementById("successMessage").classList.add("active");
+  try {
 
-  // Update all step indicators to completed
-  document.querySelectorAll(".step").forEach((step) => {
-    step.classList.add("completed");
-  });
+    await simulateLoading(2000);
 
-  // Log booking data (in a real app, this would be sent to a server)
-  console.log("Training session booked:", bookingData);
+    hideLoading();
 
-  // Optional: Scroll to success message
-  document
-    .querySelector(".success-message")
-    .scrollIntoView({ behavior: "smooth", block: "center" });
+    document.getElementById("step4").classList.remove("active");
+
+    // Show success message
+    document.getElementById("successMessage").classList.add("active");
+
+    // Update all step indicators to completed
+    document.querySelectorAll(".step").forEach((step) => {
+      step.classList.add("completed");
+    });
+
+    // Log booking data (in a real app, this would be sent to a server)
+    console.log("Training session booked:", bookingData);
+
+    // Optional: Scroll to success message
+    document
+      .querySelector(".success-message")
+      .scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    hideLoading();
+
+    alert("Something went wrong. Please try again.");
+  }
 }

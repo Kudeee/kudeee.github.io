@@ -4,13 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/payment.css" />
+    <link rel="stylesheet" href="components/css/loading-component.css">
     <title class="page-title">Renew Membership</title>
   </head>
   <body>
 
     <header class="header">
       <a href="homepage.html">
-        <img src="assests/logo/society-fit.png" alt="">
+        <img src="assests/logo/society-fit.png" alt="society-fit logo">
       </a>
     </header>
 
@@ -30,14 +31,17 @@
       </div>
 
       <div class="containers">
-        <form action="">
+        <form onsubmit="handlePayment(event)">
           <div class="payment-method-js"></div>
-          <button class="payment-btn">RENEW</button>
+          <button class="payment-btn button" type="submit">RENEW</button>
         </form>
       </div>
     </div>
 
+    <div id="loading"></div>
+
     <script src="js/payment-content.js"></script>
     <script src="js/payment-methods.js"></script>
+    <script src="components/loading.js"></script>
   </body>
 </html>

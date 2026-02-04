@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/book-trainer-page.css" />
+    <link rel="stylesheet" href="components/css/loading-component.css">
     <title>Book a Trainer</title>
   </head>
   <body>
@@ -317,7 +318,7 @@
           <!-- Success Message -->
           <div id="successMessage" class="step-content">
             <div class="success-message">
-              <div class="success-icon">✅</div>
+              <div class="success-icon"><img src="assests/icons/check.png" alt=""></div>
               <h2 class="success-title">Session Booked!</h2>
               <p class="success-text">
                 Your training session has been confirmed. Your trainer will
@@ -377,8 +378,11 @@
         </div>
       </div>
     </div>
+
+    <div id="loading"></div>
     <script type="module" src="js/header.js"></script>
     <script src="js/book-trainer-page.js"></script>
     <script type="module" src="js/payment-methods.js"></script>
+    <script src="components/loading.js"></script>
   </body>
 </html>

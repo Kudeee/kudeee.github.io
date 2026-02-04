@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/book-class-page.css" />
+    <link rel="stylesheet" href="components/css/loading-component.css">
     <title>Book a Class</title>
   </head>
   <body>
@@ -203,7 +204,7 @@
           <!-- Success Message -->
           <div id="successMessage" class="step-content">
             <div class="success-message">
-              <div class="success-icon">✅</div>
+              <div class="success-icon"><img src="assests/icons/check.png" alt=""></div>
               <h2 class="success-title">Booking Confirmed!</h2>
               <p class="success-text">
                 You're all set for your class. We've sent a confirmation email
@@ -215,7 +216,7 @@
             </div>
           </div>
         </div>
-1
+
         <div class="booking-summary">
           <h3 class="summary-title">Booking Summary</h3>
           <div class="summary-item">
@@ -245,8 +246,11 @@
       </div>
     </div>
 
+    <div id="loading"></div>
+
     <script type="module" src="js/header.js"></script>
     <script src="js/book-class-page.js"></script>
     <script type="module" src="js/payment-methods.js"></script>
+    <script src="components/loading.js"></script>
   </body>
 </html>
