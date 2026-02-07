@@ -6,7 +6,6 @@ trainers.forEach((trainer) => {
     trainersHTML += `
         <div class="trainer-card">
           <div class="trainer-image">
-            <span class="trainer-badge">Top Rated</span>
             <img src="${trainer.image}" alt="">
           </div>
           <div class="trainer-info">

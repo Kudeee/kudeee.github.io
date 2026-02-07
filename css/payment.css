@@ -24,15 +24,15 @@ header {
   width: 160px;
 }
 
-.header-name{
+.header-name {
   text-align: center;
   margin-top: 30px;
 }
 
 .container {
-  display: block;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 0 100px;
+  min-height: 100vh;
 }
 
 .row {
@@ -88,4 +88,26 @@ button:hover {
 .containers {
   display: flex;
   justify-content: center;
+  align-items: center;
+}
+
+.payment-successful {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.payment-successful img {
+  width: 300px;
+  margin-top: 90px;
+}
+
+.payment-successful p {
+  font-weight: 100;
+  font-size: x-large;
+  margin: 20px 0 20px;
+}
+
+.payment-successful button {
+  width: 20%;
 }
