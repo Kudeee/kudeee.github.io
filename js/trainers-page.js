@@ -1,4 +1,4 @@
-import {trainers} from '../data/trainer.js';
+import {trainers} from '../data/Trainers.js';
 
 let trainersHTML = '';
 

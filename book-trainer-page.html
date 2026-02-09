@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/book-trainer-page.css" />
-    <link rel="stylesheet" href="components/css/loading-component.css">
+    <link rel="stylesheet" href="components/css/loading-component.css" />
     <title>Book a Trainer</title>
   </head>
   <body>
@@ -35,75 +35,7 @@
           <!-- Step 1: Choose Trainer -->
           <div id="step1" class="step-content active">
             <h2 class="section-title">Choose Your Trainer</h2>
-            <div class="trainer-select-grid">
-              <div
-                class="trainer-option"
-                onclick="
-                  selectTrainer('Emma Rodriguez', 'HIIT & CrossFit', '500')
-                "
-              >
-                <div class="trainer-photo"></div>
-                <div class="trainer-details">
-                  <h3>Emma Rodriguez</h3>
-                  <div class="trainer-specialty">
-                    HIIT & CrossFit Specialist
-                  </div>
-                  <div class="trainer-stats">
-                    <span>⭐ 4.9 Rating</span>
-                    <span>🏋️ 8+ Years</span>
-                    <span>👥 200+ Clients</span>
-                  </div>
-                </div>
-                <div class="trainer-price">
-                  <div class="price-value">₱500</div>
-                  <div class="price-label">/session</div>
-                </div>
-              </div>
-
-              <div
-                class="trainer-option"
-                onclick="
-                  selectTrainer('Mike Chen', 'Strength & Conditioning', '600')
-                "
-              >
-                <div class="trainer-photo"></div>
-                <div class="trainer-details">
-                  <h3>Mike Chen</h3>
-                  <div class="trainer-specialty">Strength & Conditioning</div>
-                  <div class="trainer-stats">
-                    <span>⭐ 5.0 Rating</span>
-                    <span>🏋️ 12+ Years</span>
-                    <span>👥 300+ Clients</span>
-                  </div>
-                </div>
-                <div class="trainer-price">
-                  <div class="price-value">₱600</div>
-                  <div class="price-label">/session</div>
-                </div>
-              </div>
-
-              <div
-                class="trainer-option"
-                onclick="
-                  selectTrainer('Sarah Johnson', 'Yoga & Pilates', '550')
-                "
-              >
-                <div class="trainer-photo"></div>
-                <div class="trainer-details">
-                  <h3>Sarah Johnson</h3>
-                  <div class="trainer-specialty">Yoga & Pilates Expert</div>
-                  <div class="trainer-stats">
-                    <span>⭐ 4.9 Rating</span>
-                    <span>🏋️ 10+ Years</span>
-                    <span>👥 250+ Clients</span>
-                  </div>
-                </div>
-                <div class="trainer-price">
-                  <div class="price-value">₱550</div>
-                  <div class="price-label">/session</div>
-                </div>
-              </div>
-            </div>
+            <div class="trainer-select-grid trainer-select-grid-js"></div>
             <div class="action-buttons">
               <button class="btn btn-primary" onclick="nextStep(2)">
                 Next: Session Type
@@ -318,7 +250,9 @@
           <!-- Success Message -->
           <div id="successMessage" class="step-content">
             <div class="success-message">
-              <div class="success-icon"><img src="assests/icons/check.png" alt=""></div>
+              <div class="success-icon">
+                <img src="assests/icons/check.png" alt="" />
+              </div>
               <h2 class="success-title">Session Booked!</h2>
               <p class="success-text">
                 Your training session has been confirmed. Your trainer will
@@ -326,7 +260,7 @@
               </p>
               <button
                 class="btn btn-primary"
-                onclick="location.href = '#home'"
+                onclick="location.href = 'homepage.html'"
                 style="flex: none; padding: 15px 40px"
               >
                 Back to Home
@@ -382,6 +316,7 @@
     <div id="loading"></div>
     <script type="module" src="js/header.js"></script>
     <script src="js/book-trainer-page.js"></script>
+    <script type="module" src="components/selectTrainer.js"></script>
     <script type="module" src="js/payment-methods.js"></script>
     <script src="components/loading.js"></script>
   </body>

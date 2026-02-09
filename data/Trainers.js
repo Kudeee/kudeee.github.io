@@ -6,9 +6,10 @@ export const trainers = [
     trainerBio:
       "With over 10 years of experience, Nadja helps clients improve flexibility, core strength, and mind-body connection through yoga and pilates.",
     briefIntro:
-      "10+ years of experience improving flexibility, balance, and core strength.",
+      "Unlock flexibility, balance, and inner strength with expert-led yoga and pilates.",
     exp: 10,
     clients: 200,
+    BaseRate: 600,
     rating: 4.9,
     availability: "Limited Availability",
     availCss: "limited",
@@ -21,9 +22,10 @@ export const trainers = [
     trainerBio:
       "Certified CrossFit Level 2 trainer with a passion for high-intensity workouts. Ping specializes in helping clients push their limits and achieve breakthrough results.",
     briefIntro:
-      "High-energy coach focused on intense workouts and fast results.",
+      "Push your limits with high-intensity training built for serious results.",
     exp: 8,
     clients: 200,
+    BaseRate: 550,
     rating: 4.9,
     availability: "Available This Week",
     specialtyTag: ["HIIT", "CrossFit", "Strength", "Endurance"],
@@ -35,9 +37,10 @@ export const trainers = [
     trainerBio:
       "Marcus focuses on building strength, power, and endurance through structured weight training and performance programs.",
     briefIntro:
-      "Expert in strength training and long-term performance development.",
+      "Build real strength and elite performance with proven training systems.",
     exp: 12,
     clients: 350,
+    BaseRate: 650,
     rating: 4.8,
     availability: "Limited Availability",
     availCss: "limited",
@@ -55,9 +58,10 @@ export const trainers = [
     trainerBio:
       "Alyssa helps clients lose weight sustainably by combining smart workouts with realistic nutrition strategies.",
     briefIntro:
-      "Focused on sustainable weight loss through fitness and nutrition.",
+      "Lose weight sustainably with smart workouts and realistic nutrition.",
     exp: 7,
     clients: 280,
+    BaseRate: 500,
     rating: 4.7,
     availability: "Available This Week",
     specialtyTag: [
@@ -73,9 +77,11 @@ export const trainers = [
     specialty: "Functional Training Specialist",
     trainerBio:
       "Neil designs functional workouts that improve mobility, balance, and everyday movement efficiency.",
-    briefIntro: "Improves everyday strength, movement, and mobility.",
+    briefIntro:
+      "Move better, feel stronger, and train for real-life performance.",
     exp: 6,
     clients: 190,
+    BaseRate: 480,
     rating: 4.8,
     availability: "Available This Week",
     specialtyTag: [
@@ -91,9 +97,11 @@ export const trainers = [
     specialty: "Zumba & Dance Fitness Instructor",
     trainerBio:
       "Sofia makes fitness fun through energetic dance workouts that burn calories while boosting confidence.",
-    briefIntro: "Fun, high-energy dance workouts that burn calories fast.",
+    briefIntro:
+      "Burn calories, boost confidence, and have fun through dance fitness.",
     exp: 9,
     clients: 400,
+    BaseRate: 550,
     rating: 4.9,
     availability: "Limited Availability",
     availCss: "limited",
@@ -105,9 +113,11 @@ export const trainers = [
     specialty: "Bodybuilding Coach",
     trainerBio:
       "Ethan specializes in muscle growth, physique development, and competition-level bodybuilding prep.",
-    briefIntro: "Dedicated to muscle growth and physique transformation.",
+    briefIntro:
+      "Transform your physique with serious muscle-building programs.",
     exp: 11,
     clients: 260,
+    BaseRate: 620,
     rating: 4.8,
     availability: "Limited Availability",
     availCss: "limited",
@@ -124,9 +134,11 @@ export const trainers = [
     specialty: "Sports Performance Trainer",
     trainerBio:
       "Liam works with athletes to improve speed, agility, and explosive power for peak sports performance.",
-    briefIntro: "Helps athletes boost speed, power, and agility.",
+    briefIntro:
+      "Train like an athlete and unlock speed, power, and agility.",
     exp: 10,
     clients: 220,
+    BaseRate: 600,
     rating: 4.9,
     availability: "Available This Week",
     specialtyTag: ["Sports Performance", "Speed", "Agility", "Power Training"],
@@ -137,9 +149,11 @@ export const trainers = [
     specialty: "Rehabilitation & Mobility Coach",
     trainerBio:
       "Maya helps clients recover from injuries and improve joint mobility through corrective exercises.",
-    briefIntro: "Focused on recovery, joint health, and pain-free movement.",
+    briefIntro:
+      "Recover stronger and move pain-free with expert mobility coaching.",
     exp: 8,
     clients: 175,
+    BaseRate: 520,
     rating: 4.8,
     availability: "Available This Week",
     specialtyTag: [
@@ -156,9 +170,10 @@ export const trainers = [
     trainerBio:
       "Noah guides beginners step-by-step, building confidence and healthy habits in a supportive environment.",
     briefIntro:
-      "Beginner-friendly coach focused on confidence and consistency.",
+      "Start strong with beginner-friendly coaching that builds confidence.",
     exp: 5,
     clients: 150,
+    BaseRate: 450,
     rating: 4.7,
     availability: "Available This Week",
     specialtyTag: [
