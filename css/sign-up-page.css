@@ -191,14 +191,6 @@ h2 {
   font-weight: 500;
 }
 
-/* .discount-box {
-  display: flex;
-  align-items: center;
-  border: 1px solid #ddd;
-  padding: 8px 12px;
-  background: #fff;
-} */
-
 .discount-box input {
   outline: none;
   flex: 1;
