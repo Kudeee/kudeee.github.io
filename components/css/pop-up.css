@@ -1,64 +1,98 @@
-@import url('../../css/GENERAL-LAYOUT.css');
+@import url("../../css/GENERAL-LAYOUT.css");
 
 .pop-up-container {
-  display: none; /* Hidden by default */
+  display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
   z-index: 9999;
+  display: flex;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
 }
 
 .pop-up-wrapper {
-  display: flex;
-  justify-content: center;
   background: #ffffff;
-  width: 360px;
-  padding: 24px;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  width: 400px;
+  padding: 40px 32px;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+  animation: popupFade 0.25s ease;
 }
 
 .pop-up {
-  justify-items: center;
+  text-align: center;
 }
 
-.icon-wrapper {
-  border-radius: 50%;
-  background: #fff1eb;
+.icon {
+  margin: 0 auto 24px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  align-items: center;
 }
 
-.icon img{
-  width: 60px;
-  height: 60px;
+.icon img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  filter: invert(51%) sepia(83%) saturate(1520%) hue-rotate(345deg);
 }
-
 .message {
-  font-size: large;
-  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 32px;
+  line-height: 1.5;
 }
 
-button {
-  height: 40px;
-  width: 100px;
-  background: #ff6a2a;
+.pop-up-btn {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pop-up-btn button {
+  height: 45px;
+  min-width: 110px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.popBtn {
+  background: linear-gradient(135deg, #ff6b35, #ff8c5a);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: medium;
-  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(255, 107, 53, 0.3);
 }
 
-button:hover {
-  background: #e85d21;
+.popBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px rgba(255, 107, 53, 0.4);
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 2px solid #ff6b35;
+  color: #ff6b35;
+}
+
+.btn-cancel:hover {
+  background: #ff6b35;
+  color: #fff;
+}
+
+@keyframes popupFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
