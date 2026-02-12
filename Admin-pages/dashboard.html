@@ -2,37 +2,95 @@
   <h1>Dashboard</h1>
   <div class="user-box">Admin</div>
 </div>
+
+<!-- Key Metrics -->
 <section class="grid">
   <div class="card">
     <h3>Total Members</h3>
-    <p>1,245 members</p>
+    <p class="stat-value">1,245</p>
+    <p class="stat-status">↑ 12% from last month</p>
   </div>
   <div class="card">
     <h3>Active Subscriptions</h3>
-    <p>985 running plans</p>
+    <p class="stat-value">985</p>
+    <p class="stat-status">↑ 8% from last month</p>
   </div>
   <div class="card">
     <h3>Monthly Revenue</h3>
-    <p>₱245,000</p>
+    <p class="stat-value">₱245,000</p>
+    <p class="stat-status">↑ 15% from last month</p>
   </div>
   <div class="card">
     <h3>Classes Today</h3>
-    <p>12 scheduled sessions</p>
+    <p class="stat-value">12</p>
+    <p class="stat-status">Scheduled sessions</p>
   </div>
 </section>
 
+<!-- Additional Statistics -->
+<section class="grid">
+  <div class="card">
+    <h3>New Members (This Month)</h3>
+    <p class="stat-value">24</p>
+    <p class="stat-status">↑ 3% from last month</p>
+  </div>
+  <div class="card">
+    <h3>Retention Rate</h3>
+    <p class="stat-value">89%</p>
+    <p class="stat-status">↑ 2% from last month</p>
+  </div>
+  <div class="card">
+    <h3>Active Trainers</h3>
+    <p class="stat-value">10</p>
+    <p class="stat-status">All certified</p>
+  </div>
+  <div class="card">
+    <h3>Equipment Status</h3>
+    <p class="stat-value">98%</p>
+    <p class="stat-status">Operational</p>
+  </div>
+</section>
+
+<!-- Recent Activity & Quick Actions -->
 <div class="grid">
   <div class="card">
     <h3>Recent Activities</h3>
-    <p>• New member registered: John Doe</p>
-    <p>• Payment received: ₱2,500</p>
-    <p>• Class scheduled: Yoga at 6 PM</p>
+    <p>• New member registered: John Doe (Premium Plan)</p>
+    <p>• Payment received: ₱2,500 - Sarah Johnson</p>
+    <p>• Class scheduled: Yoga at 6 PM - 15 spots filled</p>
+    <p>• Trainer added: Marcus Lee (Strength Training)</p>
+    <p>• Equipment maintenance: Treadmill #3 serviced</p>
+    <p>• Membership expired: 3 members (follow-up sent)</p>
   </div>
+  
   <div class="card">
     <h3>Quick Actions</h3>
     <div class="action-buttons">
-      <button class="btn btn-primary">Add Member</button>
-      <button class="btn btn-secondary">View Reports</button>
+      <button class="btn btn-primary" onclick="location.href='#members'">Add Member</button>
+      <button class="btn btn-primary" onclick="location.href='#classes'">Schedule Class</button>
+    </div>
+    <div class="action-buttons">
+      <button class="btn btn-secondary" onclick="location.href='#revenue'">View Reports</button>
+      <button class="btn btn-secondary" onclick="location.href='#payments'">Process Payments</button>
+    </div>
+  </div>
+</div>
+
+<!-- Membership Breakdown -->
+<div class="card" style="margin-top: 20px;">
+  <h3>Membership Distribution</h3>
+  <div class="grid" style="margin-top: 15px;">
+    <div style="text-align: center;">
+      <p class="stat-value" style="font-size: 1.8rem;">421</p>
+      <p style="color: #666; font-weight: 600;">Basic Plan</p>
+    </div>
+    <div style="text-align: center;">
+      <p class="stat-value" style="font-size: 1.8rem;">498</p>
+      <p style="color: #666; font-weight: 600;">Premium Plan</p>
+    </div>
+    <div style="text-align: center;">
+      <p class="stat-value" style="font-size: 1.8rem;">326</p>
+      <p style="color: #666; font-weight: 600;">VIP Plan</p>
     </div>
   </div>
 </div>

@@ -2,45 +2,199 @@
   <h1>Classes</h1>
 </div>
 
+<!-- Class Statistics -->
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card">
+    <h3>Total Classes</h3>
+    <p class="stat-value">48</p>
+    <p class="stat-status">Per week</p>
+  </div>
+  <div class="card">
+    <h3>Today's Classes</h3>
+    <p class="stat-value">12</p>
+    <p class="stat-status">Scheduled</p>
+  </div>
+  <div class="card">
+    <h3>Average Attendance</h3>
+    <p class="stat-value">85%</p>
+    <p class="stat-status">This week</p>
+  </div>
+  <div class="card">
+    <h3>Popular Class</h3>
+    <p class="stat-value">HIIT</p>
+    <p class="stat-status">98% attendance</p>
+  </div>
+</div>
+
+<!-- Schedule New Class -->
 <div class="card">
   <h3>Schedule New Class</h3>
   <form action="#">
-    <div class="form">
-      <label>Class Name</label>
-      <input type="text" placeholder="e.g., Yoga, Zumba" />
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+      <div class="form">
+        <label>Class Name</label>
+        <select>
+          <option>Select Class Type</option>
+          <option>Yoga Flow</option>
+          <option>HIIT Training</option>
+          <option>Zumba</option>
+          <option>CrossFit</option>
+          <option>Boxing</option>
+          <option>Pilates</option>
+          <option>Spin Class</option>
+        </select>
+      </div>
+      
+      <div class="form">
+        <label>Trainer</label>
+        <select>
+          <option>Select Trainer</option>
+          <option>Ping Guerrero</option>
+          <option>Nadja Collins</option>
+          <option>Marcus Lee</option>
+          <option>Alyssa Moreno</option>
+          <option>Neil Aspag</option>
+          <option>Sofia Ramirez</option>
+        </select>
+      </div>
+      
+      <div class="form">
+        <label>Date & Time</label>
+        <input type="datetime-local" />
+      </div>
+      
+      <div class="form">
+        <label>Duration (minutes)</label>
+        <select>
+          <option>30</option>
+          <option>45</option>
+          <option selected>50</option>
+          <option>60</option>
+          <option>90</option>
+        </select>
+      </div>
+      
+      <div class="form">
+        <label>Max Participants</label>
+        <input type="number" value="20" min="5" max="50" />
+      </div>
+      
+      <div class="form">
+        <label>Studio/Location</label>
+        <select>
+          <option>Studio A</option>
+          <option>Studio B</option>
+          <option>Main Gym</option>
+          <option>Outdoor Area</option>
+          <option>Boxing Ring</option>
+        </select>
+      </div>
     </div>
+    
     <div class="form">
-      <label>Trainer</label>
-      <select>
-        <option>Ping Guerrero</option>
-        <option>Nadja Cole</option>
-      </select>
+      <label>Class Description</label>
+      <textarea rows="3" placeholder="Brief description of the class..."></textarea>
     </div>
-    <div class="form">
-      <label>Date & Time</label>
-      <input type="datetime-local" />
-    </div>
-    <div class="form">
-      <label>Max Participants</label>
-      <input type="number" value="20" />
-    </div>
+    
     <div class="scheduleClass-btn">
-        <button type="submit">Schedule Class</button>
-    </div> 
+      <button type="submit">Schedule Class</button>
+    </div>
   </form>
 </div>
 
-<div class="grid">
+<!-- Upcoming Classes -->
+<div style="margin-top: 30px;">
+  <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Upcoming Classes</h2>
+  
+  <div class="grid">
     <div class="card">
-        <h3>Zumba</h3>
-        <p><Strong>Trainer:</Strong> Ping Guerrero</p>
-        <p><strong>Date & Time:</strong> Jan 23, 2026</p>
-        <p><strong>Participants:</strong> 20</p>
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #ff6b35;">Zumba</h3>
+        <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">20/20 Full</span>
+      </div>
+      <p><strong>Trainer:</strong> Ping Guerrero</p>
+      <p><strong>Date & Time:</strong> Feb 13, 2026 - 6:00 PM</p>
+      <p><strong>Duration:</strong> 50 minutes</p>
+      <p><strong>Location:</strong> Studio A</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+      </div>
     </div>
+
     <div class="card">
-        <h3>Yoga</h3>
-        <p><Strong>Trainer:</Strong> Nadja Collins</p>
-        <p><strong>Date & Time:</strong> Jan 19, 2026</p>
-        <p><strong>Participants:</strong> 15</p>
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #ff6b35;">Yoga Flow</h3>
+        <span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">15/20</span>
+      </div>
+      <p><strong>Trainer:</strong> Nadja Collins</p>
+      <p><strong>Date & Time:</strong> Feb 13, 2026 - 9:00 AM</p>
+      <p><strong>Duration:</strong> 60 minutes</p>
+      <p><strong>Location:</strong> Studio B</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+      </div>
     </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #ff6b35;">HIIT Training</h3>
+        <span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">18/20</span>
+      </div>
+      <p><strong>Trainer:</strong> Marcus Lee</p>
+      <p><strong>Date & Time:</strong> Feb 14, 2026 - 6:00 AM</p>
+      <p><strong>Duration:</strong> 45 minutes</p>
+      <p><strong>Location:</strong> Main Gym</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #ff6b35;">CrossFit</h3>
+        <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">8/25</span>
+      </div>
+      <p><strong>Trainer:</strong> Ping Guerrero</p>
+      <p><strong>Date & Time:</strong> Feb 14, 2026 - 5:00 PM</p>
+      <p><strong>Duration:</strong> 60 minutes</p>
+      <p><strong>Location:</strong> Main Gym</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #ff6b35;">Pilates</h3>
+        <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">12/15</span>
+      </div>
+      <p><strong>Trainer:</strong> Nadja Collins</p>
+      <p><strong>Date & Time:</strong> Feb 15, 2026 - 10:00 AM</p>
+      <p><strong>Duration:</strong> 50 minutes</p>
+      <p><strong>Location:</strong> Studio B</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #ff6b35;">Boxing</h3>
+        <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">10/15</span>
+      </div>
+      <p><strong>Trainer:</strong> Marcus Lee</p>
+      <p><strong>Date & Time:</strong> Feb 15, 2026 - 7:00 PM</p>
+      <p><strong>Duration:</strong> 45 minutes</p>
+      <p><strong>Location:</strong> Boxing Ring</p>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>

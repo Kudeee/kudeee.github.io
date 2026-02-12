@@ -2,24 +2,217 @@
   <h1>Trainers</h1>
 </div>
 
-<div class="option-bar">
-    <button id="addTrainerBtn">Add Trainer</button>
-    <button id="deleteTrainerBtn">Delete</button>
-    <button id="updateTrainerBtn">Update</button>
+<!-- Trainer Statistics -->
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card">
+    <h3>Total Trainers</h3>
+    <p class="stat-value">10</p>
+    <p class="stat-status">All certified</p>
+  </div>
+  <div class="card">
+    <h3>Active Today</h3>
+    <p class="stat-value">8</p>
+    <p class="stat-status">On duty</p>
+  </div>
+  <div class="card">
+    <h3>Avg Client Rating</h3>
+    <p class="stat-value">4.8</p>
+    <p class="stat-status">⭐ Out of 5.0</p>
+  </div>
+  <div class="card">
+    <h3>Sessions This Week</h3>
+    <p class="stat-value">156</p>
+    <p class="stat-status">Total sessions</p>
+  </div>
 </div>
 
+<!-- Action Buttons -->
+<div class="option-bar">
+  <button id="addTrainerBtn">Add Trainer</button>
+  <button id="scheduleBtn">View Schedule</button>
+  <button id="certificationBtn">Certifications</button>
+</div>
+
+<!-- Trainers Grid -->
 <div class="grid">
   <div class="card">
-    <h3>Ping Guerrero</h3>
-    <p><strong>Specialization:</strong> Strength Training</p>
-    <p><strong>Experience:</strong> 5 years</p>
-    <p><strong>Classes:</strong> 15/week</p>
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #ff6b35, #ff8c5a); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">PG</div>
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Ping Guerrero</h3>
+        <p style="margin: 0; color: #666; font-weight: 600;">HIIT & CrossFit Coach</p>
+      </div>
+    </div>
+    <p><strong>Experience:</strong> 8 years</p>
+    <p><strong>Classes/Week:</strong> 15</p>
+    <p><strong>Clients:</strong> 200+</p>
+    <p><strong>Rating:</strong> ⭐ 4.9/5.0</p>
+    <p><strong>Certifications:</strong></p>
+    <p style="font-size: 0.85rem;">• CrossFit Level 2 Trainer<br>• CPR & First Aid Certified<br>• Sports Nutrition Specialist</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 8px;">Edit Profile</button>
+      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    </div>
   </div>
 
   <div class="card">
-    <h3>Nadja Collins</h3>
-    <p><strong>Specialization:</strong> Yoga & Pilates</p>
-    <p><strong>Experience:</strong> 8 years</p>
-    <p><strong>Classes:</strong> 12/week</p>
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4caf50, #66bb6a); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">NC</div>
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Nadja Collins</h3>
+        <p style="margin: 0; color: #666; font-weight: 600;">Yoga & Pilates Specialist</p>
+      </div>
+    </div>
+    <p><strong>Experience:</strong> 10 years</p>
+    <p><strong>Classes/Week:</strong> 12</p>
+    <p><strong>Clients:</strong> 200+</p>
+    <p><strong>Rating:</strong> ⭐ 4.9/5.0</p>
+    <p><strong>Certifications:</strong></p>
+    <p style="font-size: 0.85rem;">• RYT 500 Yoga Certification<br>• Pilates Mat Instructor<br>• Meditation Teacher</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 8px;">Edit Profile</button>
+      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    </div>
   </div>
+
+  <div class="card">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #2196f3, #42a5f5); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">ML</div>
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Marcus Lee</h3>
+        <p style="margin: 0; color: #666; font-weight: 600;">Strength & Conditioning</p>
+      </div>
+    </div>
+    <p><strong>Experience:</strong> 12 years</p>
+    <p><strong>Classes/Week:</strong> 18</p>
+    <p><strong>Clients:</strong> 350+</p>
+    <p><strong>Rating:</strong> ⭐ 4.8/5.0</p>
+    <p><strong>Certifications:</strong></p>
+    <p style="font-size: 0.85rem;">• NSCA-CPT Certified<br>• Olympic Weightlifting Coach<br>• Sports Performance Specialist</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 8px;">Edit Profile</button>
+      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #9c27b0, #ba68c8); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">AM</div>
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Alyssa Moreno</h3>
+        <p style="margin: 0; color: #666; font-weight: 600;">Weight Loss & Nutrition</p>
+      </div>
+    </div>
+    <p><strong>Experience:</strong> 7 years</p>
+    <p><strong>Classes/Week:</strong> 14</p>
+    <p><strong>Clients:</strong> 280+</p>
+    <p><strong>Rating:</strong> ⭐ 4.7/5.0</p>
+    <p><strong>Certifications:</strong></p>
+    <p style="font-size: 0.85rem;">• Certified Nutritionist<br>• Weight Loss Specialist<br>• Metabolic Training Expert</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 8px;">Edit Profile</button>
+      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #ff9800, #ffb74d); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">NA</div>
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Neil Aspag</h3>
+        <p style="margin: 0; color: #666; font-weight: 600;">Functional Training</p>
+      </div>
+    </div>
+    <p><strong>Experience:</strong> 6 years</p>
+    <p><strong>Classes/Week:</strong> 13</p>
+    <p><strong>Clients:</strong> 190+</p>
+    <p><strong>Rating:</strong> ⭐ 4.8/5.0</p>
+    <p><strong>Certifications:</strong></p>
+    <p style="font-size: 0.85rem;">• Functional Training Specialist<br>• Mobility Coach<br>• TRX Instructor</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 8px;">Edit Profile</button>
+      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #e91e63, #f06292); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">SR</div>
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Sofia Ramirez</h3>
+        <p style="margin: 0; color: #666; font-weight: 600;">Zumba & Dance Fitness</p>
+      </div>
+    </div>
+    <p><strong>Experience:</strong> 9 years</p>
+    <p><strong>Classes/Week:</strong> 16</p>
+    <p><strong>Clients:</strong> 400+</p>
+    <p><strong>Rating:</strong> ⭐ 4.9/5.0</p>
+    <p><strong>Certifications:</strong></p>
+    <p style="font-size: 0.85rem;">• Zumba Instructor License<br>• Dance Fitness Specialist<br>• Aerobics Instructor</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 8px;">Edit Profile</button>
+      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trainer Availability Calendar -->
+<div class="card" style="margin-top: 30px;">
+  <h3>Trainer Availability This Week</h3>
+  <table style="margin-top: 15px;">
+    <thead>
+      <tr>
+        <th>Trainer</th>
+        <th>Monday</th>
+        <th>Tuesday</th>
+        <th>Wednesday</th>
+        <th>Thursday</th>
+        <th>Friday</th>
+        <th>Saturday</th>
+        <th>Sunday</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Ping Guerrero</td>
+        <td>6AM-8PM</td>
+        <td>6AM-8PM</td>
+        <td>6AM-8PM</td>
+        <td>OFF</td>
+        <td>6AM-8PM</td>
+        <td>8AM-2PM</td>
+        <td>OFF</td>
+      </tr>
+      <tr>
+        <td>Nadja Collins</td>
+        <td>7AM-6PM</td>
+        <td>7AM-6PM</td>
+        <td>OFF</td>
+        <td>7AM-6PM</td>
+        <td>7AM-6PM</td>
+        <td>9AM-3PM</td>
+        <td>OFF</td>
+      </tr>
+      <tr>
+        <td>Marcus Lee</td>
+        <td>5AM-9PM</td>
+        <td>5AM-9PM</td>
+        <td>5AM-9PM</td>
+        <td>5AM-9PM</td>
+        <td>OFF</td>
+        <td>7AM-4PM</td>
+        <td>OFF</td>
+      </tr>
+      <tr>
+        <td>Alyssa Moreno</td>
+        <td>8AM-7PM</td>
+        <td>OFF</td>
+        <td>8AM-7PM</td>
+        <td>8AM-7PM</td>
+        <td>8AM-7PM</td>
+        <td>OFF</td>
+        <td>10AM-2PM</td>
+      </tr>
+    </tbody>
+  </table>
 </div>

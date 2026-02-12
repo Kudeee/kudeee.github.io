@@ -1,43 +1,269 @@
 <div class="header">
-  <h1>Event Creation</h1>
+  <h1>Event Management</h1>
 </div>
 
+<!-- Event Statistics -->
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card">
+    <h3>Upcoming Events</h3>
+    <p class="stat-value">4</p>
+    <p class="stat-status">This quarter</p>
+  </div>
+  <div class="card">
+    <h3>Total Registrations</h3>
+    <p class="stat-value">156</p>
+    <p class="stat-status">Across all events</p>
+  </div>
+  <div class="card">
+    <h3>Past Events</h3>
+    <p class="stat-value">12</p>
+    <p class="stat-status">Last 6 months</p>
+  </div>
+  <div class="card">
+    <h3>Avg. Attendance Rate</h3>
+    <p class="stat-value">92%</p>
+    <p class="stat-status">Very high turnout</p>
+  </div>
+</div>
+
+<!-- Create New Event -->
 <div class="card">
   <h3>Create New Event</h3>
   <form action="#">
-    <div class="form">
-      <label>Event Name</label>
-      <input type="text" placeholder="e.g., Summer Fitness Challenge" />
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+      <div class="form">
+        <label>Event Name</label>
+        <input type="text" placeholder="e.g., Summer Fitness Challenge" />
+      </div>
+      
+      <div class="form">
+        <label>Event Type</label>
+        <select>
+          <option>Select Type</option>
+          <option>Challenge/Competition</option>
+          <option>Workshop/Seminar</option>
+          <option>Social Event</option>
+          <option>Charity Event</option>
+          <option>Special Class</option>
+        </select>
+      </div>
+      
+      <div class="form">
+        <label>Event Date</label>
+        <input type="date" />
+      </div>
+      
+      <div class="form">
+        <label>Start Time</label>
+        <input type="time" />
+      </div>
+      
+      <div class="form">
+        <label>Duration (hours)</label>
+        <input type="number" placeholder="2" min="0.5" max="8" step="0.5" />
+      </div>
+      
+      <div class="form">
+        <label>Max Participants</label>
+        <input type="number" placeholder="50" min="5" max="200" />
+      </div>
+      
+      <div class="form">
+        <label>Location/Venue</label>
+        <select>
+          <option>Main Gym</option>
+          <option>Studio A</option>
+          <option>Studio B</option>
+          <option>Outdoor Area</option>
+          <option>Off-site Location</option>
+        </select>
+      </div>
+      
+      <div class="form">
+        <label>Registration Fee</label>
+        <input type="number" placeholder="0" />
+        <small style="color: #666; font-size: 0.85rem;">Leave 0 for free event</small>
+      </div>
     </div>
+    
     <div class="form">
-      <label>Description</label>
-      <textarea rows="3"></textarea>
+      <label>Event Description</label>
+      <textarea rows="4" placeholder="Detailed description of the event, what participants can expect, requirements, etc."></textarea>
     </div>
+    
     <div class="form">
-      <label>Event Date</label>
-      <input type="date" />
+      <label>Special Requirements</label>
+      <textarea rows="2" placeholder="e.g., Bring your own mat, water bottle required, etc."></textarea>
     </div>
-    <button type="submit">Create Event</button>
+    
+    <div style="display: flex; gap: 15px; margin-top: 15px;">
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" style="width: auto;">
+        <span>Send email notification to all members</span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" style="width: auto;">
+        <span>Post on social media</span>
+      </label>
+    </div>
+    
+    <button type="submit" style="margin-top: 20px; width: 100%;">Create Event</button>
   </form>
 </div>
 
-<div class="grid">
+<!-- Upcoming Events -->
+<div style="margin-top: 30px;">
+  <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Upcoming Events</h2>
+  
+  <div class="grid">
     <div class="card">
-        <h3>Sweat, Smile, and Summer Vibes</h3>
-        <p><Strong>Description:</Strong>
-          Looking for some extra motivation this season? Our Summer 
-          Fitness Challenge is all about community, consistency, and a little friendly competition. 
-          Track your progress, join our exclusive group sessions, and compete for awesome prizes. 
-          Let’s make this your strongest summer yet!</p>
-        <p><strong>Date & Time:</strong> Jan 26, 2026</p>
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #ff6b35;">Sweat, Smile, and Summer Vibes</h3>
+        <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">48/50 Spots</span>
+      </div>
+      
+      <p style="margin: 10px 0;"><strong>Type:</strong> Fitness Challenge</p>
+      <p style="margin: 10px 0;"><strong>Date & Time:</strong> Jan 26, 2026 - 9:00 AM</p>
+      <p style="margin: 10px 0;"><strong>Duration:</strong> 3 hours</p>
+      <p style="margin: 10px 0;"><strong>Location:</strong> Main Gym & Outdoor Area</p>
+      <p style="margin: 10px 0;"><strong>Fee:</strong> Free for members</p>
+      
+      <p style="margin: 15px 0; color: #666;"><strong>Description:</strong> Looking for some extra motivation this season? Our Summer Fitness Challenge is all about community, consistency, and a little friendly competition. Track your progress, join our exclusive group sessions, and compete for awesome prizes.</p>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <p style="color: #666; margin-bottom: 10px;"><strong>Registrations:</strong> 48 participants</p>
+        <p style="color: #4caf50; font-weight: 600;">✓ Email sent to all members</p>
+        <p style="color: #4caf50; font-weight: 600;">✓ Posted on social media</p>
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit Event</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Registrations</button>
+        <button style="flex: 1; padding: 8px; background: #ffebee; color: #c62828;">Cancel Event</button>
+      </div>
     </div>
+
     <div class="card">
-        <h3>Reps for a Cause</h3>
-        <p><Strong>Description:</Strong>
-         Put your strength to good use! Join our charity "Lift-A-Thon" where every rep you complete raises 
-         money for Alagang Kapatid Charity. Whether you’re deadlifting, benching, or squatting, your sweat directly 
-         supports our community. Open to all fitness levels—bring your friends, set a personal best, and make a 
-         difference together.</p>
-        <p><strong>Date & Time:</strong> Feb 10, 2026</p>
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #ff6b35;">Reps for a Cause</h3>
+        <span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">32/60 Spots</span>
+      </div>
+      
+      <p style="margin: 10px 0;"><strong>Type:</strong> Charity Event</p>
+      <p style="margin: 10px 0;"><strong>Date & Time:</strong> Feb 10, 2026 - 10:00 AM</p>
+      <p style="margin: 10px 0;"><strong>Duration:</strong> 4 hours</p>
+      <p style="margin: 10px 0;"><strong>Location:</strong> Main Gym</p>
+      <p style="margin: 10px 0;"><strong>Fee:</strong> ₱500 (goes to charity)</p>
+      
+      <p style="margin: 15px 0; color: #666;"><strong>Description:</strong> Put your strength to good use! Join our charity "Lift-A-Thon" where every rep you complete raises money for Alagang Kapatid Charity. Whether you're deadlifting, benching, or squatting, your sweat directly supports our community.</p>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <p style="color: #666; margin-bottom: 10px;"><strong>Registrations:</strong> 32 participants</p>
+        <p style="color: #666; margin-bottom: 5px;"><strong>Funds Raised:</strong> ₱16,000</p>
+        <p style="color: #4caf50; font-weight: 600;">✓ Charity partnership confirmed</p>
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit Event</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Registrations</button>
+        <button style="flex: 1; padding: 8px; background: #ffebee; color: #c62828;">Cancel Event</button>
+      </div>
     </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #ff6b35;">Nutrition Workshop</h3>
+        <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">18/30 Spots</span>
+      </div>
+      
+      <p style="margin: 10px 0;"><strong>Type:</strong> Workshop/Seminar</p>
+      <p style="margin: 10px 0;"><strong>Date & Time:</strong> Feb 15, 2026 - 2:00 PM</p>
+      <p style="margin: 10px 0;"><strong>Duration:</strong> 2 hours</p>
+      <p style="margin: 10px 0;"><strong>Location:</strong> Studio A</p>
+      <p style="margin: 10px 0;"><strong>Fee:</strong> Free for Premium & VIP</p>
+      
+      <p style="margin: 15px 0; color: #666;"><strong>Description:</strong> Learn meal prep strategies and nutrition fundamentals from our certified dietitian. Topics include macronutrients, meal timing, supplements, and creating sustainable eating habits.</p>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <p style="color: #666; margin-bottom: 10px;"><strong>Registrations:</strong> 18 participants</p>
+        <p style="color: #666;"><strong>Speaker:</strong> Dr. Alyssa Moreno</p>
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit Event</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Registrations</button>
+        <button style="flex: 1; padding: 8px; background: #ffebee; color: #c62828;">Cancel Event</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #ff6b35;">Member Appreciation Night</h3>
+        <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">58/100 Spots</span>
+      </div>
+      
+      <p style="margin: 10px 0;"><strong>Type:</strong> Social Event</p>
+      <p style="margin: 10px 0;"><strong>Date & Time:</strong> Mar 01, 2026 - 7:00 PM</p>
+      <p style="margin: 10px 0;"><strong>Duration:</strong> 3 hours</p>
+      <p style="margin: 10px 0;"><strong>Location:</strong> Entire Facility</p>
+      <p style="margin: 10px 0;"><strong>Fee:</strong> Free (Members only)</p>
+      
+      <p style="margin: 15px 0; color: #666;"><strong>Description:</strong> Join us for an evening of fun, food, and fitness! Enjoy mini workout sessions, raffles, prizes, food & drinks, and meet fellow members. Bring a guest!</p>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <p style="color: #666; margin-bottom: 10px;"><strong>Registrations:</strong> 58 participants</p>
+        <p style="color: #666;"><strong>Catering:</strong> Ordered for 100 people</p>
+        <p style="color: #4caf50; font-weight: 600;">✓ Raffle prizes secured</p>
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button style="flex: 1; padding: 8px;">Edit Event</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Registrations</button>
+        <button style="flex: 1; padding: 8px; background: #ffebee; color: #c62828;">Cancel Event</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Past Events -->
+<div class="card" style="margin-top: 30px;">
+  <h3>Past Events Performance</h3>
+  <table style="margin-top: 15px;">
+    <thead>
+      <tr>
+        <th>Event Name</th>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Registered</th>
+        <th>Attended</th>
+        <th>Attendance Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>New Year Kickoff Challenge</td>
+        <td>Jan 05, 2026</td>
+        <td>Challenge</td>
+        <td>65</td>
+        <td>62</td>
+        <td><span style="color: #4caf50; font-weight: 600;">95%</span></td>
+      </tr>
+      <tr>
+        <td>Holiday Social Mixer</td>
+        <td>Dec 20, 2025</td>
+        <td>Social</td>
+        <td>88</td>
+        <td>79</td>
+        <td><span style="color: #4caf50; font-weight: 600;">90%</span></td>
+      </tr>
+      <tr>
+        <td>Strength Training Workshop</td>
+        <td>Nov 15, 2025</td>
+        <td>Workshop</td>
+        <td>25</td>
+        <td>24</td>
+        <td><span style="color: #4caf50; font-weight: 600;">96%</span></td>
+      </tr>
+    </tbody>
+  </table>
 </div>

@@ -2,29 +2,156 @@
   <h1>Members</h1>
 </div>
 
-<div class="option-bar">
-    <button id="addMemberBtn">Add Member</button>
-    <button id="deleteMemberBtn">Delete</button>
-    <button id="updateMemberBtn">Update</button>
+<!-- Search and Filter Section -->
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Search & Filter Members</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Search by Name</label>
+      <input type="text" placeholder="Enter member name..." style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" id="memberSearch">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Filter by Status</label>
+      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" id="statusFilter">
+        <option>All Status</option>
+        <option>Active</option>
+        <option>Expired</option>
+        <option>Pending</option>
+      </select>
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Filter by Plan</label>
+      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" id="planFilter">
+        <option>All Plans</option>
+        <option>Basic</option>
+        <option>Premium</option>
+        <option>VIP</option>
+      </select>
+    </div>
+  </div>
 </div>
 
+<!-- Action Buttons -->
+<div class="option-bar">
+  <button id="addMemberBtn">Add Member</button>
+  <button id="exportBtn">Export Data</button>
+  <button id="sendEmailBtn">Send Email</button>
+</div>
+
+<!-- Members Statistics -->
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card">
+    <h3>Total Members</h3>
+    <p class="stat-value">1,245</p>
+  </div>
+  <div class="card">
+    <h3>Active Members</h3>
+    <p class="stat-value">985</p>
+  </div>
+  <div class="card">
+    <h3>Expired This Month</h3>
+    <p class="stat-value">23</p>
+  </div>
+  <div class="card">
+    <h3>New This Month</h3>
+    <p class="stat-value">24</p>
+  </div>
+</div>
+
+<!-- Members Table -->
 <table id="membersTable">
-  <tr>
-    <th>Name</th>
-    <th>Status</th>
-    <th>Plan</th>
-    <th>Last Payments</th>
-  </tr>
-  <tr>
-    <td>Palito Dimagiba</td>
-    <td>Active</td>
-    <td>Premium</td>
-    <td>Jan 03, 2026</td>
-  </tr>
-  <tr>
-    <td>Bogart Batongbakal</td>
-    <td>Expired</td>
-    <td>Basic</td>
-    <td>Dec 15, 2025</td>
-  </tr>
+  <thead>
+    <tr>
+      <th>Member ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Status</th>
+      <th>Plan</th>
+      <th>Join Date</th>
+      <th>Last Payment</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>#M1001</td>
+      <td>Palito Dimagiba</td>
+      <td>palito.d@email.com</td>
+      <td>0912-345-6789</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600;">Active</span></td>
+      <td>Premium</td>
+      <td>Jun 15, 2025</td>
+      <td>Jan 03, 2026</td>
+      <td>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1001')">View</button>
+      </td>
+    </tr>
+    <tr>
+      <td>#M1002</td>
+      <td>Bogart Batongbakal</td>
+      <td>bogart.b@email.com</td>
+      <td>0923-456-7890</td>
+      <td><span style="background: #ffebee; color: #c62828; padding: 4px 12px; border-radius: 12px; font-weight: 600;">Expired</span></td>
+      <td>Basic</td>
+      <td>Mar 20, 2025</td>
+      <td>Dec 15, 2025</td>
+      <td>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1002')">View</button>
+      </td>
+    </tr>
+    <tr>
+      <td>#M1003</td>
+      <td>Maria Santos</td>
+      <td>maria.s@email.com</td>
+      <td>0934-567-8901</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600;">Active</span></td>
+      <td>VIP</td>
+      <td>Jan 10, 2025</td>
+      <td>Feb 01, 2026</td>
+      <td>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1003')">View</button>
+      </td>
+    </tr>
+    <tr>
+      <td>#M1004</td>
+      <td>Juan dela Cruz</td>
+      <td>juan.dc@email.com</td>
+      <td>0945-678-9012</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600;">Active</span></td>
+      <td>Premium</td>
+      <td>Aug 05, 2025</td>
+      <td>Jan 28, 2026</td>
+      <td>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1004')">View</button>
+      </td>
+    </tr>
+    <tr>
+      <td>#M1005</td>
+      <td>Ana Reyes</td>
+      <td>ana.r@email.com</td>
+      <td>0956-789-0123</td>
+      <td><span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-weight: 600;">Pending</span></td>
+      <td>Basic</td>
+      <td>Feb 05, 2026</td>
+      <td>Feb 05, 2026</td>
+      <td>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1005')">View</button>
+      </td>
+    </tr>
+  </tbody>
 </table>
+
+<!-- Pagination -->
+<div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px;">
+  <button style="padding: 8px 16px;">Previous</button>
+  <span style="font-weight: 600;">Page 1 of 25</span>
+  <button style="padding: 8px 16px;">Next</button>
+</div>
+
+<script>
+function viewMember(id) {
+  alert('Viewing member details for ' + id);
+  // In a real application, this would open a modal or navigate to a detail page
+}
+</script>
