@@ -36,7 +36,13 @@ export function renderSubscriptionCards(currentPlan = null) {
       : subscription.price < getCurrentPlanPrice(currentPlan)
       ? "Downgrade Plan"
       : "Upgrade Plan";
-    const buttonLink = isCurrentPlan ? "" : 'href="payment.html"';
+    
+    // Construct the payment link with plan information
+    const planParam = encodeURIComponent(subscription.plan);
+    const priceParam = subscription.price;
+    const buttonLink = isCurrentPlan 
+      ? "" 
+      : `href="payment.html?type=change&plan=${planParam}&price=${priceParam}"`;
 
     subscriptionHTML += `
       <div class="sub-card">

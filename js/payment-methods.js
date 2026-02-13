@@ -52,16 +52,29 @@ const paymentMethod = `
           </label>
 `;
 
-document.querySelector(".payment-method-js").innerHTML = paymentMethod;
+function initializePaymentMethods() {
+  const paymentContainer = document.querySelector(".payment-method-js");
+  
+  if (paymentContainer) {
+    paymentContainer.innerHTML = paymentMethod;
 
-const currentPage = window.location.pathname.split("/").pop();
-
-if (
-  currentPage === "book-class-page.html" ||
-  currentPage === "book-trainer-page.html"
-) {
-  document.getElementById("head-title").style.display = "none";
+    // Hide title on specific pages
+    const currentPage = window.location.pathname.split("/").pop();
+    const headTitle = document.getElementById("head-title");
+    
+    if (headTitle && (currentPage === "book-class-page.html" || currentPage === "book-trainer-page.html")) {
+      headTitle.style.display = "none";
+    }
+  }
 }
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializePaymentMethods);
+} else {
+  initializePaymentMethods();
+}
+
+setTimeout(initializePaymentMethods, 100);
 
 async function handlePayment(event) {
   showLoading("Processing Payment");

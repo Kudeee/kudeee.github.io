@@ -1,5 +1,7 @@
 @import url("GENERAL-LAYOUT.css");
 @import url("payment-method.css");
+@import url("../components/css/subscription-cards.css");
+@import url("../components/css/loading-component.css");
 
 body {
   min-height: 100vh;
@@ -26,7 +28,7 @@ header {
 
 .header-name {
   text-align: center;
-  margin-top: 30px;
+  margin: 30px 0 30px;
 }
 
 .container {
@@ -89,6 +91,69 @@ button:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Subscription card styles in payment page */
+.containers .sub-card {
+  background: white;
+  border: 3px solid #ff6b35;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
+  margin: 0 auto 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.containers .sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.containers .sub-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ff6b35;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.containers .sub-price {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.containers .sub-price .price {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #000;
+}
+
+.containers .sub-price .month {
+  font-size: 1rem;
+  color: #666;
+}
+
+.containers .sub-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px 0;
+}
+
+.containers .sub-benefits li {
+  padding: 10px 0;
+  color: #333;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.containers .sub-benefits li:last-child {
+  border-bottom: none;
 }
 
 .payment-successful {
