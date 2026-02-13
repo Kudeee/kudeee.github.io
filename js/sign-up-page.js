@@ -1,3 +1,9 @@
+import { showPopUP, renderPopUP, closePopUp } from "../components/pop-up.js";
+import { render } from "./renderer.js";
+
+render('#pop-up', 'warning', renderPopUP);
+window.closePopUp = closePopUp;
+
 const validationRules = {
   firstName: { 
     selector: '#first-page input[placeholder="First name"]',
@@ -116,7 +122,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // FORM SUBMISSION
 // ============================================
 
-async function handleSignUp(event) {
+document.querySelector('#form').addEventListener("submit", handleSignUp)
+
+export async function handleSignUp(event) {
   event.preventDefault();
   
   if (!validateTerms()) return;

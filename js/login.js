@@ -1,4 +1,12 @@
-async function handleLogin(event) {
+import {renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
+import { render } from "./renderer.js";
+
+render('#pop-up', 'warning', renderPopUP);
+window.closePopUp = closePopUp;
+
+document.getElementById('submit').addEventListener("submit", handleLogin)
+
+export async function handleLogin(event) {
   event.preventDefault();
 
   const email = document.querySelector('input[type="email"]').value;

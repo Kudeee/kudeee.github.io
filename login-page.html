@@ -17,7 +17,7 @@
 
         <h1>Welcome Back!</h1>
 
-        <form onsubmit="handleLogin(event)">
+        <form id="submit">
           <label for="email">Email</label>
           <input type="email" placeholder="Enter your Email"/>
 
@@ -67,11 +67,11 @@
       </div>
     </div>
     <div id="loading"></div>
-    <div id="pop-up-render"></div>
+    <div id="pop-up"></div>
 
     <script src="components/loading.js"></script>
-    <script src="js/login.js"></script>
-    <script src="components/pop-up.js"></script>
+    <script type="module" src="js/login.js"></script>
+    <script type="module" src="components/pop-up.js"></script>
     <script src="js/carousel.js"></script>
   </body>
 </html>

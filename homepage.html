@@ -46,7 +46,7 @@
         <div class="status-actions">
           <button class="btn" onclick="location.href='payment.html?type=renew'">Renew Now</button>
           <button class="btn btn-outline" onclick="location.href='payment.html?type=upgrade'">Upgrade to VIP</button>
-          <button class="btn btn-secondary" onclick="showPopUP('Are you sure you want to pause membership?')">Pause Membership</button>
+          <button class="btn btn-secondary" id="pauseMem">Pause Membership</button>
         </div>
       </div>
 
@@ -73,7 +73,7 @@
             </div>
           </div>
           <div class="action-buttons">
-            <button class="btn btn-outline" onclick="showPopUP('Are you sure you want to cancel?')">Cancel Booking</button>
+            <button class="btn btn-outline" id="CancelBooking">Cancel Booking</button>
             <button class="btn btn-secondary" onclick="window.location.href='book-class-page.html'">Book Another</button>
           </div>
         </div>
@@ -170,10 +170,12 @@
       </div>
     </div>
 
-    <div id="pop-up-render-cancel"></div>
+    <div id="loading"></div>
+    <div id="pop-up"></div>
   </body>
 
   <script src="js/header.js"></script>
   <script src="js/payment-content.js"></script>
-  <script src="components/pop-up.js"></script>
+  <script src="components/loading.js"></script>
+  <script type="module" src="js/homepage.js"></script>
 </html>

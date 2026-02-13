@@ -1,3 +1,6 @@
+import {renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
+import {render} from './renderer.js';
+
 let bookingData = {
   class: null,
   date: null,
@@ -8,6 +11,14 @@ let bookingData = {
     phone: null,
   },
 };
+render('#pop-up', 'warning', renderPopUP);
+window.closePopUp = closePopUp;
+window.confirmBooking = confirmBooking;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.selectClass = selectClass;
+window.selectDate = selectDate;
+window.selectTime = selectTime;
 
 // Step navigation
 function nextStep(step) {

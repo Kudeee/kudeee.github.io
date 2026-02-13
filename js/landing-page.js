@@ -1,3 +1,34 @@
+import { render } from "./renderer.js";
+import { renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
+
+render("#pop-up", "done", renderPopUP);
+
+document
+  .querySelector(".contact-form")
+  .addEventListener("submit", handleInqSubmit);
+
+window.toggleMenu = toggleMenu;
+window.closeMenu = closeMenu;
+window.toggleFAQ = toggleFAQ;
+window.closePopUp = closePopUp;
+
+async function handleInqSubmit(event) {
+  event.preventDefault();
+
+  showLoading("Sending...");
+
+  try {
+    await simulateLoading(2000);
+
+    hideLoading();
+    event.target.reset();
+    showPopUP("Message has been sent.");
+  } catch (error) {
+    hideLoading();
+    showPopUP("Please try again.");
+  }
+}
+
 function toggleMenu() {
   const navLinks = document.getElementById("navLinks");
   navLinks.classList.toggle("active");
@@ -14,12 +45,6 @@ function toggleFAQ(element) {
 
   answer.classList.toggle("active");
   symbol.textContent = answer.classList.contains("active") ? "−" : "+";
-}
-
-function handleSubmit(event) {
-  event.preventDefault();
-  alert("Thank you for your message! We will get back to you soon.");
-  event.target.reset();
 }
 
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {

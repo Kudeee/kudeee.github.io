@@ -1,3 +1,6 @@
+import {renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
+import {render} from './renderer.js';
+
 let bookingData = {
   trainer: {
     name: null,
@@ -17,6 +20,16 @@ let bookingData = {
   medicalInfo: null,
   recurring: false,
 };
+
+render('#pop-up', 'warning', renderPopUP);
+window.closePopUp = closePopUp;
+window.confirmBooking = confirmBooking;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.selectDate = selectDate;
+window.selectTime = selectTime;
+window.selectSession = selectSession;
+window.selectTrainer = selectTrainer;
 
 // Step navigation
 function nextStep(step) {

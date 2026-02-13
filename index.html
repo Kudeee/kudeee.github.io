@@ -268,7 +268,7 @@
       <div class="container">
         <h2>Get in Touch</h2>
 
-        <form action="#" class="contact-form" onsubmit="handleSubmit(event)">
+        <form class="contact-form" >
           <div class="form-group">
             <label for="name">Name</label>
             <input type="text" id="name" required />
@@ -338,7 +338,7 @@
         <div class="faq-item" onclick="toggleFAQ(this)">
           <div class="faq-question">
             <span>What should I bring to my first visit?</span>
-            <span>+</span>1
+            <span>+</span>
           </div>
           <div class="faq-answer">
             Bring comfortable workout clothes, athletic shoes, a water bottle,
@@ -357,9 +357,13 @@
         </p>
       </div>
     </footer>
+    <div id="loading"></div>
+    <div id="pop-up"></div>
   </body>
 
-  <script src="js/landing-page.js"></script>
+  <script type="module" src="js/landing-page.js"></script>
   <script type="module" src="components/meetOurTrainer.js"></script>
   <script src="js/trainer-carousel.js"></script>
+  <script src="components/loading.js"></script>
+  <script type="module" src="components/pop-up.js"></script>
 </html>
