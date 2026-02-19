@@ -427,6 +427,16 @@
   margin-bottom: 15px;
 }
 
+.checkbox-group input[type="checkbox"] {
+  margin: 0;
+  vertical-align: middle; 
+}
+
+.checkbox-group label {
+  margin: 0;
+  font-size: 1rem; 
+  line-height: 1.2; 
+}
 .action-buttons {
   display: flex;
   gap: 15px;
