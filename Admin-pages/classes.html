@@ -29,73 +29,75 @@
 <!-- Schedule New Class -->
 <div class="card">
   <h3>Schedule New Class</h3>
-  <form action="#">
+  <form id="scheduleClassForm" method="POST" action="/api/admin/classes/create.php">
+    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
       <div class="form">
-        <label>Class Name</label>
-        <select>
-          <option>Select Class Type</option>
-          <option>Yoga Flow</option>
-          <option>HIIT Training</option>
-          <option>Zumba</option>
-          <option>CrossFit</option>
-          <option>Boxing</option>
-          <option>Pilates</option>
-          <option>Spin Class</option>
+        <label for="class_type">Class Name</label>
+        <select id="class_type" name="class_type" required>
+          <option value="">Select Class Type</option>
+          <option value="yoga_flow">Yoga Flow</option>
+          <option value="hiit_training">HIIT Training</option>
+          <option value="zumba">Zumba</option>
+          <option value="crossfit">CrossFit</option>
+          <option value="boxing">Boxing</option>
+          <option value="pilates">Pilates</option>
+          <option value="spin_class">Spin Class</option>
         </select>
       </div>
-      
+
       <div class="form">
-        <label>Trainer</label>
-        <select>
-          <option>Select Trainer</option>
-          <option>Ping Guerrero</option>
-          <option>Nadja Collins</option>
-          <option>Marcus Lee</option>
-          <option>Alyssa Moreno</option>
-          <option>Neil Aspag</option>
-          <option>Sofia Ramirez</option>
+        <label for="trainer_id">Trainer</label>
+        <select id="trainer_id" name="trainer_id" required>
+          <option value="">Select Trainer</option>
+          <option value="1">Ping Guerrero</option>
+          <option value="2">Nadja Collins</option>
+          <option value="3">Marcus Lee</option>
+          <option value="4">Alyssa Moreno</option>
+          <option value="5">Neil Aspag</option>
+          <option value="6">Sofia Ramirez</option>
         </select>
       </div>
-      
+
       <div class="form">
-        <label>Date & Time</label>
-        <input type="datetime-local" />
+        <label for="class_datetime">Date &amp; Time</label>
+        <input type="datetime-local" id="class_datetime" name="class_datetime" required />
       </div>
-      
+
       <div class="form">
-        <label>Duration (minutes)</label>
-        <select>
-          <option>30</option>
-          <option>45</option>
-          <option selected>50</option>
-          <option>60</option>
-          <option>90</option>
+        <label for="duration_minutes">Duration (minutes)</label>
+        <select id="duration_minutes" name="duration_minutes">
+          <option value="30">30</option>
+          <option value="45">45</option>
+          <option value="50" selected>50</option>
+          <option value="60">60</option>
+          <option value="90">90</option>
         </select>
       </div>
-      
+
       <div class="form">
-        <label>Max Participants</label>
-        <input type="number" value="20" min="5" max="50" />
+        <label for="max_participants">Max Participants</label>
+        <input type="number" id="max_participants" name="max_participants" value="20" min="5" max="50" required />
       </div>
-      
+
       <div class="form">
-        <label>Studio/Location</label>
-        <select>
-          <option>Studio A</option>
-          <option>Studio B</option>
-          <option>Main Gym</option>
-          <option>Outdoor Area</option>
-          <option>Boxing Ring</option>
+        <label for="location">Studio/Location</label>
+        <select id="location" name="location">
+          <option value="studio_a">Studio A</option>
+          <option value="studio_b">Studio B</option>
+          <option value="main_gym">Main Gym</option>
+          <option value="outdoor_area">Outdoor Area</option>
+          <option value="boxing_ring">Boxing Ring</option>
         </select>
       </div>
     </div>
-    
+
     <div class="form">
-      <label>Class Description</label>
-      <textarea rows="3" placeholder="Brief description of the class..."></textarea>
+      <label for="class_description">Class Description</label>
+      <textarea id="class_description" name="class_description" rows="3" placeholder="Brief description of the class..."></textarea>
     </div>
-    
+
     <div class="scheduleClass-btn">
       <button type="submit">Schedule Class</button>
     </div>
@@ -105,7 +107,7 @@
 <!-- Upcoming Classes -->
 <div style="margin-top: 30px;">
   <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Upcoming Classes</h2>
-  
+
   <div class="grid">
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
@@ -113,12 +115,12 @@
         <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">20/20 Full</span>
       </div>
       <p><strong>Trainer:</strong> Ping Guerrero</p>
-      <p><strong>Date & Time:</strong> Feb 13, 2026 - 6:00 PM</p>
+      <p><strong>Date &amp; Time:</strong> Feb 13, 2026 - 6:00 PM</p>
       <p><strong>Duration:</strong> 50 minutes</p>
       <p><strong>Location:</strong> Studio A</p>
       <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+        <button style="flex: 1; padding: 8px;" onclick="editClass(1)">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelClass(1)">Cancel</button>
       </div>
     </div>
 
@@ -128,12 +130,12 @@
         <span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">15/20</span>
       </div>
       <p><strong>Trainer:</strong> Nadja Collins</p>
-      <p><strong>Date & Time:</strong> Feb 13, 2026 - 9:00 AM</p>
+      <p><strong>Date &amp; Time:</strong> Feb 13, 2026 - 9:00 AM</p>
       <p><strong>Duration:</strong> 60 minutes</p>
       <p><strong>Location:</strong> Studio B</p>
       <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+        <button style="flex: 1; padding: 8px;" onclick="editClass(2)">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelClass(2)">Cancel</button>
       </div>
     </div>
 
@@ -143,12 +145,12 @@
         <span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">18/20</span>
       </div>
       <p><strong>Trainer:</strong> Marcus Lee</p>
-      <p><strong>Date & Time:</strong> Feb 14, 2026 - 6:00 AM</p>
+      <p><strong>Date &amp; Time:</strong> Feb 14, 2026 - 6:00 AM</p>
       <p><strong>Duration:</strong> 45 minutes</p>
       <p><strong>Location:</strong> Main Gym</p>
       <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+        <button style="flex: 1; padding: 8px;" onclick="editClass(3)">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelClass(3)">Cancel</button>
       </div>
     </div>
 
@@ -158,12 +160,12 @@
         <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">8/25</span>
       </div>
       <p><strong>Trainer:</strong> Ping Guerrero</p>
-      <p><strong>Date & Time:</strong> Feb 14, 2026 - 5:00 PM</p>
+      <p><strong>Date &amp; Time:</strong> Feb 14, 2026 - 5:00 PM</p>
       <p><strong>Duration:</strong> 60 minutes</p>
       <p><strong>Location:</strong> Main Gym</p>
       <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+        <button style="flex: 1; padding: 8px;" onclick="editClass(4)">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelClass(4)">Cancel</button>
       </div>
     </div>
 
@@ -173,12 +175,12 @@
         <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">12/15</span>
       </div>
       <p><strong>Trainer:</strong> Nadja Collins</p>
-      <p><strong>Date & Time:</strong> Feb 15, 2026 - 10:00 AM</p>
+      <p><strong>Date &amp; Time:</strong> Feb 15, 2026 - 10:00 AM</p>
       <p><strong>Duration:</strong> 50 minutes</p>
       <p><strong>Location:</strong> Studio B</p>
       <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+        <button style="flex: 1; padding: 8px;" onclick="editClass(5)">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelClass(5)">Cancel</button>
       </div>
     </div>
 
@@ -188,12 +190,12 @@
         <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">10/15</span>
       </div>
       <p><strong>Trainer:</strong> Marcus Lee</p>
-      <p><strong>Date & Time:</strong> Feb 15, 2026 - 7:00 PM</p>
+      <p><strong>Date &amp; Time:</strong> Feb 15, 2026 - 7:00 PM</p>
       <p><strong>Duration:</strong> 45 minutes</p>
       <p><strong>Location:</strong> Boxing Ring</p>
       <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">Cancel</button>
+        <button style="flex: 1; padding: 8px;" onclick="editClass(6)">Edit</button>
+        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelClass(6)">Cancel</button>
       </div>
     </div>
   </div>

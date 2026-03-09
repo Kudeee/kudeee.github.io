@@ -17,15 +17,33 @@
 
         <h1>Welcome Back!</h1>
 
-        <form id="submit">
+        <!-- POST to PHP login handler -->
+        <form id="submit" method="POST" action="/api/auth/login.php">
+          <!-- CSRF token for security -->
+          <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+
           <label for="email">Email</label>
-          <input type="email" placeholder="Enter your Email"/>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter your Email"
+            autocomplete="email"
+            required
+          />
 
           <label for="password">Password</label>
-          <input type="password" placeholder="Enter Password" />
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter Password"
+            autocomplete="current-password"
+            required
+          />
 
           <div class="forgot-password">
-            <a href="">Forgot Password?</a>
+            <a href="forgot-password.html">Forgot Password?</a>
           </div>
 
           <div class="form-btn">
@@ -52,7 +70,7 @@
             <img src="assests/images/car1.jpg" alt="" />
             <div class="slide-text">
               <h2>Back for More?</h2>
-              <p>Let’s keep pushing your limits</p>
+              <p>Let's keep pushing your limits</p>
             </div>
           </div>
 

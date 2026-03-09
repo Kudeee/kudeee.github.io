@@ -1,46 +1,35 @@
-import {renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
-import {render} from './renderer.js';
+import { renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
+import { render } from './renderer.js';
 
 let bookingData = {
-  trainer: {
-    name: null,
-    specialty: null,
-    baseRate: 0,
-  },
-  session: {
-    duration: null,
-    durationMinutes: null,
-    multiplier: 1,
-  },
-  focusArea: null,
-  date: null,
-  time: null,
-  fitnessGoals: null,
-  fitnessLevel: null,
-  medicalInfo: null,
-  recurring: false,
+  trainer: { name: null, specialty: null, baseRate: 0 },
+  session: { duration: null, durationMinutes: null, multiplier: 1 },
+  focusArea:    null,
+  date:         null,  // display label e.g. "Jan 20"
+  dateValue:    null,  // ISO value e.g. "2026-01-20"
+  time:         null,
 };
 
 render('#pop-up', 'warning', renderPopUP);
-window.closePopUp = closePopUp;
-window.confirmBooking = confirmBooking;
-window.nextStep = nextStep;
-window.prevStep = prevStep;
-window.selectDate = selectDate;
-window.selectTime = selectTime;
-window.selectSession = selectSession;
-window.selectTrainer = selectTrainer;
+window.closePopUp        = closePopUp;
+window.nextStep          = nextStep;
+window.prevStep          = prevStep;
+window.selectDate        = selectDate;
+window.selectTime        = selectTime;
+window.selectSession     = selectSession;
+window.selectTrainer     = selectTrainer;
+// Called by the form's submit button to sync hidden fields before POST
+window.prepareTrainerSubmit = prepareTrainerSubmit;
 
-// Step navigation
+// ─── Step navigation ──────────────────────────────────────────────────────────
+
 function nextStep(step) {
-  // Validate current step before proceeding
   const currentStep = document.querySelector(".step-content.active").id;
 
   if (currentStep === "step1" && !bookingData.trainer.name) {
     showPopUP("Please select a trainer before continuing");
     return;
   }
-
   if (currentStep === "step2") {
     if (!bookingData.session.duration) {
       showPopUP("Please select a session duration before continuing");
@@ -53,110 +42,66 @@ function nextStep(step) {
     }
     bookingData.focusArea = focusArea;
   }
-
-  if (currentStep === "step3" && (!bookingData.date || !bookingData.time)) {
+  if (currentStep === "step3" && (!bookingData.dateValue || !bookingData.time)) {
     showPopUP("Please select both date and time before continuing");
     return;
   }
 
-  // Hide all steps
-  document.querySelectorAll(".step-content").forEach((content) => {
-    content.classList.remove("active");
-  });
-  document.querySelectorAll(".step").forEach((stepEl) => {
-    stepEl.classList.remove("active");
-  });
+  document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
+  document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
 
-  // Show current step
   document.getElementById("step" + step).classList.add("active");
   document.getElementById("step" + step + "Indicator").classList.add("active");
 
-  // Mark previous steps as completed
   for (let i = 1; i < step; i++) {
-    document
-      .getElementById("step" + i + "Indicator")
-      .classList.add("completed");
+    document.getElementById("step" + i + "Indicator").classList.add("completed");
   }
 
-  // Scroll to top of booking section
-  document
-    .querySelector(".booking-steps")
-    .scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function prevStep(step) {
   nextStep(step);
 }
 
-// Trainer selection
+// ─── Selection handlers ───────────────────────────────────────────────────────
+
 function selectTrainer(name, specialty, baseRate) {
-  bookingData.trainer = {
-    name: name,
-    specialty: specialty,
-    baseRate: parseFloat(baseRate),
-  };
+  bookingData.trainer = { name, specialty, baseRate: parseFloat(baseRate) };
 
-  document.getElementById("summaryTrainer").textContent = name;
+  document.getElementById("summaryTrainer").textContent   = name;
   document.getElementById("summarySpecialty").textContent = specialty;
-  document.getElementById("baseRate").textContent = "₱" + baseRate;
-
-  // Update total price
+  document.getElementById("baseRate").textContent         = "₱" + baseRate;
   updateTotalPrice();
 
-  // Remove selection from all trainers
-  document.querySelectorAll(".trainer-option").forEach((option) => {
-    option.classList.remove("selected");
-  });
-
-  // Add selection to clicked trainer
+  document.querySelectorAll(".trainer-option").forEach(o => o.classList.remove("selected"));
   event.target.closest(".trainer-option").classList.add("selected");
 }
 
-// Session selection
 function selectSession(duration, minutes, multiplier) {
-  bookingData.session = {
-    duration: duration,
-    durationMinutes: minutes,
-    multiplier: parseFloat(multiplier),
-  };
+  bookingData.session = { duration, durationMinutes: minutes, multiplier: parseFloat(multiplier) };
 
   document.getElementById("summaryDuration").textContent = duration;
-  document.getElementById("multiplier").textContent = "×" + multiplier;
-
-  // Update total price
+  document.getElementById("multiplier").textContent      = "×" + multiplier;
   updateTotalPrice();
 
-  // Remove selection from all sessions
-  document.querySelectorAll(".session-option").forEach((option) => {
-    option.classList.remove("selected");
-  });
-
-  // Add selection to clicked session
+  document.querySelectorAll(".session-option").forEach(o => o.classList.remove("selected"));
   event.target.closest(".session-option").classList.add("selected");
 }
 
-// Date selection
-function selectDate(date) {
-  // Check if the date is disabled
-  if (event.target.closest(".calendar-day").classList.contains("disabled")) {
-    return;
-  }
+// Accepts both the display label and the ISO date value
+function selectDate(displayLabel, isoValue) {
+  if (event.target.closest(".calendar-day").classList.contains("disabled")) return;
 
-  bookingData.date = date;
-  document.getElementById("summaryDate").textContent = date;
+  bookingData.date      = displayLabel;
+  bookingData.dateValue = isoValue;
+  document.getElementById("summaryDate").textContent = displayLabel;
 
-  // Remove selection from all dates
-  document.querySelectorAll(".calendar-day").forEach((day) => {
-    day.classList.remove("selected");
-  });
-
-  // Add selection to clicked date
+  document.querySelectorAll(".calendar-day").forEach(d => d.classList.remove("selected"));
   event.target.closest(".calendar-day").classList.add("selected");
 }
 
-// Time selection
 function selectTime(time) {
-  // Check if the time slot is unavailable
   if (event.target.closest(".time-slot").classList.contains("unavailable")) {
     showPopUP("This time slot is not available. Please select another time.");
     return;
@@ -165,16 +110,10 @@ function selectTime(time) {
   bookingData.time = time;
   document.getElementById("summaryTime").textContent = time;
 
-  // Remove selection from all times
-  document.querySelectorAll(".time-slot").forEach((slot) => {
-    slot.classList.remove("selected");
-  });
-
-  // Add selection to clicked time
+  document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
   event.target.closest(".time-slot").classList.add("selected");
 }
 
-// Update total price calculation
 function updateTotalPrice() {
   if (bookingData.trainer.baseRate && bookingData.session.multiplier) {
     const total = bookingData.trainer.baseRate * bookingData.session.multiplier;
@@ -182,58 +121,44 @@ function updateTotalPrice() {
   }
 }
 
-// Confirm booking
-async function confirmBooking() {
-  // Get additional form data
-  bookingData.fitnessGoals = document.getElementById("fitnessGoals").value;
-  bookingData.fitnessLevel = document.getElementById("fitnessLevel").value;
-  bookingData.medicalInfo = document.getElementById("medicalInfo").value;
-  bookingData.recurring = document.getElementById("recurring").checked;
+// ─── Pre-submit: populate hidden fields so PHP receives all data ──────────────
 
-  // Validate fitness level
-  if (!bookingData.fitnessLevel) {
+function prepareTrainerSubmit() {
+  if (!bookingData.trainer.name) {
+    showPopUP("Please go back and select a trainer.");
+    event.preventDefault();
+    return false;
+  }
+  if (!bookingData.session.duration) {
+    showPopUP("Please go back and select a session duration.");
+    event.preventDefault();
+    return false;
+  }
+  if (!bookingData.dateValue || !bookingData.time) {
+    showPopUP("Please go back and select a date and time.");
+    event.preventDefault();
+    return false;
+  }
+
+  const fitnessLevel = document.getElementById("fitness_level").value;
+  if (!fitnessLevel) {
     showPopUP("Please select your current fitness level");
-    return;
+    event.preventDefault();
+    return false;
   }
 
-  // Validate fitness goals (optional but recommended)
-  if (!bookingData.fitnessGoals) {
-    const proceed = confirm(
-      "You haven't described your fitness goals. Do you want to continue without them?",
-    );
-    if (!proceed) {
-      return;
-    }
-  }
+  const total = (bookingData.trainer.baseRate * bookingData.session.multiplier).toFixed(0);
 
-  showLoading("Booking Trainer");
+  // Write all booking data into hidden form fields
+  document.getElementById("hidden_trainer_name").value      = bookingData.trainer.name;
+  document.getElementById("hidden_trainer_specialty").value = bookingData.trainer.specialty;
+  document.getElementById("hidden_session_duration").value  = bookingData.session.duration;
+  document.getElementById("hidden_session_minutes").value   = bookingData.session.durationMinutes;
+  document.getElementById("hidden_multiplier_val").value    = bookingData.session.multiplier;
+  document.getElementById("hidden_focus_area").value        = bookingData.focusArea || "";
+  document.getElementById("hidden_booking_date").value      = bookingData.dateValue;
+  document.getElementById("hidden_booking_time").value      = bookingData.time;
+  document.getElementById("hidden_total_price").value       = total;
 
-  try {
-
-    await simulateLoading(2000);
-
-    hideLoading();
-
-    document.getElementById("step4").classList.remove("active");
-
-    // Show success message
-    document.getElementById("successMessage").classList.add("active");
-
-    // Update all step indicators to completed
-    document.querySelectorAll(".step").forEach((step) => {
-      step.classList.add("completed");
-    });
-
-    // Log booking data (in a real app, this would be sent to a server)
-    console.log("Training session booked:", bookingData);
-
-    // Optional: Scroll to success message
-    document
-      .querySelector(".success-message")
-      .scrollIntoView({ behavior: "smooth", block: "center" });
-  } catch (error) {
-    hideLoading();
-
-    showPopUP("Something went wrong. Please try again.");
-  }
+  return true; // allow form to submit
 }

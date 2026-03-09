@@ -36,9 +36,7 @@
             <h2 class="section-title">Choose Your Trainer</h2>
             <div class="trainer-select-grid trainer-select-grid-js"></div>
             <div class="action-buttons">
-              <button class="btn btn-primary" onclick="nextStep(2)">
-                Next: Session Type
-              </button>
+              <button class="btn btn-primary" onclick="nextStep(2)">Next: Session Type</button>
             </div>
           </div>
 
@@ -46,44 +44,28 @@
           <div id="step2" class="step-content">
             <h2 class="section-title">Choose Session Type</h2>
             <div class="session-type-grid">
-              <div
-                class="session-option"
-                onclick="selectSession('30 Min', '30', '1')"
-              >
+              <div class="session-option" onclick="selectSession('30 Min', '30', '1')">
                 <div class="session-duration">30</div>
                 <div class="session-label">Minutes</div>
                 <div class="session-price">Base Price</div>
               </div>
-              <div
-                class="session-option"
-                onclick="selectSession('60 Min', '60', '1.5')"
-              >
+              <div class="session-option" onclick="selectSession('60 Min', '60', '1.5')">
                 <div class="session-duration">60</div>
                 <div class="session-label">Minutes</div>
                 <div class="session-price">+50%</div>
               </div>
-              <div
-                class="session-option"
-                onclick="selectSession('90 Min', '90', '2')"
-              >
+              <div class="session-option" onclick="selectSession('90 Min', '90', '2')">
                 <div class="session-duration">90</div>
                 <div class="session-label">Minutes</div>
                 <div class="session-price">+100%</div>
               </div>
             </div>
 
-            <h3
-              style="
-                font-size: 1.2rem;
-                font-weight: 700;
-                margin-bottom: 15px;
-                margin-top: 30px;
-              "
-            >
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; margin-top: 30px;">
               Focus Area
             </h3>
             <div class="form-group">
-              <select class="form-select" id="focusArea">
+              <select class="form-select" id="focusArea" name="focus_area">
                 <option value="">Select focus area...</option>
                 <option value="weight_loss">Weight Loss</option>
                 <option value="muscle_building">Muscle Building</option>
@@ -95,12 +77,8 @@
             </div>
 
             <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="prevStep(1)">
-                Back
-              </button>
-              <button class="btn btn-primary" onclick="nextStep(3)">
-                Next: Schedule
-              </button>
+              <button class="btn btn-secondary" onclick="prevStep(1)">Back</button>
+              <button class="btn btn-primary" onclick="nextStep(3)">Next: Schedule</button>
             </div>
           </div>
 
@@ -112,138 +90,108 @@
               <div class="calendar-header">
                 <div class="calendar-month">January 2026</div>
                 <div class="calendar-nav">
-                  <button>◀</button>
-                  <button>▶</button>
+                  <button type="button">◀</button>
+                  <button type="button">▶</button>
                 </div>
               </div>
               <div class="calendar-grid">
                 <div class="calendar-day disabled">1</div>
                 <div class="calendar-day disabled">2</div>
                 <div class="calendar-day disabled">3</div>
-                <div class="calendar-day" onclick="selectDate('Jan 20')">
-                  20
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 21')">
-                  21
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 22')">
-                  22
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 23')">
-                  23
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 24')">
-                  24
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 25')">
-                  25
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 26')">
-                  26
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 27')">
-                  27
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 28')">
-                  28
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 29')">
-                  29
-                </div>
-                <div class="calendar-day" onclick="selectDate('Jan 30')">
-                  30
-                </div>
+                <div class="calendar-day" onclick="selectDate('Jan 20', '2026-01-20')">20</div>
+                <div class="calendar-day" onclick="selectDate('Jan 21', '2026-01-21')">21</div>
+                <div class="calendar-day" onclick="selectDate('Jan 22', '2026-01-22')">22</div>
+                <div class="calendar-day" onclick="selectDate('Jan 23', '2026-01-23')">23</div>
+                <div class="calendar-day" onclick="selectDate('Jan 24', '2026-01-24')">24</div>
+                <div class="calendar-day" onclick="selectDate('Jan 25', '2026-01-25')">25</div>
+                <div class="calendar-day" onclick="selectDate('Jan 26', '2026-01-26')">26</div>
+                <div class="calendar-day" onclick="selectDate('Jan 27', '2026-01-27')">27</div>
+                <div class="calendar-day" onclick="selectDate('Jan 28', '2026-01-28')">28</div>
+                <div class="calendar-day" onclick="selectDate('Jan 29', '2026-01-29')">29</div>
+                <div class="calendar-day" onclick="selectDate('Jan 30', '2026-01-30')">30</div>
               </div>
             </div>
 
-            <h3
-              style="font-size: 1.2rem; font-weight: 700; margin-bottom: 15px"
-            >
-              Available Time Slots
-            </h3>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 15px">Available Time Slots</h3>
             <div class="time-slots">
-              <div class="time-slot" onclick="selectTime('6:00 AM')">
-                6:00 AM
-              </div>
-              <div class="time-slot" onclick="selectTime('8:00 AM')">
-                8:00 AM
-              </div>
+              <div class="time-slot" onclick="selectTime('6:00 AM')">6:00 AM</div>
+              <div class="time-slot" onclick="selectTime('8:00 AM')">8:00 AM</div>
               <div class="time-slot unavailable">10:00 AM</div>
-              <div class="time-slot" onclick="selectTime('12:00 PM')">
-                12:00 PM
-              </div>
-              <div class="time-slot" onclick="selectTime('2:00 PM')">
-                2:00 PM
-              </div>
-              <div class="time-slot" onclick="selectTime('4:00 PM')">
-                4:00 PM
-              </div>
+              <div class="time-slot" onclick="selectTime('12:00 PM')">12:00 PM</div>
+              <div class="time-slot" onclick="selectTime('2:00 PM')">2:00 PM</div>
+              <div class="time-slot" onclick="selectTime('4:00 PM')">4:00 PM</div>
               <div class="time-slot unavailable">6:00 PM</div>
-              <div class="time-slot" onclick="selectTime('8:00 PM')">
-                8:00 PM
-              </div>
+              <div class="time-slot" onclick="selectTime('8:00 PM')">8:00 PM</div>
             </div>
 
             <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="prevStep(2)">
-                Back
-              </button>
-              <button class="btn btn-primary" onclick="nextStep(4)">
-                Next: Details
-              </button>
+              <button class="btn btn-secondary" onclick="prevStep(2)">Back</button>
+              <button class="btn btn-primary" onclick="nextStep(4)">Next: Details</button>
             </div>
           </div>
 
-          <!-- Step 4: Details -->
+          <!-- Step 4: Details — the actual form that POSTs -->
           <div id="step4" class="step-content">
             <h2 class="section-title">Session Details</h2>
 
-            <div class="form-group">
-              <label class="form-label">Fitness Goals</label>
-              <textarea
-                id="fitnessGoals"
-                class="form-textarea"
-                placeholder="Describe your fitness goals and what you want to achieve..."
-              ></textarea>
-            </div>
+            <form id="trainerBookingForm" method="POST" action="/api/bookings/book-trainer.php">
+              <input type="hidden" name="csrf_token"           value="<?php echo $_SESSION['csrf_token']; ?>" />
+              <!-- Hidden fields populated by JS across all steps -->
+              <input type="hidden" name="trainer_name"         id="hidden_trainer_name"      value="" />
+              <input type="hidden" name="trainer_specialty"    id="hidden_trainer_specialty" value="" />
+              <input type="hidden" name="session_duration"     id="hidden_session_duration"  value="" />
+              <input type="hidden" name="session_minutes"      id="hidden_session_minutes"   value="" />
+              <input type="hidden" name="price_multiplier"     id="hidden_multiplier_val"    value="" />
+              <input type="hidden" name="focus_area"           id="hidden_focus_area"        value="" />
+              <input type="hidden" name="booking_date"         id="hidden_booking_date"      value="" />
+              <input type="hidden" name="booking_time"         id="hidden_booking_time"      value="" />
+              <input type="hidden" name="total_price"          id="hidden_total_price"       value="" />
 
-            <div class="form-group">
-              <label class="form-label">Current Fitness Level</label>
-              <select class="form-select" id="fitnessLevel">
-                <option value="">Select your level...</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
+              <div class="form-group">
+                <label class="form-label" for="fitness_goals">Fitness Goals</label>
+                <textarea
+                  id="fitness_goals"
+                  name="fitness_goals"
+                  class="form-textarea"
+                  placeholder="Describe your fitness goals and what you want to achieve..."
+                ></textarea>
+              </div>
 
-            <div class="form-group">
-              <label class="form-label">Medical Conditions / Injuries</label>
-              <textarea
-                id="medicalInfo"
-                class="form-textarea"
-                placeholder="Any medical conditions, injuries, or limitations we should know about..."
-              ></textarea>
-            </div>
+              <div class="form-group">
+                <label class="form-label" for="fitness_level">Current Fitness Level</label>
+                <select class="form-select" id="fitness_level" name="fitness_level">
+                  <option value="">Select your level...</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
 
-            <h2 class="section-title">Payment Method</h2>
-            <div class="form-group payment-method-js"></div>
+              <div class="form-group">
+                <label class="form-label" for="medical_info">Medical Conditions / Injuries</label>
+                <textarea
+                  id="medical_info"
+                  name="medical_info"
+                  class="form-textarea"
+                  placeholder="Any medical conditions, injuries, or limitations we should know about..."
+                ></textarea>
+              </div>
 
-            <div class="checkbox-group">
-              <input type="checkbox" id="recurring" />
-              <label for="recurring"
-                >Make this a recurring session (weekly)</label
-              >
-            </div>
+              <h2 class="section-title">Payment Method</h2>
+              <div class="form-group payment-method-js"></div>
 
-            <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="prevStep(3)">
-                Back
-              </button>
-              <button class="btn btn-primary" onclick="confirmBooking()">
-                Confirm Booking
-              </button>
-            </div>
+              <div class="checkbox-group">
+                <input type="checkbox" id="recurring" name="recurring" value="1" />
+                <label for="recurring">Make this a recurring session (weekly)</label>
+              </div>
+
+              <div class="action-buttons">
+                <button class="btn btn-secondary" type="button" onclick="prevStep(3)">Back</button>
+                <button class="btn btn-primary" type="submit" onclick="prepareTrainerSubmit()">
+                  Confirm Booking
+                </button>
+              </div>
+            </form>
           </div>
 
           <!-- Success Message -->
@@ -254,8 +202,7 @@
               </div>
               <h2 class="success-title">Session Booked!</h2>
               <p class="success-text">
-                Your training session has been confirmed. Your trainer will
-                contact you 24 hours before the session.
+                Your training session has been confirmed. Your trainer will contact you 24 hours before the session.
               </p>
               <button
                 class="btn btn-primary"
@@ -268,6 +215,7 @@
           </div>
         </div>
 
+        <!-- Booking Summary Sidebar -->
         <div class="booking-summary">
           <h3 class="summary-title">Booking Summary</h3>
           <div class="summary-item">
@@ -302,9 +250,7 @@
               </div>
             </div>
             <div style="border-top: 2px solid #e0e0e0; padding-top: 15px">
-              <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px">
-                Total Price
-              </div>
+              <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px">Total Price</div>
               <div class="total-price" id="totalPrice">₱0</div>
             </div>
           </div>
@@ -314,7 +260,7 @@
 
     <div id="loading"></div>
     <div id="pop-up"></div>
-    
+
     <script type="module" src="js/header.js"></script>
     <script type="module" src="js/book-trainer-page.js"></script>
     <script type="module" src="components/selectTrainer.js"></script>

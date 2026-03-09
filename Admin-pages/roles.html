@@ -1,204 +1,217 @@
 <div class="header">
-  <h1>User Roles & Permissions</h1>
+  <h1>Roles &amp; Access</h1>
 </div>
 
 <!-- Role Statistics -->
 <div class="grid" style="margin-bottom: 20px;">
   <div class="card">
-    <h3>Total Users</h3>
-    <p class="stat-value">15</p>
-    <p class="stat-status">Staff members</p>
+    <h3>Total Admin Users</h3>
+    <p class="stat-value">8</p>
+    <p class="stat-status">With system access</p>
   </div>
   <div class="card">
-    <h3>Active Roles</h3>
-    <p class="stat-value">5</p>
-    <p class="stat-status">Role types</p>
-  </div>
-  <div class="card">
-    <h3>Admins</h3>
+    <h3>Super Admins</h3>
     <p class="stat-value">2</p>
     <p class="stat-status">Full access</p>
   </div>
   <div class="card">
-    <h3>Recent Changes</h3>
-    <p class="stat-value">3</p>
-    <p class="stat-status">Last 7 days</p>
+    <h3>Staff Accounts</h3>
+    <p class="stat-value">5</p>
+    <p class="stat-status">Limited access</p>
+  </div>
+  <div class="card">
+    <h3>Trainer Accounts</h3>
+    <p class="stat-value">6</p>
+    <p class="stat-status">Schedule access only</p>
   </div>
 </div>
 
-<!-- User Roles Table -->
-<div class="card">
-  <h3>User Roles Overview</h3>
-  <table style="margin-top: 15px;">
-    <thead>
-      <tr>
-        <th>Role</th>
-        <th>Permissions</th>
-        <th>Users</th>
-        <th>Description</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span style="background: linear-gradient(135deg, #ff6b35, #ff8c5a); color: white; padding: 6px 12px; border-radius: 8px; font-weight: 600;">Admin</span></td>
-        <td>Full Access</td>
-        <td>2</td>
-        <td>Complete system control, manage all users and settings</td>
-        <td><button style="padding: 6px 12px; font-size: 0.85rem;">Edit</button></td>
-      </tr>
-      <tr>
-        <td><span style="background: linear-gradient(135deg, #4caf50, #66bb6a); color: white; padding: 6px 12px; border-radius: 8px; font-weight: 600;">Trainer</span></td>
-        <td>Classes & Schedule</td>
-        <td>8</td>
-        <td>Manage own classes, view member profiles, update schedules</td>
-        <td><button style="padding: 6px 12px; font-size: 0.85rem;">Edit</button></td>
-      </tr>
-    </tbody>
-  </table>
+<!-- Action Bar -->
+<div class="option-bar">
+  <button id="addUserBtn">Add New User</button>
 </div>
 
-<!-- Detailed Permissions -->
-<div style="margin-top: 30px;">
-  <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Role Permissions Matrix</h2>
-  
-  <div class="card">
-    <table style="margin-top: 0;">
-      <thead>
-        <tr>
-          <th>Permission</th>
-          <th style="text-align: center;">Admin</th>
-          <th style="text-align: center;">Trainer</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Member Management</strong></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Add/Edit Members</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Delete Members</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">View Member Data</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        
-        <tr style="background: #f9f9f9;">
-          <td><strong>Class Management</strong></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Create/Edit Classes</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Cancel Classes</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        
-        <tr style="background: #f9f9f9;">
-          <td><strong>Financial</strong></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Process Payments</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">View Revenue Reports</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Modify Pricing</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #ccc; font-size: 1.2rem;">✗</span></td>
-        </tr>
-        
-        <tr style="background: #f9f9f9;">
-          <td><strong>System Settings</strong></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">Manage Users & Roles</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #ccc; font-size: 1.2rem;">✗</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 30px;">System Configuration</td>
-          <td style="text-align: center;"><span style="color: #4caf50; font-size: 1.2rem;">✓</span></td>
-          <td style="text-align: center;"><span style="color: #ccc; font-size: 1.2rem;">✗</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <p style="margin-top: 15px; color: #666; font-size: 0.9rem;"><strong>Legend:</strong> ✓ = Full Access | ⚠ = Limited Access | ✗ = No Access</p>
+<!-- Add New User Modal -->
+<div id="addUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 550px; max-width: 95vw; max-height: 90vh; overflow-y: auto;">
+    <h3 style="margin-bottom: 20px;">Add New Admin User</h3>
+    <form id="addUserForm" method="POST" action="/api/admin/roles/create-user.php">
+      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form">
+          <label for="user_first_name">First Name</label>
+          <input type="text" id="user_first_name" name="first_name" placeholder="First name" required />
+        </div>
+        <div class="form">
+          <label for="user_last_name">Last Name</label>
+          <input type="text" id="user_last_name" name="last_name" placeholder="Last name" required />
+        </div>
+      </div>
+
+      <div class="form">
+        <label for="user_email">Email</label>
+        <input type="email" id="user_email" name="email" placeholder="user@societyfit.com" required />
+      </div>
+
+      <div class="form">
+        <label for="user_role">Role</label>
+        <select id="user_role" name="role" required>
+          <option value="">Select Role</option>
+          <option value="super_admin">Super Admin (Full Access)</option>
+          <option value="admin">Admin (Standard Access)</option>
+          <option value="staff">Staff (Limited Access)</option>
+          <option value="trainer">Trainer (Schedule Only)</option>
+          <option value="receptionist">Receptionist (Members &amp; Bookings)</option>
+        </select>
+      </div>
+
+      <div class="form">
+        <label for="user_temp_password">Temporary Password</label>
+        <input type="password" id="user_temp_password" name="temp_password" placeholder="Set a temporary password" required autocomplete="new-password" />
+        <small style="color: #888;">User will be prompted to change on first login.</small>
+      </div>
+
+      <div class="form">
+        <label>Permissions</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="view_members" /> View Members
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="edit_members" /> Edit Members
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="view_payments" /> View Payments
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="issue_refunds" /> Issue Refunds
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="manage_classes" /> Manage Classes
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="manage_events" /> Manage Events
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="manage_trainers" /> Manage Trainers
+          </label>
+          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" name="permissions[]" value="manage_roles" /> Manage Roles
+          </label>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button type="submit" style="flex: 1;">Create User</button>
+        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('addUserModal')">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>
 
-<!-- Current Staff List -->
-<div style="margin-top: 30px;">
-  <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Staff Members</h2>
-  
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h3 style="margin: 0;">All Staff</h3>
-      <button>Add New User</button>
-    </div>
-    
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Last Login</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Admin User</td>
-          <td>admin@societyfit.com</td>
-          <td><span style="background: linear-gradient(135deg, #ff6b35, #ff8c5a); color: white; padding: 4px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem;">Admin</span></td>
-          <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Active</span></td>
-          <td>2 hours ago</td>
-          <td><button style="padding: 6px 12px; font-size: 0.85rem;">Edit</button></td>
-        </tr>
-        <tr>
-          <td>Ping Guerrero</td>
-          <td>ping.g@societyfit.com</td>
-          <td><span style="background: linear-gradient(135deg, #4caf50, #66bb6a); color: white; padding: 4px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem;">Trainer</span></td>
-          <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Active</span></td>
-          <td>1 hour ago</td>
-          <td><button style="padding: 6px 12px; font-size: 0.85rem;">Edit</button></td>
-        </tr>
-        <tr>
-          <td>Nadja Collins</td>
-          <td>nadja.c@societyfit.com</td>
-          <td><span style="background: linear-gradient(135deg, #4caf50, #66bb6a); color: white; padding: 4px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem;">Trainer</span></td>
-          <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Active</span></td>
-          <td>3 hours ago</td>
-          <td><button style="padding: 6px 12px; font-size: 0.85rem;">Edit</button></td>
-        </tr>
-        <tr>
-      </tbody>
-    </table>
+<!-- Users Table -->
+<table id="usersTable" style="margin-top: 20px;">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Last Login</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Admin User</td>
+      <td>admin@societyfit.com</td>
+      <td><span style="background: #ffebee; color: #b71c1c; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Super Admin</span></td>
+      <td>Mar 09, 2026 — 8:02 AM</td>
+      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
+      <td>
+        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(1)">Edit</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Reception Staff</td>
+      <td>reception@societyfit.com</td>
+      <td><span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Receptionist</span></td>
+      <td>Mar 09, 2026 — 7:45 AM</td>
+      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
+      <td>
+        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(2)">Edit</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Ping Guerrero</td>
+      <td>ping@societyfit.com</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Trainer</span></td>
+      <td>Mar 08, 2026 — 5:30 PM</td>
+      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
+      <td>
+        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(3)">Edit</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Nadja Collins</td>
+      <td>nadja@societyfit.com</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Trainer</span></td>
+      <td>Mar 07, 2026 — 9:10 AM</td>
+      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
+      <td>
+        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(4)">Edit</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Old Staff</td>
+      <td>oldstaff@societyfit.com</td>
+      <td><span style="background: #f5f5f5; color: #757575; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Staff</span></td>
+      <td>Jan 15, 2026 — 3:22 PM</td>
+      <td><span style="color: #c62828; font-weight: 600;">Inactive</span></td>
+      <td>
+        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(5)">Edit</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Change Password Modal (for editing user) -->
+<div id="editUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 450px; max-width: 95vw;">
+    <h3 style="margin-bottom: 20px;">Edit User</h3>
+    <form id="editUserForm" method="POST" action="/api/admin/roles/update-user.php">
+      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+      <input type="hidden" id="edit_user_id" name="user_id" value="" />
+
+      <div class="form">
+        <label for="edit_user_role">Role</label>
+        <select id="edit_user_role" name="role" required>
+          <option value="super_admin">Super Admin</option>
+          <option value="admin">Admin</option>
+          <option value="staff">Staff</option>
+          <option value="trainer">Trainer</option>
+          <option value="receptionist">Receptionist</option>
+        </select>
+      </div>
+
+      <div class="form">
+        <label for="edit_user_status">Status</label>
+        <select id="edit_user_status" name="status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="form">
+        <label for="edit_new_password">New Password <small style="color: #888;">(leave blank to keep current)</small></label>
+        <input type="password" id="edit_new_password" name="new_password" placeholder="Enter new password" autocomplete="new-password" />
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button type="submit" style="flex: 1;">Save Changes</button>
+        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('editUserModal')">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>

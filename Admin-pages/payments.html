@@ -1,230 +1,210 @@
 <div class="header">
-  <h1>Payment Status</h1>
+  <h1>Payments</h1>
 </div>
 
 <!-- Payment Statistics -->
 <div class="grid" style="margin-bottom: 20px;">
   <div class="card">
-    <h3>Total Revenue (This Month)</h3>
-    <p class="stat-value">₱245,000</p>
-    <p class="stat-status">↑ 15% from last month</p>
+    <h3>Total Revenue (Month)</h3>
+    <p class="stat-value">₱892,400</p>
+    <p class="stat-status">+12% vs last month</p>
   </div>
   <div class="card">
-    <h3>Pending Payments</h3>
-    <p class="stat-value">₱12,500</p>
-    <p class="stat-status">5 members</p>
+    <h3>Transactions Today</h3>
+    <p class="stat-value">34</p>
+    <p class="stat-status">₱48,200 total</p>
   </div>
   <div class="card">
-    <h3>Successful Payments</h3>
-    <p class="stat-value">985</p>
-    <p class="stat-status">This month</p>
+    <h3>Failed Payments</h3>
+    <p class="stat-value">3</p>
+    <p class="stat-status">Needs attention</p>
   </div>
   <div class="card">
-    <h3>Failed Transactions</h3>
-    <p class="stat-value">8</p>
-    <p class="stat-status">Requires follow-up</p>
+    <h3>Pending Refunds</h3>
+    <p class="stat-value">2</p>
+    <p class="stat-status">₱3,800 total</p>
   </div>
 </div>
 
-<!-- Filter & Search -->
+<!-- Filter / Search Payments — GET to PHP handler -->
 <div class="card" style="margin-bottom: 20px;">
   <h3>Filter Payments</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date Range</label>
-      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
-        <option>This Month</option>
-        <option>Last Month</option>
-        <option>Last 3 Months</option>
-        <option>This Year</option>
-        <option>Custom Range</option>
-      </select>
+  <form id="paymentFilterForm" method="GET" action="/api/admin/payments/list.php">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="filter_member">Member Name / ID</label>
+        <input type="text" id="filter_member" name="member" placeholder="Search member..."
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" />
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="filter_type">Payment Type</label>
+        <select id="filter_type" name="type" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+          <option value="">All Types</option>
+          <option value="subscription">Subscription</option>
+          <option value="class_booking">Class Booking</option>
+          <option value="trainer_session">Trainer Session</option>
+          <option value="event">Event Registration</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="filter_status">Status</label>
+        <select id="filter_status" name="status" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+          <option value="">All</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+          <option value="refunded">Refunded</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="filter_method">Payment Method</label>
+        <select id="filter_method" name="method" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+          <option value="">All Methods</option>
+          <option value="gcash">GCash</option>
+          <option value="maya">Maya</option>
+          <option value="gotyme">GoTyme</option>
+          <option value="card">Credit / Debit Card</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="filter_date_from">Date From</label>
+        <input type="date" id="filter_date_from" name="date_from"
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" />
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="filter_date_to">Date To</label>
+        <input type="date" id="filter_date_to" name="date_to"
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" />
+      </div>
     </div>
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Status</label>
-      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
-        <option>All Status</option>
-        <option>Paid</option>
-        <option>Pending</option>
-        <option>Failed</option>
-        <option>Refunded</option>
-      </select>
+
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button type="submit" style="padding: 10px 20px;">Apply Filter</button>
+      <button type="button" style="padding: 10px 20px; background: #e5e7eb; color: #333;" onclick="document.getElementById('paymentFilterForm').reset()">Clear</button>
     </div>
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Plan Type</label>
-      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
-        <option>All Plans</option>
-        <option>Basic</option>
-        <option>Premium</option>
-        <option>VIP</option>
-      </select>
-    </div>
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Payment Method</label>
-      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
-        <option>All Methods</option>
-        <option>GCash</option>
-        <option>Maya</option>
-        <option>Credit Card</option>
-        <option>Bank Transfer</option>
-      </select>
-    </div>
-  </div>
+  </form>
 </div>
 
-<!-- Action Buttons -->
+<!-- Action Bar -->
 <div class="option-bar">
-  <button>Export Report</button>
-  <button>Manual Entry</button>
-  <button>Sync Payments</button>
-  <button style="background: #e5e7eb; color: #333;">Send Reminders</button>
+  <button id="exportPaymentsBtn">Export CSV</button>
+  <button id="generateReportBtn">Generate Report</button>
 </div>
 
 <!-- Payments Table -->
-<table class="membersTable">
+<table id="paymentsTable" style="margin-top: 20px;">
   <thead>
     <tr>
       <th>Transaction ID</th>
-      <th>Date</th>
       <th>Member</th>
+      <th>Type</th>
       <th>Amount</th>
-      <th>Plan Type</th>
-      <th>Payment Method</th>
+      <th>Method</th>
+      <th>Date</th>
       <th>Status</th>
       <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>#TXN2601031</td>
-      <td>Jan 03, 2026</td>
+      <td>#TXN-20260301-001</td>
       <td>Palito Dimagiba</td>
-      <td>₱899</td>
-      <td>Premium</td>
+      <td>Subscription</td>
+      <td>₱1,299</td>
       <td>GCash</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Paid</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
+      <td>Mar 01, 2026</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Completed</span></td>
+      <td><button style="padding: 5px 10px; font-size: 0.8rem;" onclick="viewTransaction('TXN-20260301-001')">View</button></td>
     </tr>
     <tr>
-      <td>#TXN2512152</td>
-      <td>Dec 15, 2025</td>
-      <td>Bogart Batongbakal</td>
-      <td>₱499</td>
-      <td>Basic</td>
-      <td>Maya</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Paid</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
-    </tr>
-    <tr>
-      <td>#TXN2602013</td>
-      <td>Feb 01, 2026</td>
+      <td>#TXN-20260301-002</td>
       <td>Maria Santos</td>
-      <td>₱1,500</td>
-      <td>VIP</td>
-      <td>Credit Card</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Paid</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
-    </tr>
-    <tr>
-      <td>#TXN2601284</td>
-      <td>Jan 28, 2026</td>
-      <td>Juan dela Cruz</td>
-      <td>₱899</td>
-      <td>Premium</td>
-      <td>GCash</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Paid</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
-    </tr>
-    <tr>
-      <td>#TXN2602055</td>
-      <td>Feb 05, 2026</td>
-      <td>Ana Reyes</td>
-      <td>₱499</td>
-      <td>Basic</td>
-      <td>Bank Transfer</td>
-      <td><span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Pending</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
-    </tr>
-    <tr>
-      <td>#TXN2602086</td>
-      <td>Feb 08, 2026</td>
-      <td>Carlos Rivera</td>
-      <td>₱899</td>
-      <td>Premium</td>
-      <td>Credit Card</td>
-      <td><span style="background: #ffebee; color: #c62828; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Failed</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">Retry</button></td>
-    </tr>
-    <tr>
-      <td>#TXN2602097</td>
-      <td>Feb 09, 2026</td>
-      <td>Lisa Tan</td>
-      <td>₱1,500</td>
-      <td>VIP</td>
-      <td>GCash</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Paid</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
-    </tr>
-    <tr>
-      <td>#TXN2602108</td>
-      <td>Feb 10, 2026</td>
-      <td>Michael Wong</td>
-      <td>₱499</td>
-      <td>Basic</td>
+      <td>Trainer Session</td>
+      <td>₱900</td>
       <td>Maya</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">Paid</span></td>
-      <td><button style="padding: 6px 12px; font-size: 0.8rem;">View</button></td>
+      <td>Mar 01, 2026</td>
+      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Completed</span></td>
+      <td><button style="padding: 5px 10px; font-size: 0.8rem;" onclick="viewTransaction('TXN-20260301-002')">View</button></td>
+    </tr>
+    <tr>
+      <td>#TXN-20260228-017</td>
+      <td>Juan dela Cruz</td>
+      <td>Class Booking</td>
+      <td>₱350</td>
+      <td>Card</td>
+      <td>Feb 28, 2026</td>
+      <td><span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Failed</span></td>
+      <td><button style="padding: 5px 10px; font-size: 0.8rem;" onclick="viewTransaction('TXN-20260228-017')">View</button></td>
+    </tr>
+    <tr>
+      <td>#TXN-20260228-011</td>
+      <td>Ana Reyes</td>
+      <td>Subscription</td>
+      <td>₱799</td>
+      <td>GCash</td>
+      <td>Feb 28, 2026</td>
+      <td><span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Pending</span></td>
+      <td><button style="padding: 5px 10px; font-size: 0.8rem;" onclick="viewTransaction('TXN-20260228-011')">View</button></td>
+    </tr>
+    <tr>
+      <td>#TXN-20260225-005</td>
+      <td>Bogart Batongbakal</td>
+      <td>Subscription</td>
+      <td>₱799</td>
+      <td>GoTyme</td>
+      <td>Feb 25, 2026</td>
+      <td><span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Refunded</span></td>
+      <td><button style="padding: 5px 10px; font-size: 0.8rem;" onclick="viewTransaction('TXN-20260225-005')">View</button></td>
     </tr>
   </tbody>
 </table>
 
-<!-- Revenue Breakdown -->
-<div style="margin-top: 30px;">
-  <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Revenue Breakdown by Plan</h2>
-  
-  <div class="grid">
-    <div class="card">
-      <h3>Basic Plan Revenue</h3>
-      <p class="stat-value">₱84,331</p>
-      <p style="color: #666; margin-top: 10px;">169 active subscriptions</p>
-      <p style="color: #666;">₱499/month per member</p>
-    </div>
-    
-    <div class="card">
-      <h3>Premium Plan Revenue</h3>
-      <p class="stat-value">₱147,802</p>
-      <p style="color: #666; margin-top: 10px;">498 active subscriptions</p>
-      <p style="color: #666;">₱899/month per member</p>
-    </div>
-    
-    <div class="card">
-      <h3>VIP Plan Revenue</h3>
-      <p class="stat-value">₱489,000</p>
-      <p style="color: #666; margin-top: 10px;">326 active subscriptions</p>
-      <p style="color: #666;">₱1,500/month per member</p>
-    </div>
-  </div>
+<!-- Pagination -->
+<div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px;">
+  <button style="padding: 8px 16px;" onclick="changePage('prev')">Previous</button>
+  <span style="font-weight: 600;" id="pageInfo">Page 1 of 18</span>
+  <button style="padding: 8px 16px;" onclick="changePage('next')">Next</button>
 </div>
 
-<!-- Payment Methods Breakdown -->
-<div class="card" style="margin-top: 30px;">
-  <h3>Payment Methods Distribution</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 15px;">
-    <div style="text-align: center; padding: 15px; background: #f9f9f9; border-radius: 10px;">
-      <p class="stat-value" style="font-size: 1.8rem;">45%</p>
-      <p style="font-weight: 600; color: #666;">GCash</p>
-    </div>
-    <div style="text-align: center; padding: 15px; background: #f9f9f9; border-radius: 10px;">
-      <p class="stat-value" style="font-size: 1.8rem;">28%</p>
-      <p style="font-weight: 600; color: #666;">Credit Card</p>
-    </div>
-    <div style="text-align: center; padding: 15px; background: #f9f9f9; border-radius: 10px;">
-      <p class="stat-value" style="font-size: 1.8rem;">18%</p>
-      <p style="font-weight: 600; color: #666;">Maya</p>
-    </div>
-    <div style="text-align: center; padding: 15px; background: #f9f9f9; border-radius: 10px;">
-      <p class="stat-value" style="font-size: 1.8rem;">9%</p>
-      <p style="font-weight: 600; color: #666;">Bank Transfer</p>
-    </div>
+<!-- Issue Refund Modal -->
+<div id="refundModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 450px; max-width: 95vw;">
+    <h3 style="margin-bottom: 20px;">Issue Refund</h3>
+    <form id="refundForm" method="POST" action="/api/admin/payments/refund.php">
+      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+      <input type="hidden" id="refund_transaction_id" name="transaction_id" value="" />
+
+      <div class="form">
+        <label for="refund_amount">Refund Amount (₱)</label>
+        <input type="number" id="refund_amount" name="amount" min="1" step="0.01" required />
+      </div>
+
+      <div class="form">
+        <label for="refund_reason">Reason</label>
+        <select id="refund_reason" name="reason" required>
+          <option value="">Select reason</option>
+          <option value="cancelled_class">Class Cancelled</option>
+          <option value="duplicate_payment">Duplicate Payment</option>
+          <option value="member_request">Member Request</option>
+          <option value="billing_error">Billing Error</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form">
+        <label for="refund_notes">Notes</label>
+        <textarea id="refund_notes" name="notes" rows="2" placeholder="Optional notes..."></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button type="submit" style="flex: 1; background: #c62828; color: #fff;">Issue Refund</button>
+        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('refundModal')">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>

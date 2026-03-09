@@ -6,213 +6,215 @@
 <div class="grid" style="margin-bottom: 20px;">
   <div class="card">
     <h3>Total Trainers</h3>
-    <p class="stat-value">10</p>
-    <p class="stat-status">All certified</p>
+    <p class="stat-value">6</p>
+    <p class="stat-status">Active staff</p>
   </div>
   <div class="card">
-    <h3>Active Today</h3>
-    <p class="stat-value">8</p>
-    <p class="stat-status">On duty</p>
+    <h3>Sessions Today</h3>
+    <p class="stat-value">18</p>
+    <p class="stat-status">Across all trainers</p>
   </div>
   <div class="card">
-    <h3>Avg Client Rating</h3>
+    <h3>Avg. Rating</h3>
     <p class="stat-value">4.8</p>
-    <p class="stat-status">⭐ Out of 5.0</p>
+    <p class="stat-status">Out of 5</p>
   </div>
   <div class="card">
-    <h3>Sessions This Week</h3>
-    <p class="stat-value">156</p>
-    <p class="stat-status">Total sessions</p>
+    <h3>Top Trainer</h3>
+    <p class="stat-value">Ping G.</p>
+    <p class="stat-status">42 sessions/mo</p>
   </div>
 </div>
 
-<!-- Action Buttons -->
+<!-- Action Bar -->
 <div class="option-bar">
   <button id="addTrainerBtn">Add Trainer</button>
-  <button id="scheduleBtn">View Schedule</button>
-  <button id="certificationBtn">Certifications</button>
+  <button id="exportTrainersBtn">Export Data</button>
+</div>
+
+<!-- Add Trainer Modal -->
+<div id="addTrainerModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto;">
+    <h3 style="margin-bottom: 20px;">Add New Trainer</h3>
+    <form id="addTrainerForm" method="POST" action="/api/admin/trainers/create.php" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form">
+          <label for="trainer_first_name">First Name</label>
+          <input type="text" id="trainer_first_name" name="first_name" placeholder="First name" required />
+        </div>
+        <div class="form">
+          <label for="trainer_last_name">Last Name</label>
+          <input type="text" id="trainer_last_name" name="last_name" placeholder="Last name" required />
+        </div>
+      </div>
+
+      <div class="form">
+        <label for="trainer_email">Email</label>
+        <input type="email" id="trainer_email" name="email" placeholder="trainer@societyfit.com" required />
+      </div>
+
+      <div class="form">
+        <label for="trainer_phone">Phone</label>
+        <input type="tel" id="trainer_phone" name="phone" placeholder="09XX-XXX-XXXX" required />
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form">
+          <label for="trainer_specialty">Specialty</label>
+          <select id="trainer_specialty" name="specialty" required>
+            <option value="">Select Specialty</option>
+            <option value="yoga">Yoga</option>
+            <option value="hiit">HIIT</option>
+            <option value="crossfit">CrossFit</option>
+            <option value="boxing">Boxing</option>
+            <option value="pilates">Pilates</option>
+            <option value="zumba">Zumba</option>
+            <option value="strength">Strength &amp; Conditioning</option>
+            <option value="nutrition">Nutrition Coaching</option>
+          </select>
+        </div>
+        <div class="form">
+          <label for="trainer_rate">Session Rate (₱/hr)</label>
+          <input type="number" id="trainer_rate" name="session_rate" min="0" step="50" placeholder="e.g. 800" required />
+        </div>
+      </div>
+
+      <div class="form">
+        <label for="trainer_bio">Bio / Description</label>
+        <textarea id="trainer_bio" name="bio" rows="3" placeholder="Short trainer bio..."></textarea>
+      </div>
+
+      <div class="form">
+        <label for="trainer_photo">Profile Photo</label>
+        <input type="file" id="trainer_photo" name="photo" accept="image/*" />
+      </div>
+
+      <div class="form">
+        <label for="trainer_status">Status</label>
+        <select id="trainer_status" name="status">
+          <option value="active">Active</option>
+          <option value="on_leave">On Leave</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button type="submit" style="flex: 1;">Add Trainer</button>
+        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('addTrainerModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Trainers Grid -->
-<div class="grid">
+<div class="grid" style="margin-top: 20px;">
   <div class="card">
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #ff6b35, #ff8c5a); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">PG</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Ping Guerrero</h3>
-        <p style="margin: 0; color: #666; font-weight: 600;">HIIT & CrossFit Coach</p>
+      <img src="../assests/images/trainer-ping.jpg" alt="Ping Guerrero" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd;" />
+      <div>
+        <h3 style="margin: 0;">Ping Guerrero</h3>
+        <p style="margin: 0; color: #ff6b35; font-weight: 600;">CrossFit · Zumba</p>
       </div>
     </div>
-    <p><strong>Experience:</strong> 8 years</p>
-    <p><strong>Classes/Week:</strong> 15</p>
-    <p><strong>Clients:</strong> 200+</p>
-    <p><strong>Rating:</strong> ⭐ 4.9/5.0</p>
-    <p><strong>Certifications:</strong></p>
-    <p style="font-size: 0.85rem;">• CrossFit Level 2 Trainer<br>• CPR & First Aid Certified<br>• Sports Nutrition Specialist</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button style="flex: 1; padding: 8px;">Edit Profile</button>
-      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    <p><strong>Sessions/mo:</strong> 42</p>
+    <p><strong>Rating:</strong> ⭐ 4.9</p>
+    <p><strong>Rate:</strong> ₱900/hr</p>
+    <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: 600;">Active</span></p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button style="flex: 1; padding: 8px;" onclick="editTrainer(1)">Edit</button>
+      <button style="flex: 1; padding: 8px;" onclick="viewTrainerSchedule(1)">Schedule</button>
     </div>
   </div>
 
   <div class="card">
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4caf50, #66bb6a); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">NC</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Nadja Collins</h3>
-        <p style="margin: 0; color: #666; font-weight: 600;">Yoga & Pilates Specialist</p>
+      <img src="../assests/images/trainer-nadja.jpg" alt="Nadja Collins" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd;" />
+      <div>
+        <h3 style="margin: 0;">Nadja Collins</h3>
+        <p style="margin: 0; color: #ff6b35; font-weight: 600;">Yoga · Pilates</p>
       </div>
     </div>
-    <p><strong>Experience:</strong> 10 years</p>
-    <p><strong>Classes/Week:</strong> 12</p>
-    <p><strong>Clients:</strong> 200+</p>
-    <p><strong>Rating:</strong> ⭐ 4.9/5.0</p>
-    <p><strong>Certifications:</strong></p>
-    <p style="font-size: 0.85rem;">• RYT 500 Yoga Certification<br>• Pilates Mat Instructor<br>• Meditation Teacher</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button style="flex: 1; padding: 8px;">Edit Profile</button>
-      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    <p><strong>Sessions/mo:</strong> 38</p>
+    <p><strong>Rating:</strong> ⭐ 4.8</p>
+    <p><strong>Rate:</strong> ₱850/hr</p>
+    <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: 600;">Active</span></p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button style="flex: 1; padding: 8px;" onclick="editTrainer(2)">Edit</button>
+      <button style="flex: 1; padding: 8px;" onclick="viewTrainerSchedule(2)">Schedule</button>
     </div>
   </div>
 
   <div class="card">
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #2196f3, #42a5f5); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">ML</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Marcus Lee</h3>
-        <p style="margin: 0; color: #666; font-weight: 600;">Strength & Conditioning</p>
+      <img src="../assests/images/trainer-marcus.jpg" alt="Marcus Lee" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd;" />
+      <div>
+        <h3 style="margin: 0;">Marcus Lee</h3>
+        <p style="margin: 0; color: #ff6b35; font-weight: 600;">HIIT · Boxing</p>
       </div>
     </div>
-    <p><strong>Experience:</strong> 12 years</p>
-    <p><strong>Classes/Week:</strong> 18</p>
-    <p><strong>Clients:</strong> 350+</p>
-    <p><strong>Rating:</strong> ⭐ 4.8/5.0</p>
-    <p><strong>Certifications:</strong></p>
-    <p style="font-size: 0.85rem;">• NSCA-CPT Certified<br>• Olympic Weightlifting Coach<br>• Sports Performance Specialist</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button style="flex: 1; padding: 8px;">Edit Profile</button>
-      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    <p><strong>Sessions/mo:</strong> 35</p>
+    <p><strong>Rating:</strong> ⭐ 4.7</p>
+    <p><strong>Rate:</strong> ₱800/hr</p>
+    <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: 600;">Active</span></p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button style="flex: 1; padding: 8px;" onclick="editTrainer(3)">Edit</button>
+      <button style="flex: 1; padding: 8px;" onclick="viewTrainerSchedule(3)">Schedule</button>
     </div>
   </div>
 
   <div class="card">
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #9c27b0, #ba68c8); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">AM</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Alyssa Moreno</h3>
-        <p style="margin: 0; color: #666; font-weight: 600;">Weight Loss & Nutrition</p>
+      <img src="../assests/images/trainer-alyssa.jpg" alt="Alyssa Moreno" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd;" />
+      <div>
+        <h3 style="margin: 0;">Alyssa Moreno</h3>
+        <p style="margin: 0; color: #ff6b35; font-weight: 600;">Strength · Nutrition</p>
       </div>
     </div>
-    <p><strong>Experience:</strong> 7 years</p>
-    <p><strong>Classes/Week:</strong> 14</p>
-    <p><strong>Clients:</strong> 280+</p>
-    <p><strong>Rating:</strong> ⭐ 4.7/5.0</p>
-    <p><strong>Certifications:</strong></p>
-    <p style="font-size: 0.85rem;">• Certified Nutritionist<br>• Weight Loss Specialist<br>• Metabolic Training Expert</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button style="flex: 1; padding: 8px;">Edit Profile</button>
-      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    <p><strong>Sessions/mo:</strong> 29</p>
+    <p><strong>Rating:</strong> ⭐ 4.9</p>
+    <p><strong>Rate:</strong> ₱950/hr</p>
+    <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: 600;">Active</span></p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button style="flex: 1; padding: 8px;" onclick="editTrainer(4)">Edit</button>
+      <button style="flex: 1; padding: 8px;" onclick="viewTrainerSchedule(4)">Schedule</button>
     </div>
   </div>
 
   <div class="card">
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #ff9800, #ffb74d); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">NA</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Neil Aspag</h3>
-        <p style="margin: 0; color: #666; font-weight: 600;">Functional Training</p>
+      <img src="../assests/images/trainer-neil.jpg" alt="Neil Aspag" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd;" />
+      <div>
+        <h3 style="margin: 0;">Neil Aspag</h3>
+        <p style="margin: 0; color: #ff6b35; font-weight: 600;">CrossFit · HIIT</p>
       </div>
     </div>
-    <p><strong>Experience:</strong> 6 years</p>
-    <p><strong>Classes/Week:</strong> 13</p>
-    <p><strong>Clients:</strong> 190+</p>
-    <p><strong>Rating:</strong> ⭐ 4.8/5.0</p>
-    <p><strong>Certifications:</strong></p>
-    <p style="font-size: 0.85rem;">• Functional Training Specialist<br>• Mobility Coach<br>• TRX Instructor</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button style="flex: 1; padding: 8px;">Edit Profile</button>
-      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    <p><strong>Sessions/mo:</strong> 26</p>
+    <p><strong>Rating:</strong> ⭐ 4.6</p>
+    <p><strong>Rate:</strong> ₱800/hr</p>
+    <p><strong>Status:</strong> <span style="color: #f57c00; font-weight: 600;">On Leave</span></p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button style="flex: 1; padding: 8px;" onclick="editTrainer(5)">Edit</button>
+      <button style="flex: 1; padding: 8px;" onclick="viewTrainerSchedule(5)">Schedule</button>
     </div>
   </div>
 
   <div class="card">
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #e91e63, #f06292); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 900;">SR</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 5px 0; color: #1a1a1a;">Sofia Ramirez</h3>
-        <p style="margin: 0; color: #666; font-weight: 600;">Zumba & Dance Fitness</p>
+      <img src="../assests/images/trainer-sofia.jpg" alt="Sofia Ramirez" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd;" />
+      <div>
+        <h3 style="margin: 0;">Sofia Ramirez</h3>
+        <p style="margin: 0; color: #ff6b35; font-weight: 600;">Zumba · Pilates</p>
       </div>
     </div>
-    <p><strong>Experience:</strong> 9 years</p>
-    <p><strong>Classes/Week:</strong> 16</p>
-    <p><strong>Clients:</strong> 400+</p>
-    <p><strong>Rating:</strong> ⭐ 4.9/5.0</p>
-    <p><strong>Certifications:</strong></p>
-    <p style="font-size: 0.85rem;">• Zumba Instructor License<br>• Dance Fitness Specialist<br>• Aerobics Instructor</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button style="flex: 1; padding: 8px;">Edit Profile</button>
-      <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;">View Schedule</button>
+    <p><strong>Sessions/mo:</strong> 31</p>
+    <p><strong>Rating:</strong> ⭐ 4.8</p>
+    <p><strong>Rate:</strong> ₱850/hr</p>
+    <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: 600;">Active</span></p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button style="flex: 1; padding: 8px;" onclick="editTrainer(6)">Edit</button>
+      <button style="flex: 1; padding: 8px;" onclick="viewTrainerSchedule(6)">Schedule</button>
     </div>
   </div>
-</div>
-
-<!-- Trainer Availability Calendar -->
-<div class="card" style="margin-top: 30px;">
-  <h3>Trainer Availability This Week</h3>
-  <table style="margin-top: 15px;">
-    <thead>
-      <tr>
-        <th>Trainer</th>
-        <th>Monday</th>
-        <th>Tuesday</th>
-        <th>Wednesday</th>
-        <th>Thursday</th>
-        <th>Friday</th>
-        <th>Saturday</th>
-        <th>Sunday</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Ping Guerrero</td>
-        <td>6AM-8PM</td>
-        <td>6AM-8PM</td>
-        <td>6AM-8PM</td>
-        <td>OFF</td>
-        <td>6AM-8PM</td>
-        <td>8AM-2PM</td>
-        <td>OFF</td>
-      </tr>
-      <tr>
-        <td>Nadja Collins</td>
-        <td>7AM-6PM</td>
-        <td>7AM-6PM</td>
-        <td>OFF</td>
-        <td>7AM-6PM</td>
-        <td>7AM-6PM</td>
-        <td>9AM-3PM</td>
-        <td>OFF</td>
-      </tr>
-      <tr>
-        <td>Marcus Lee</td>
-        <td>5AM-9PM</td>
-        <td>5AM-9PM</td>
-        <td>5AM-9PM</td>
-        <td>5AM-9PM</td>
-        <td>OFF</td>
-        <td>7AM-4PM</td>
-        <td>OFF</td>
-      </tr>
-      <tr>
-        <td>Alyssa Moreno</td>
-        <td>8AM-7PM</td>
-        <td>OFF</td>
-        <td>8AM-7PM</td>
-        <td>8AM-7PM</td>
-        <td>8AM-7PM</td>
-        <td>OFF</td>
-        <td>10AM-2PM</td>
-      </tr>
-    </tbody>
-  </table>
 </div>

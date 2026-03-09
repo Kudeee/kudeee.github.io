@@ -1,36 +1,47 @@
-import {renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
+import { renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
 import { render } from "./renderer.js";
 
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp = closePopUp;
 
-document.getElementById('submit').addEventListener("submit", handleLogin)
+document.getElementById('submit').addEventListener("submit", handleLogin);
 
 export async function handleLogin(event) {
   event.preventDefault();
 
-  const email = document.querySelector('input[type="email"]').value;
-  const password = document.querySelector('input[type="password"]').value;
+  const email    = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
   if (!email || !password) {
-    showPopUP("invalid email or password");
+    showPopUP("Please enter your email and password.");
     return;
   }
 
-  showLoading("Logging in");
+  showLoading("Logging in...");
 
   try {
-    await simulateLoading(2000);
+    const formData = new FormData(event.target);
 
+    const response = await fetch("/api/auth/login.php", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
     hideLoading();
 
-    if (email === "admin@admin" && password === "admin") {
-      window.location.href = "../admin-panel.html";
+    if (result.success) {
+      // Redirect based on role returned by server
+      if (result.role === "admin") {
+        window.location.href = "admin-panel.html";
+      } else {
+        window.location.href = "homepage.html";
+      }
     } else {
-      window.location.href = "../homepage.html";
+      showPopUP(result.message || "Invalid email or password.");
     }
   } catch (error) {
     hideLoading();
-    showPopUP("login failed");
+    showPopUP("Login failed. Please try again.");
   }
 }

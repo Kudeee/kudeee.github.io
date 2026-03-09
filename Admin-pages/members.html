@@ -2,33 +2,44 @@
   <h1>Members</h1>
 </div>
 
-<!-- Search and Filter Section -->
+<!-- Search and Filter — GET request to filter the table -->
 <div class="card" style="margin-bottom: 20px;">
-  <h3>Search & Filter Members</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Search by Name</label>
-      <input type="text" placeholder="Enter member name..." style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" id="memberSearch">
+  <h3>Search &amp; Filter Members</h3>
+  <form id="memberFilterForm" method="GET" action="/api/admin/members/list.php">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="search_name">Search by Name</label>
+        <input
+          type="text"
+          id="search_name"
+          name="search_name"
+          placeholder="Enter member name..."
+          style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;"
+        />
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="status_filter">Filter by Status</label>
+        <select id="status_filter" name="status_filter" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="expired">Expired</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600;" for="plan_filter">Filter by Plan</label>
+        <select id="plan_filter" name="plan_filter" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+          <option value="">All Plans</option>
+          <option value="basic">Basic</option>
+          <option value="premium">Premium</option>
+          <option value="vip">VIP</option>
+        </select>
+      </div>
     </div>
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Filter by Status</label>
-      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" id="statusFilter">
-        <option>All Status</option>
-        <option>Active</option>
-        <option>Expired</option>
-        <option>Pending</option>
-      </select>
+    <div style="margin-top: 15px;">
+      <button type="submit" style="padding: 10px 20px;">Search</button>
     </div>
-    <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: 600;">Filter by Plan</label>
-      <select style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" id="planFilter">
-        <option>All Plans</option>
-        <option>Basic</option>
-        <option>Premium</option>
-        <option>VIP</option>
-      </select>
-    </div>
-  </div>
+  </form>
 </div>
 
 <!-- Action Buttons -->
@@ -36,6 +47,67 @@
   <button id="addMemberBtn">Add Member</button>
   <button id="exportBtn">Export Data</button>
   <button id="sendEmailBtn">Send Email</button>
+</div>
+
+<!-- Add Member Modal Form (hidden by default, shown by JS) -->
+<div id="addMemberModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto;">
+    <h3 style="margin-bottom: 20px;">Add New Member</h3>
+    <form id="addMemberForm" method="POST" action="/api/admin/members/create.php">
+      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form">
+          <label for="member_first_name">First Name</label>
+          <input type="text" id="member_first_name" name="first_name" placeholder="First name" required />
+        </div>
+        <div class="form">
+          <label for="member_last_name">Last Name</label>
+          <input type="text" id="member_last_name" name="last_name" placeholder="Last name" required />
+        </div>
+      </div>
+
+      <div class="form">
+        <label for="member_email">Email</label>
+        <input type="email" id="member_email" name="email" placeholder="member@email.com" required />
+      </div>
+
+      <div class="form">
+        <label for="member_phone">Phone</label>
+        <input type="tel" id="member_phone" name="phone" placeholder="09XX-XXX-XXXX" required />
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form">
+          <label for="member_plan">Membership Plan</label>
+          <select id="member_plan" name="plan" required>
+            <option value="">Select Plan</option>
+            <option value="basic">Basic</option>
+            <option value="premium">Premium</option>
+            <option value="vip">VIP</option>
+          </select>
+        </div>
+        <div class="form">
+          <label for="member_status">Status</label>
+          <select id="member_status" name="status">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form">
+        <label for="member_join_date">Join Date</label>
+        <input type="date" id="member_join_date" name="join_date" required />
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button type="submit" style="flex: 1;">Add Member</button>
+        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('addMemberModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Members Statistics -->
@@ -84,7 +156,7 @@
       <td>Jun 15, 2025</td>
       <td>Jan 03, 2026</td>
       <td>
-        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1001')">View</button>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember(1001)">View</button>
       </td>
     </tr>
     <tr>
@@ -97,7 +169,7 @@
       <td>Mar 20, 2025</td>
       <td>Dec 15, 2025</td>
       <td>
-        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1002')">View</button>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember(1002)">View</button>
       </td>
     </tr>
     <tr>
@@ -110,7 +182,7 @@
       <td>Jan 10, 2025</td>
       <td>Feb 01, 2026</td>
       <td>
-        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1003')">View</button>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember(1003)">View</button>
       </td>
     </tr>
     <tr>
@@ -123,7 +195,7 @@
       <td>Aug 05, 2025</td>
       <td>Jan 28, 2026</td>
       <td>
-        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1004')">View</button>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember(1004)">View</button>
       </td>
     </tr>
     <tr>
@@ -136,7 +208,7 @@
       <td>Feb 05, 2026</td>
       <td>Feb 05, 2026</td>
       <td>
-        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember('M1005')">View</button>
+        <button style="padding: 6px 12px; font-size: 0.8rem;" onclick="viewMember(1005)">View</button>
       </td>
     </tr>
   </tbody>
@@ -144,14 +216,7 @@
 
 <!-- Pagination -->
 <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px;">
-  <button style="padding: 8px 16px;">Previous</button>
-  <span style="font-weight: 600;">Page 1 of 25</span>
-  <button style="padding: 8px 16px;">Next</button>
+  <button style="padding: 8px 16px;" onclick="changePage('prev')">Previous</button>
+  <span style="font-weight: 600;" id="pageInfo">Page 1 of 25</span>
+  <button style="padding: 8px 16px;" onclick="changePage('next')">Next</button>
 </div>
-
-<script>
-function viewMember(id) {
-  alert('Viewing member details for ' + id);
-  // In a real application, this would open a modal or navigate to a detail page
-}
-</script>
