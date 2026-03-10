@@ -7,22 +7,22 @@
 <section class="grid">
   <div class="card">
     <h3>Total Members</h3>
-    <p class="stat-value">1,245</p>
-    <p class="stat-status">↑ 12% from last month</p>
+    <p class="stat-value" id="dash-total-members">—</p>
+    <p class="stat-status">↑ from last month</p>
   </div>
   <div class="card">
     <h3>Active Subscriptions</h3>
-    <p class="stat-value">985</p>
-    <p class="stat-status">↑ 8% from last month</p>
+    <p class="stat-value" id="dash-active-subs">—</p>
+    <p class="stat-status">Current active</p>
   </div>
   <div class="card">
     <h3>Monthly Revenue</h3>
-    <p class="stat-value">₱245,000</p>
-    <p class="stat-status">↑ 15% from last month</p>
+    <p class="stat-value" id="dash-monthly-revenue">—</p>
+    <p class="stat-status">This month</p>
   </div>
   <div class="card">
-    <h3>Classes Today</h3>
-    <p class="stat-value">12</p>
+    <h3>Classes This Month</h3>
+    <p class="stat-value" id="dash-classes-today">—</p>
     <p class="stat-status">Scheduled sessions</p>
   </div>
 </section>
@@ -31,8 +31,8 @@
 <section class="grid">
   <div class="card">
     <h3>New Members (This Month)</h3>
-    <p class="stat-value">24</p>
-    <p class="stat-status">↑ 3% from last month</p>
+    <p class="stat-value" id="dash-new-members">—</p>
+    <p class="stat-status">New sign-ups</p>
   </div>
   <div class="card">
     <h3>Retention Rate</h3>
@@ -41,7 +41,7 @@
   </div>
   <div class="card">
     <h3>Active Trainers</h3>
-    <p class="stat-value">10</p>
+    <p class="stat-value" id="dash-active-trainers">—</p>
     <p class="stat-status">All certified</p>
   </div>
   <div class="card">
@@ -55,23 +55,20 @@
 <div class="grid">
   <div class="card">
     <h3>Recent Activities</h3>
-    <p>• New member registered: John Doe (Premium Plan)</p>
-    <p>• Payment received: ₱2,500 - Sarah Johnson</p>
-    <p>• Class scheduled: Yoga at 6 PM - 15 spots filled</p>
-    <p>• Trainer added: Marcus Lee (Strength Training)</p>
-    <p>• Equipment maintenance: Treadmill #3 serviced</p>
-    <p>• Membership expired: 3 members (follow-up sent)</p>
+    <div id="dash-recent-activity">
+      <p style="color:#999;">Loading...</p>
+    </div>
   </div>
-  
+
   <div class="card">
     <h3>Quick Actions</h3>
     <div class="action-buttons">
-      <button class="btn btn-primary" onclick="location.href='#members'">Add Member</button>
-      <button class="btn btn-primary" onclick="location.href='#classes'">Schedule Class</button>
+      <button class="btn btn-primary" onclick="loadPage('members')">Add Member</button>
+      <button class="btn btn-primary" onclick="loadPage('classes')">Schedule Class</button>
     </div>
     <div class="action-buttons">
-      <button class="btn btn-secondary" onclick="location.href='#revenue'">View Reports</button>
-      <button class="btn btn-secondary" onclick="location.href='#payments'">Process Payments</button>
+      <button class="btn btn-secondary" onclick="loadPage('revenue')">View Reports</button>
+      <button class="btn btn-secondary" onclick="loadPage('payments')">Process Payments</button>
     </div>
   </div>
 </div>
@@ -81,15 +78,15 @@
   <h3>Membership Distribution</h3>
   <div class="grid" style="margin-top: 15px;">
     <div style="text-align: center;">
-      <p class="stat-value" style="font-size: 1.8rem;">421</p>
+      <p class="stat-value" style="font-size: 1.8rem;" id="sub-plan-count-basic">—</p>
       <p style="color: #666; font-weight: 600;">Basic Plan</p>
     </div>
     <div style="text-align: center;">
-      <p class="stat-value" style="font-size: 1.8rem;">498</p>
+      <p class="stat-value" style="font-size: 1.8rem;" id="sub-plan-count-premium">—</p>
       <p style="color: #666; font-weight: 600;">Premium Plan</p>
     </div>
     <div style="text-align: center;">
-      <p class="stat-value" style="font-size: 1.8rem;">326</p>
+      <p class="stat-value" style="font-size: 1.8rem;" id="sub-plan-count-vip">—</p>
       <p style="color: #666; font-weight: 600;">VIP Plan</p>
     </div>
   </div>

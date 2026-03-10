@@ -1,7 +1,7 @@
 export const trainers = [
   {
     name: "Nadja Collins",
-    image: "../assests/trainers/nadjaCole.png",
+    image: "assests/trainers/nadjaCole.png",
     specialty: "Yoga & Pilates Specialist",
     trainerBio:
       "With over 10 years of experience, Nadja helps clients improve flexibility, core strength, and mind-body connection through yoga and pilates.",
@@ -17,7 +17,7 @@ export const trainers = [
   },
   {
     name: "Ping Guerrero",
-    image: "../assests/trainers/pingGuerrero.png",
+    image: "assests/trainers/pingGuerrero.png",
     specialty: "HIIT & CrossFit Coach",
     trainerBio:
       "Certified CrossFit Level 2 trainer with a passion for high-intensity workouts. Ping specializes in helping clients push their limits and achieve breakthrough results.",
@@ -32,7 +32,7 @@ export const trainers = [
   },
   {
     name: "Marcus Lee",
-    image: "../assests/trainers/marcusLee.jpeg",
+    image: "assests/trainers/marcusLee.jpeg",
     specialty: "Strength & Conditioning Coach",
     trainerBio:
       "Marcus focuses on building strength, power, and endurance through structured weight training and performance programs.",
@@ -53,7 +53,7 @@ export const trainers = [
   },
   {
     name: "Alyssa Moreno",
-    image: "../assests/trainers/alyssaMoreno.jpg",
+    image: "assests/trainers/alyssaMoreno.jpg",
     specialty: "Weight Loss & Nutrition Coach",
     trainerBio:
       "Alyssa helps clients lose weight sustainably by combining smart workouts with realistic nutrition strategies.",
@@ -73,7 +73,7 @@ export const trainers = [
   },
   {
     name: "Neil Aspag",
-    image: "../assests/trainers/neilAspag.jpg",
+    image: "assests/trainers/neilAspag.jpg",
     specialty: "Functional Training Specialist",
     trainerBio:
       "Neil designs functional workouts that improve mobility, balance, and everyday movement efficiency.",
@@ -93,7 +93,7 @@ export const trainers = [
   },
   {
     name: "Sofia Ramirez",
-    image: "../assests/trainers/sofiaRamirez.png",
+    image: "assests/trainers/sofiaRamirez.png",
     specialty: "Zumba & Dance Fitness Instructor",
     trainerBio:
       "Sofia makes fitness fun through energetic dance workouts that burn calories while boosting confidence.",
@@ -109,7 +109,7 @@ export const trainers = [
   },
   {
     name: "Ethan Brooks",
-    image: "../assests/trainers/ethanBrooks.jpg",
+    image: "assests/trainers/ethanBrooks.jpg",
     specialty: "Bodybuilding Coach",
     trainerBio:
       "Ethan specializes in muscle growth, physique development, and competition-level bodybuilding prep.",
@@ -130,7 +130,7 @@ export const trainers = [
   },
   {
     name: "Eileen Dover",
-    image: "../assests/trainers/Emma Roids.jpg",
+    image: "assests/trainers/Emma Roids.jpg",
     specialty: "Sports Performance Trainer",
     trainerBio:
       "Liam works with athletes to improve speed, agility, and explosive power for peak sports performance.",
@@ -145,7 +145,7 @@ export const trainers = [
   },
   {
     name: "Sum Ting Wong",
-    image: "../assests/trainers/sumTingWong.jpg",
+    image: "assests/trainers/sumTingWong.jpg",
     specialty: "Rehabilitation & Mobility Coach",
     trainerBio:
       "Maya helps clients recover from injuries and improve joint mobility through corrective exercises.",
@@ -165,7 +165,7 @@ export const trainers = [
   },
   {
     name: "Noah Patel",
-    image: "../assests/trainers/noahPatel.jpg",
+    image: "assests/trainers/noahPatel.jpg",
     specialty: "Beginner Fitness Coach",
     trainerBio:
       "Noah guides beginners step-by-step, building confidence and healthy habits in a supportive environment.",

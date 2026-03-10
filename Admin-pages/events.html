@@ -6,38 +6,36 @@
 <div class="grid" style="margin-bottom: 20px;">
   <div class="card">
     <h3>Upcoming Events</h3>
-    <p class="stat-value">6</p>
-    <p class="stat-status">Next 30 days</p>
+    <p class="stat-value" id="events-upcoming">—</p>
+    <p class="stat-status">Next 60 days</p>
   </div>
   <div class="card">
     <h3>Total Registrations</h3>
-    <p class="stat-value">312</p>
-    <p class="stat-status">This month</p>
+    <p class="stat-value" id="events-total-reg">—</p>
+    <p class="stat-status">This period</p>
   </div>
   <div class="card">
     <h3>Events This Week</h3>
-    <p class="stat-value">2</p>
+    <p class="stat-value" id="events-this-week">—</p>
     <p class="stat-status">Scheduled</p>
   </div>
   <div class="card">
     <h3>Most Popular</h3>
-    <p class="stat-value">Fitness Expo</p>
-    <p class="stat-status">98 registered</p>
+    <p class="stat-value" id="events-popular">—</p>
+    <p class="stat-status">Most registered</p>
   </div>
 </div>
 
 <!-- Create New Event -->
 <div class="card">
   <h3>Create New Event</h3>
-  <form id="createEventForm" method="POST" action="/api/admin/events/create.php">
-    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
-
+  <form id="createEventForm">
+    <input type="hidden" name="csrf_token" value="" />
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
       <div class="form">
         <label for="event_name">Event Name</label>
         <input type="text" id="event_name" name="event_name" placeholder="Enter event name" required />
       </div>
-
       <div class="form">
         <label for="event_type">Event Type</label>
         <select id="event_type" name="event_type" required>
@@ -50,32 +48,26 @@
           <option value="special_class">Special Class</option>
         </select>
       </div>
-
       <div class="form">
         <label for="event_date">Date</label>
         <input type="date" id="event_date" name="event_date" required />
       </div>
-
       <div class="form">
         <label for="event_time">Time</label>
         <input type="time" id="event_time" name="event_time" required />
       </div>
-
       <div class="form">
         <label for="event_location">Location</label>
         <input type="text" id="event_location" name="event_location" placeholder="e.g. Main Gym / Studio A" required />
       </div>
-
       <div class="form">
         <label for="max_attendees">Max Attendees</label>
         <input type="number" id="max_attendees" name="max_attendees" value="50" min="1" max="500" required />
       </div>
-
       <div class="form">
         <label for="event_fee">Registration Fee (₱)</label>
         <input type="number" id="event_fee" name="event_fee" value="0" min="0" step="0.01" />
       </div>
-
       <div class="form">
         <label for="organizer_id">Organizer / Trainer</label>
         <select id="organizer_id" name="organizer_id">
@@ -86,23 +78,19 @@
           <option value="4">Alyssa Moreno</option>
           <option value="5">Neil Aspag</option>
           <option value="6">Sofia Ramirez</option>
-          <option value="staff">Staff / Management</option>
         </select>
       </div>
     </div>
-
     <div class="form">
       <label for="event_description">Event Description</label>
       <textarea id="event_description" name="event_description" rows="3" placeholder="Describe the event..."></textarea>
     </div>
-
     <div class="form">
       <label>
         <input type="checkbox" name="is_members_only" value="1" />
         Members Only Event
       </label>
     </div>
-
     <div class="scheduleClass-btn">
       <button type="submit">Create Event</button>
     </div>
@@ -112,51 +100,7 @@
 <!-- Upcoming Events List -->
 <div style="margin-top: 30px;">
   <h2 style="font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Upcoming Events</h2>
-
-  <div class="grid">
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: #ff6b35;">Fitness Expo 2026</h3>
-        <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">98/100</span>
-      </div>
-      <p><strong>Type:</strong> Competition</p>
-      <p><strong>Date:</strong> Mar 15, 2026 — 8:00 AM</p>
-      <p><strong>Location:</strong> Main Gym</p>
-      <p><strong>Fee:</strong> ₱500</p>
-      <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;" onclick="editEvent(1)">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelEvent(1)">Cancel</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: #ff6b35;">Nutrition Workshop</h3>
-        <span style="background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">24/40</span>
-      </div>
-      <p><strong>Type:</strong> Workshop</p>
-      <p><strong>Date:</strong> Mar 20, 2026 — 2:00 PM</p>
-      <p><strong>Location:</strong> Studio B</p>
-      <p><strong>Fee:</strong> Free (Members)</p>
-      <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;" onclick="editEvent(2)">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelEvent(2)">Cancel</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: #ff6b35;">30-Day Challenge Kickoff</h3>
-        <span style="background: #fff3e0; color: #f57c00; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">45/50</span>
-      </div>
-      <p><strong>Type:</strong> Fitness Challenge</p>
-      <p><strong>Date:</strong> Apr 1, 2026 — 6:00 AM</p>
-      <p><strong>Location:</strong> Main Gym</p>
-      <p><strong>Fee:</strong> ₱200</p>
-      <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button style="flex: 1; padding: 8px;" onclick="editEvent(3)">Edit</button>
-        <button style="flex: 1; padding: 8px; background: #e5e7eb; color: #333;" onclick="cancelEvent(3)">Cancel</button>
-      </div>
-    </div>
+  <div class="grid" id="upcoming-events-grid">
+    <div class="card"><p style="color:#999;">Loading upcoming events...</p></div>
   </div>
 </div>

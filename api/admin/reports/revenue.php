@@ -1,125 +1,114 @@
 <?php
 /**
  * GET /api/admin/reports/revenue.php
- *
- * Detailed revenue report with daily/monthly breakdowns.
- *
- * Query params:
- *   date_from    date     required
- *   date_to      date     required
- *   group_by     string   day | week | month  (default: day)
- *   type         string   membership | class | trainer | event | all  (default: all)
- *
- * Response 200:
- *   {
- *     "success": true,
- *     "period": { "from": "...", "to": "..." },
- *     "summary": { gross, refunds, net, total_transactions },
- *     "chart_data": [ { period, gross, refunds, net, transactions } ],
- *     "by_plan":   [ { plan, amount, count } ],
- *     "by_method": [ { payment_method, amount, count } ],
- *     "by_type":   [ { type, amount, count } ]
- *   }
- *
- * DB tables used:
- *   payments, members
  */
-
 require_once __DIR__ . '/../../admin/config.php';
 require_method('GET');
 $admin = require_admin();
 
-// ─── Input ────────────────────────────────────────────────────────────────────
 $date     = get_date_range();
-$group_by = in_array($_GET['group_by'] ?? 'day', ['day','week','month']) ? ($_GET['group_by'] ?? 'day') : 'day';
+$group_by = in_array($_GET['group_by'] ?? 'month', ['day','week','month']) ? ($_GET['group_by'] ?? 'month') : 'month';
 $type     = sanitize_string($_GET['type'] ?? 'all');
+$from     = $date['from'] . ' 00:00:00';
+$to       = $date['to']   . ' 23:59:59';
 
-$valid_types = ['all','membership','class','trainer','event'];
-if (!in_array($type, $valid_types, true)) error('Invalid type filter.');
+try {
+    $pdo = db();
 
-$from = $date['from'] . ' 00:00:00';
-$to   = $date['to']   . ' 23:59:59';
-
-// ─── TODO: replace stub with real DB queries ──────────────────────────────────
-/*
-    $pdo = new PDO(
-        'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET,
-        DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-
-    $type_filter = ($type !== 'all') ? 'AND p.type = :type' : '';
-    $params_base = [':from' => $from, ':to' => $to];
-    if ($type !== 'all') $params_base[':type'] = $type;
+    $type_filter = ($type !== 'all') ? 'AND p.type = ?' : '';
+    $params_base = [$from, $to];
+    if ($type !== 'all') $params_base[] = $type;
 
     // Summary
     $stmt = $pdo->prepare("
         SELECT
-            SUM(CASE WHEN status='completed' AND amount>0 THEN amount ELSE 0 END) AS gross,
-            SUM(CASE WHEN status='refunded'  OR  amount<0 THEN ABS(amount) ELSE 0 END) AS refunds,
+            COALESCE(SUM(CASE WHEN status='completed' AND amount>0 THEN amount ELSE 0 END), 0) AS gross,
+            COALESCE(SUM(CASE WHEN status='refunded' THEN amount ELSE 0 END), 0) AS refunds,
             COUNT(CASE WHEN status='completed' AND amount>0 THEN 1 END) AS total_transactions
-        FROM payments p
-        WHERE p.created_at BETWEEN :from AND :to $type_filter
+        FROM payments p WHERE p.created_at BETWEEN ? AND ? $type_filter
     ");
     $stmt->execute($params_base);
-    $summary = $stmt->fetch(PDO::FETCH_ASSOC);
-    $summary['net'] = (float)$summary['gross'] - (float)$summary['refunds'];
+    $summary = $stmt->fetch();
+    $summary['net'] = (float) $summary['gross'] - (float) $summary['refunds'];
 
-    // Chart data grouping
-    $date_format = match($group_by) {
-        'week'  => "DATE_FORMAT(p.created_at, '%Y-W%u')",
-        'month' => "DATE_FORMAT(p.created_at, '%Y-%m')",
-        default => "DATE(p.created_at)",
-    };
+    // Monthly comparison — last 6 months
+    $monthly = [];
+    for ($i = 5; $i >= 0; $i--) {
+        $month_start = date('Y-m-01', strtotime("-$i months"));
+        $month_end   = date('Y-m-t', strtotime("-$i months"));
+        $label       = date('M Y', strtotime("-$i months"));
 
-    $stmt = $pdo->prepare("
-        SELECT
-            $date_format AS period,
-            SUM(CASE WHEN status='completed' AND amount>0 THEN amount ELSE 0 END) AS gross,
-            SUM(CASE WHEN status='refunded'  OR  amount<0 THEN ABS(amount) ELSE 0 END) AS refunds,
-            SUM(CASE WHEN status='completed' AND amount>0 THEN amount ELSE 0 END)
-            - SUM(CASE WHEN status='refunded' OR amount<0 THEN ABS(amount) ELSE 0 END) AS net,
-            COUNT(CASE WHEN status='completed' AND amount>0 THEN 1 END) AS transactions
-        FROM payments p
-        WHERE p.created_at BETWEEN :from AND :to $type_filter
-        GROUP BY period ORDER BY period ASC
-    ");
-    $stmt->execute($params_base);
-    $chart_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(amount), 0) AS total
+            FROM payments
+            WHERE created_at BETWEEN ? AND ? AND status='completed' AND amount>0
+        ");
+        $stmt->execute([$month_start . ' 00:00:00', $month_end . ' 23:59:59']);
+        $monthly[] = [
+            'label'  => $label,
+            'period' => $month_start,
+            'total'  => (float) $stmt->fetchColumn(),
+        ];
+    }
 
     // By plan
     $stmt = $pdo->prepare("
-        SELECT m.plan, SUM(p.amount) AS amount, COUNT(*) AS count
+        SELECT m.plan, COALESCE(SUM(p.amount), 0) AS amount, COUNT(*) AS count
         FROM payments p JOIN members m ON m.id=p.member_id
-        WHERE p.created_at BETWEEN :from AND :to AND p.status='completed' AND p.amount>0 $type_filter
+        WHERE p.created_at BETWEEN ? AND ? AND p.status='completed' AND p.amount>0 AND p.type='subscription'
         GROUP BY m.plan
     ");
-    $stmt->execute($params_base);
-    $by_plan = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([$from, $to]);
+    $by_plan = $stmt->fetchAll();
 
     // By method
     $stmt = $pdo->prepare("
-        SELECT payment_method, SUM(amount) AS amount, COUNT(*) AS count
-        FROM payments p
-        WHERE p.created_at BETWEEN :from AND :to AND status='completed' AND amount>0 $type_filter
-        GROUP BY payment_method
+        SELECT method, COALESCE(SUM(amount), 0) AS amount, COUNT(*) AS count
+        FROM payments
+        WHERE created_at BETWEEN ? AND ? AND status='completed' AND amount>0 $type_filter
+        GROUP BY method
     ");
     $stmt->execute($params_base);
-    $by_method = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $by_method = $stmt->fetchAll();
 
     // By type
     $stmt = $pdo->prepare("
-        SELECT type, SUM(amount) AS amount, COUNT(*) AS count
-        FROM payments p
-        WHERE p.created_at BETWEEN :from AND :to AND status='completed' AND amount>0
+        SELECT type, COALESCE(SUM(amount), 0) AS amount, COUNT(*) AS count
+        FROM payments
+        WHERE created_at BETWEEN ? AND ? AND status='completed' AND amount>0
         GROUP BY type
     ");
-    $stmt->execute($params_base);
-    $by_type = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([$from, $to]);
+    $by_type = $stmt->fetchAll();
 
-    success('Revenue report retrieved.', compact(
-        'date','summary','chart_data','by_plan','by_method','by_type'
-    ));
-*/
+    // Expenses (static for now — replace with expenses table when available)
+    $expenses = [
+        'operating'  => 289400,
+        'salaries'   => 180000,
+        'marketing'  => 43268,
+    ];
+    $total_expenses = array_sum($expenses);
+    $net_profit = (float) $summary['gross'] - $total_expenses;
 
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
+    // Goals
+    $monthly_target = 750000;
+    $achieved_pct   = $monthly_target > 0 ? round(((float) $summary['gross'] / $monthly_target) * 100) : 0;
+
+    success('Revenue report retrieved.', [
+        'period'         => $date,
+        'summary'        => $summary,
+        'monthly_chart'  => $monthly,
+        'by_plan'        => $by_plan,
+        'by_method'      => $by_method,
+        'by_type'        => $by_type,
+        'expenses'       => $expenses,
+        'total_expenses' => $total_expenses,
+        'net_profit'     => $net_profit,
+        'goals'          => [
+            'monthly_target'  => $monthly_target,
+            'achieved_pct'    => $achieved_pct,
+        ],
+    ]);
+} catch (PDOException $e) {
+    error('Database error: ' . $e->getMessage(), 500);
+}

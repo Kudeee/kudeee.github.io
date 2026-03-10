@@ -1,42 +1,8 @@
 <?php
 /**
  * GET /api/admin/reports/dashboard.php
- *
  * Returns high-level KPIs for the admin dashboard.
- * All counts and revenue figures are for the current month unless overridden.
- *
- * Query params:
- *   date_from   date   YYYY-MM-DD  (default: start of current month)
- *   date_to     date   YYYY-MM-DD  (default: end of current month)
- *
- * Response 200:
- *   {
- *     "success": true,
- *     "period": { "from": "...", "to": "..." },
- *     "members": {
- *       "total": int, "active": int, "new_this_period": int,
- *       "expired": int, "paused": int, "suspended": int
- *     },
- *     "revenue": {
- *       "gross": float, "refunds": float, "net": float,
- *       "by_type": [ { type, total } ],
- *       "by_plan": [ { plan, total } ]
- *     },
- *     "bookings": {
- *       "class_total": int, "class_confirmed": int, "class_cancelled": int,
- *       "trainer_total": int, "trainer_confirmed": int, "trainer_cancelled": int
- *     },
- *     "classes": { "scheduled": int, "completed": int, "cancelled": int },
- *     "events":  { "upcoming": int, "total_registrations": int },
- *     "top_classes":  [ { class_name, bookings } ],
- *     "top_trainers": [ { trainer_name, sessions } ]
- *   }
- *
- * DB tables used:
- *   members, subscriptions, payments, class_bookings, class_schedules,
- *   trainer_bookings, trainers, events, event_registrations
  */
-
 require_once __DIR__ . '/../../admin/config.php';
 require_method('GET');
 $admin = require_admin();
@@ -45,20 +11,18 @@ $date = get_date_range();
 $from = $date['from'] . ' 00:00:00';
 $to   = $date['to']   . ' 23:59:59';
 
-// ─── TODO: replace stub with real DB queries ──────────────────────────────────
-/*
-    $pdo = new PDO(
-        'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET,
-        DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+try {
+    $pdo = db();
 
     // ── Members ──────────────────────────────────────────────────────────────
     $stmt = $pdo->query("SELECT status, COUNT(*) AS cnt FROM members GROUP BY status");
-    $member_counts = ['total'=>0,'active'=>0,'expired'=>0,'paused'=>0,'suspended'=>0];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        if (isset($member_counts[$r['status']])) $member_counts[$r['status']] = (int) $r['cnt'];
+    $member_counts = ['total' => 0, 'active' => 0, 'expired' => 0, 'paused' => 0, 'suspended' => 0];
+    foreach ($stmt->fetchAll() as $r) {
+        $key = $r['status'];
+        if (isset($member_counts[$key])) $member_counts[$key] = (int) $r['cnt'];
         $member_counts['total'] += (int) $r['cnt'];
     }
+
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM members WHERE created_at BETWEEN ? AND ?");
     $stmt->execute([$from, $to]);
     $member_counts['new_this_period'] = (int) $stmt->fetchColumn();
@@ -66,30 +30,24 @@ $to   = $date['to']   . ' 23:59:59';
     // ── Revenue ───────────────────────────────────────────────────────────────
     $stmt = $pdo->prepare("
         SELECT
-            SUM(CASE WHEN status='completed' AND amount > 0 THEN amount ELSE 0 END) AS gross,
-            SUM(CASE WHEN status='refunded'  OR  amount < 0 THEN ABS(amount) ELSE 0 END) AS refunds
+            COALESCE(SUM(CASE WHEN status='completed' AND amount > 0 THEN amount ELSE 0 END), 0) AS gross,
+            COALESCE(SUM(CASE WHEN status='refunded' THEN amount ELSE 0 END), 0) AS refunds
         FROM payments WHERE created_at BETWEEN ? AND ?
     ");
     $stmt->execute([$from, $to]);
-    $rev = $stmt->fetch(PDO::FETCH_ASSOC);
-    $rev['net'] = (float)$rev['gross'] - (float)$rev['refunds'];
+    $rev = $stmt->fetch();
+    $rev['gross']   = (float) $rev['gross'];
+    $rev['refunds'] = (float) $rev['refunds'];
+    $rev['net']     = $rev['gross'] - $rev['refunds'];
 
     $stmt = $pdo->prepare("
-        SELECT type, SUM(amount) AS total FROM payments
+        SELECT type, COALESCE(SUM(amount), 0) AS total
+        FROM payments
         WHERE created_at BETWEEN ? AND ? AND status='completed' AND amount > 0
         GROUP BY type
     ");
     $stmt->execute([$from, $to]);
-    $rev['by_type'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $stmt = $pdo->prepare("
-        SELECT m.plan, SUM(p.amount) AS total
-        FROM payments p JOIN members m ON m.id=p.member_id
-        WHERE p.created_at BETWEEN ? AND ? AND p.type='membership' AND p.status='completed'
-        GROUP BY m.plan
-    ");
-    $stmt->execute([$from, $to]);
-    $rev['by_plan'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rev['by_type'] = $stmt->fetchAll();
 
     // ── Bookings ──────────────────────────────────────────────────────────────
     $stmt = $pdo->prepare("
@@ -97,11 +55,11 @@ $to   = $date['to']   . ' 23:59:59';
         WHERE created_at BETWEEN ? AND ? GROUP BY status
     ");
     $stmt->execute([$from, $to]);
-    $cb = ['class_total'=>0,'class_confirmed'=>0,'class_cancelled'=>0];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $cb['class_total'] += (int)$r['cnt'];
-        if ($r['status']==='confirmed') $cb['class_confirmed'] = (int)$r['cnt'];
-        if ($r['status']==='cancelled') $cb['class_cancelled'] = (int)$r['cnt'];
+    $cb = ['class_total' => 0, 'class_confirmed' => 0, 'class_cancelled' => 0];
+    foreach ($stmt->fetchAll() as $r) {
+        $cb['class_total'] += (int) $r['cnt'];
+        if ($r['status'] === 'confirmed') $cb['class_confirmed'] = (int) $r['cnt'];
+        if ($r['status'] === 'cancelled') $cb['class_cancelled'] = (int) $r['cnt'];
     }
 
     $stmt = $pdo->prepare("
@@ -109,23 +67,25 @@ $to   = $date['to']   . ' 23:59:59';
         WHERE created_at BETWEEN ? AND ? GROUP BY status
     ");
     $stmt->execute([$from, $to]);
-    $tb = ['trainer_total'=>0,'trainer_confirmed'=>0,'trainer_cancelled'=>0];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $tb['trainer_total'] += (int)$r['cnt'];
-        if ($r['status']==='confirmed') $tb['trainer_confirmed'] = (int)$r['cnt'];
-        if ($r['status']==='cancelled') $tb['trainer_cancelled'] = (int)$r['cnt'];
+    $tb = ['trainer_total' => 0, 'trainer_confirmed' => 0, 'trainer_cancelled' => 0];
+    foreach ($stmt->fetchAll() as $r) {
+        $tb['trainer_total'] += (int) $r['cnt'];
+        if ($r['status'] === 'confirmed') $tb['trainer_confirmed'] = (int) $r['cnt'];
+        if ($r['status'] === 'cancelled') $tb['trainer_cancelled'] = (int) $r['cnt'];
     }
     $bookings = array_merge($cb, $tb);
 
     // ── Classes ───────────────────────────────────────────────────────────────
     $stmt = $pdo->prepare("
         SELECT status, COUNT(*) AS cnt FROM class_schedules
-        WHERE schedule_date BETWEEN ? AND ? GROUP BY status
+        WHERE scheduled_at BETWEEN ? AND ? GROUP BY status
     ");
-    $stmt->execute([$date['from'], $date['to']]);
-    $classes = ['scheduled'=>0,'completed'=>0,'cancelled'=>0];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        if (isset($classes[$r['status']])) $classes[$r['status']] = (int)$r['cnt'];
+    $stmt->execute([$from, $to]);
+    $classes = ['scheduled' => 0, 'completed' => 0, 'cancelled' => 0];
+    foreach ($stmt->fetchAll() as $r) {
+        $key = $r['status'];
+        if (isset($classes[$key])) $classes[$key] = (int) $r['cnt'];
+        $classes['scheduled'] += (int) $r['cnt'];
     }
 
     // ── Events ────────────────────────────────────────────────────────────────
@@ -133,7 +93,7 @@ $to   = $date['to']   . ' 23:59:59';
     $stmt->execute();
     $upcoming_events = (int) $stmt->fetchColumn();
 
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM event_registrations WHERE created_at BETWEEN ? AND ? AND status='registered'");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM event_registrations WHERE registered_at BETWEEN ? AND ? AND status='registered'");
     $stmt->execute([$from, $to]);
     $event_registrations = (int) $stmt->fetchColumn();
 
@@ -146,30 +106,41 @@ $to   = $date['to']   . ' 23:59:59';
         GROUP BY cs.class_name ORDER BY bookings DESC LIMIT 5
     ");
     $stmt->execute([$from, $to]);
-    $top_classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $top_classes = $stmt->fetchAll();
 
     // ── Top Trainers ──────────────────────────────────────────────────────────
     $stmt = $pdo->prepare("
-        SELECT t.name AS trainer_name, COUNT(tb.id) AS sessions
+        SELECT CONCAT(t.first_name,' ',t.last_name) AS trainer_name, COUNT(tb.id) AS sessions
         FROM trainer_bookings tb
         JOIN trainers t ON t.id = tb.trainer_id
         WHERE tb.created_at BETWEEN ? AND ? AND tb.status = 'confirmed'
-        GROUP BY t.name ORDER BY sessions DESC LIMIT 5
+        GROUP BY trainer_name ORDER BY sessions DESC LIMIT 5
     ");
     $stmt->execute([$from, $to]);
-    $top_trainers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $top_trainers = $stmt->fetchAll();
+
+    // ── Recent activity ───────────────────────────────────────────────────────
+    $stmt = $pdo->prepare("
+        SELECT al.action, al.target_type, al.target_id, al.created_at,
+               CONCAT(au.first_name,' ',au.last_name) AS admin_name
+        FROM audit_log al
+        LEFT JOIN admin_users au ON au.id = al.admin_id
+        ORDER BY al.created_at DESC LIMIT 10
+    ");
+    $stmt->execute();
+    $recent_activity = $stmt->fetchAll();
 
     success('Dashboard data retrieved.', [
-        'period'       => $date,
-        'members'      => $member_counts,
-        'revenue'      => $rev,
-        'bookings'     => $bookings,
-        'classes'      => $classes,
-        'events'       => ['upcoming' => $upcoming_events, 'total_registrations' => $event_registrations],
-        'top_classes'  => $top_classes,
-        'top_trainers' => $top_trainers,
+        'period'          => $date,
+        'members'         => $member_counts,
+        'revenue'         => $rev,
+        'bookings'        => $bookings,
+        'classes'         => $classes,
+        'events'          => ['upcoming' => $upcoming_events, 'total_registrations' => $event_registrations],
+        'top_classes'     => $top_classes,
+        'top_trainers'    => $top_trainers,
+        'recent_activity' => $recent_activity,
     ]);
-*/
-
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
+} catch (PDOException $e) {
+    error('Database error: ' . $e->getMessage(), 500);
+}

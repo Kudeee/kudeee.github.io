@@ -6,7 +6,7 @@ trainers.forEach((trainer) => {
     trainerHTML += `
     <div class="slide card trainer-card">
           <div class="trainer-image">
-            <img src="${trainer.image}" alt="trainer">
+            <img src=${trainer.image} alt="trainer">
           </div>
           <h3>${trainer.name}</h3>
           <p>${trainer.specialty}</p>

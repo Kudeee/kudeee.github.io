@@ -1,56 +1,26 @@
 <?php
 /**
  * GET /api/admin/events/list.php
- *
- * Returns all events with registration counts.
- *
- * Query params:
- *   search      string   Filter by event name
- *   type        string   Filter by event type
- *   status      string   active | cancelled | completed | draft
- *   date_from   date     YYYY-MM-DD
- *   date_to     date     YYYY-MM-DD
- *   page        int
- *   per_page    int      default 20
- *
- * Response 200:
- *   {
- *     "success": true,
- *     "events": [ { id, name, type, description, event_date, start_time,
- *                   end_time, location, fee, max_attendees,
- *                   current_attendees, spots_left, members_only,
- *                   status, created_at } ],
- *     "pagination": { total, page, per_page, total_pages }
- *   }
- *
- * DB tables used:
- *   events
  */
-
 require_once __DIR__ . '/../../admin/config.php';
 require_method('GET');
 $admin = require_admin();
 
-// ─── Input ────────────────────────────────────────────────────────────────────
 $search = sanitize_string($_GET['search'] ?? '');
 $type   = sanitize_string($_GET['type']   ?? '');
 $status = sanitize_string($_GET['status'] ?? '');
 $date   = get_date_range();
 [$offset, $per_page, $page] = get_pagination();
 
-// ─── TODO: replace stub with real DB query ────────────────────────────────────
-/*
-    $pdo = new PDO(
-        'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET,
-        DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+try {
+    $pdo = db();
 
-    $where  = ['e.event_date BETWEEN :from AND :to'];
-    $params = [':from' => $date['from'], ':to' => $date['to']];
+    $where  = ['e.event_date BETWEEN ? AND ?'];
+    $params = [$date['from'], $date['to']];
 
-    if ($search) { $where[] = 'e.name LIKE :s'; $params[':s'] = '%'.$search.'%'; }
-    if ($type)   { $where[] = 'e.type = :type';  $params[':type'] = $type;       }
-    if ($status) { $where[] = 'e.status = :st';  $params[':st']   = $status;     }
+    if ($search) { $where[] = 'e.name LIKE ?'; $params[] = '%' . $search . '%'; }
+    if ($type)   { $where[] = 'e.type = ?';    $params[] = $type;               }
+    if ($status) { $where[] = 'e.status = ?';  $params[] = $status;             }
 
     $whereSQL = implode(' AND ', $where);
 
@@ -60,16 +30,25 @@ $date   = get_date_range();
 
     $stmt = $pdo->prepare("
         SELECT e.*,
-               (e.max_attendees - e.current_attendees) AS spots_left
+               (e.max_attendees - e.current_attendees) AS spots_left,
+               CONCAT(t.first_name,' ',t.last_name) AS organizer_name
         FROM events e
+        LEFT JOIN trainers t ON t.id = e.organizer_id
         WHERE $whereSQL
-        ORDER BY e.event_date ASC, e.start_time ASC
-        LIMIT :limit OFFSET :offset
+        ORDER BY e.event_date ASC, e.event_time ASC
+        LIMIT $per_page OFFSET $offset
     ");
-    $params[':limit']  = $per_page;
-    $params[':offset'] = $offset;
     $stmt->execute($params);
-    $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $events = $stmt->fetchAll();
+
+    // Stats
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM events WHERE event_date >= CURDATE() AND status='active'");
+    $stmt->execute();
+    $upcoming = (int) $stmt->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(current_attendees), 0) FROM events WHERE event_date BETWEEN ? AND ?");
+    $stmt->execute([$date['from'], $date['to']]);
+    $total_registrations = (int) $stmt->fetchColumn();
 
     success('Events retrieved.', [
         'events'     => $events,
@@ -77,10 +56,13 @@ $date   = get_date_range();
             'total'       => $total,
             'page'        => $page,
             'per_page'    => $per_page,
-            'total_pages' => (int) ceil($total / $per_page),
+            'total_pages' => (int) ceil($total / max($per_page, 1)),
+        ],
+        'stats' => [
+            'upcoming'            => $upcoming,
+            'total_registrations' => $total_registrations,
         ],
     ]);
-*/
-
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
+} catch (PDOException $e) {
+    error('Database error: ' . $e->getMessage(), 500);
+}

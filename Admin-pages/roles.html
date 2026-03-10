@@ -6,23 +6,23 @@
 <div class="grid" style="margin-bottom: 20px;">
   <div class="card">
     <h3>Total Admin Users</h3>
-    <p class="stat-value">8</p>
+    <p class="stat-value" id="roles-total-admins">—</p>
     <p class="stat-status">With system access</p>
   </div>
   <div class="card">
     <h3>Super Admins</h3>
-    <p class="stat-value">2</p>
+    <p class="stat-value" id="roles-super-admins">—</p>
     <p class="stat-status">Full access</p>
   </div>
   <div class="card">
     <h3>Staff Accounts</h3>
-    <p class="stat-value">5</p>
+    <p class="stat-value" id="roles-staff">—</p>
     <p class="stat-status">Limited access</p>
   </div>
   <div class="card">
-    <h3>Trainer Accounts</h3>
-    <p class="stat-value">6</p>
-    <p class="stat-status">Schedule access only</p>
+    <h3>Active Trainers</h3>
+    <p class="stat-value" id="roles-trainers">—</p>
+    <p class="stat-status">Schedule access</p>
   </div>
 </div>
 
@@ -32,13 +32,12 @@
 </div>
 
 <!-- Add New User Modal -->
-<div id="addUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 550px; max-width: 95vw; max-height: 90vh; overflow-y: auto;">
-    <h3 style="margin-bottom: 20px;">Add New Admin User</h3>
-    <form id="addUserForm" method="POST" action="/api/admin/roles/create-user.php">
-      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+<div id="addUserModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:15px;padding:30px;width:550px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <h3 style="margin-bottom:20px;">Add New Admin User</h3>
+    <form id="addUserForm">
+      <input type="hidden" name="csrf_token" value="" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
         <div class="form">
           <label for="user_first_name">First Name</label>
           <input type="text" id="user_first_name" name="first_name" placeholder="First name" required />
@@ -48,12 +47,10 @@
           <input type="text" id="user_last_name" name="last_name" placeholder="Last name" required />
         </div>
       </div>
-
       <div class="form">
         <label for="user_email">Email</label>
         <input type="email" id="user_email" name="email" placeholder="user@societyfit.com" required />
       </div>
-
       <div class="form">
         <label for="user_role">Role</label>
         <select id="user_role" name="role" required>
@@ -62,49 +59,17 @@
           <option value="admin">Admin (Standard Access)</option>
           <option value="staff">Staff (Limited Access)</option>
           <option value="trainer">Trainer (Schedule Only)</option>
-          <option value="receptionist">Receptionist (Members &amp; Bookings)</option>
+          <option value="receptionist">Receptionist</option>
         </select>
       </div>
-
       <div class="form">
         <label for="user_temp_password">Temporary Password</label>
-        <input type="password" id="user_temp_password" name="temp_password" placeholder="Set a temporary password" required autocomplete="new-password" />
-        <small style="color: #888;">User will be prompted to change on first login.</small>
+        <input type="password" id="user_temp_password" name="temp_password" placeholder="Min 8 characters" required autocomplete="new-password" />
+        <small style="color:#888;">User will be prompted to change on first login.</small>
       </div>
-
-      <div class="form">
-        <label>Permissions</label>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="view_members" /> View Members
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="edit_members" /> Edit Members
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="view_payments" /> View Payments
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="issue_refunds" /> Issue Refunds
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="manage_classes" /> Manage Classes
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="manage_events" /> Manage Events
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="manage_trainers" /> Manage Trainers
-          </label>
-          <label style="font-weight: normal; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="permissions[]" value="manage_roles" /> Manage Roles
-          </label>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button type="submit" style="flex: 1;">Create User</button>
-        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('addUserModal')">Cancel</button>
+      <div style="display:flex;gap:10px;margin-top:15px;">
+        <button type="submit" style="flex:1;">Create User</button>
+        <button type="button" style="flex:1;background:#e5e7eb;color:#333;" onclick="closeModal('addUserModal')">Cancel</button>
       </div>
     </form>
   </div>
@@ -123,67 +88,17 @@
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>Admin User</td>
-      <td>admin@societyfit.com</td>
-      <td><span style="background: #ffebee; color: #b71c1c; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Super Admin</span></td>
-      <td>Mar 09, 2026 — 8:02 AM</td>
-      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
-      <td>
-        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(1)">Edit</button>
-      </td>
-    </tr>
-    <tr>
-      <td>Reception Staff</td>
-      <td>reception@societyfit.com</td>
-      <td><span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Receptionist</span></td>
-      <td>Mar 09, 2026 — 7:45 AM</td>
-      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
-      <td>
-        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(2)">Edit</button>
-      </td>
-    </tr>
-    <tr>
-      <td>Ping Guerrero</td>
-      <td>ping@societyfit.com</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Trainer</span></td>
-      <td>Mar 08, 2026 — 5:30 PM</td>
-      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
-      <td>
-        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(3)">Edit</button>
-      </td>
-    </tr>
-    <tr>
-      <td>Nadja Collins</td>
-      <td>nadja@societyfit.com</td>
-      <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Trainer</span></td>
-      <td>Mar 07, 2026 — 9:10 AM</td>
-      <td><span style="color: #2e7d32; font-weight: 600;">Active</span></td>
-      <td>
-        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(4)">Edit</button>
-      </td>
-    </tr>
-    <tr>
-      <td>Old Staff</td>
-      <td>oldstaff@societyfit.com</td>
-      <td><span style="background: #f5f5f5; color: #757575; padding: 4px 10px; border-radius: 10px; font-weight: 600;">Staff</span></td>
-      <td>Jan 15, 2026 — 3:22 PM</td>
-      <td><span style="color: #c62828; font-weight: 600;">Inactive</span></td>
-      <td>
-        <button style="padding: 5px 10px; font-size: 0.8rem;" onclick="editUser(5)">Edit</button>
-      </td>
-    </tr>
+    <tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">Loading users...</td></tr>
   </tbody>
 </table>
 
-<!-- Change Password Modal (for editing user) -->
-<div id="editUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-  <div style="background: #fff; border-radius: 15px; padding: 30px; width: 450px; max-width: 95vw;">
-    <h3 style="margin-bottom: 20px;">Edit User</h3>
-    <form id="editUserForm" method="POST" action="/api/admin/roles/update-user.php">
-      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
+<!-- Edit User Modal -->
+<div id="editUserModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:15px;padding:30px;width:450px;max-width:95vw;">
+    <h3 style="margin-bottom:20px;">Edit User</h3>
+    <form id="editUserForm">
+      <input type="hidden" name="csrf_token" value="" />
       <input type="hidden" id="edit_user_id" name="user_id" value="" />
-
       <div class="form">
         <label for="edit_user_role">Role</label>
         <select id="edit_user_role" name="role" required>
@@ -194,7 +109,6 @@
           <option value="receptionist">Receptionist</option>
         </select>
       </div>
-
       <div class="form">
         <label for="edit_user_status">Status</label>
         <select id="edit_user_status" name="status">
@@ -202,15 +116,13 @@
           <option value="inactive">Inactive</option>
         </select>
       </div>
-
       <div class="form">
-        <label for="edit_new_password">New Password <small style="color: #888;">(leave blank to keep current)</small></label>
+        <label for="edit_new_password">New Password <small style="color:#888;">(leave blank to keep current)</small></label>
         <input type="password" id="edit_new_password" name="new_password" placeholder="Enter new password" autocomplete="new-password" />
       </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button type="submit" style="flex: 1;">Save Changes</button>
-        <button type="button" style="flex: 1; background: #e5e7eb; color: #333;" onclick="closeModal('editUserModal')">Cancel</button>
+      <div style="display:flex;gap:10px;margin-top:15px;">
+        <button type="submit" style="flex:1;">Save Changes</button>
+        <button type="button" style="flex:1;background:#e5e7eb;color:#333;" onclick="closeModal('editUserModal')">Cancel</button>
       </div>
     </form>
   </div>

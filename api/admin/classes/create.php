@@ -1,117 +1,74 @@
 <?php
 /**
  * POST /api/admin/classes/create.php
- *
- * Creates a new class schedule slot.
- *
- * Request (POST, form-data):
- *   csrf_token        string   required
- *   class_name        string   required
- *   class_type        string   required  (e.g. HIIT, Yoga, Spin, etc.)
- *   trainer_id        int      required
- *   schedule_date     date     required, YYYY-MM-DD, not in the past
- *   start_time        time     required, HH:MM (24h)
- *   end_time          time     required, HH:MM (24h), must be after start_time
- *   max_participants  int      required, min 1
- *   description       string   optional
- *   difficulty        string   optional: beginner | intermediate | advanced
- *   is_recurring      bool     optional  1|0 — if 1, repeat weekly
- *   recurring_weeks   int      optional  1–12 if is_recurring
- *
- * Response 201:
- *   { "success": true, "message": "Class created.", "class_id": <int>,
- *     "slots_created": <int> }
- *
- * DB tables used:
- *   class_schedules, trainers, admin_logs
  */
-
 require_once __DIR__ . '/../../admin/config.php';
 require_method('POST');
 require_csrf();
 $admin = require_admin();
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-$class_name       = sanitize_string($_POST['class_name']        ?? '');
-$class_type       = sanitize_string($_POST['class_type']        ?? '');
+$class_name       = sanitize_string($_POST['class_type']        ?? '');  // form uses class_type
 $trainer_id       = sanitize_int($_POST['trainer_id']           ?? 0);
-$schedule_date    = sanitize_string($_POST['schedule_date']     ?? '');
-$start_time       = sanitize_string($_POST['start_time']        ?? '');
-$end_time         = sanitize_string($_POST['end_time']          ?? '');
-$max_participants = sanitize_int($_POST['max_participants']     ?? 0);
-$description      = sanitize_string($_POST['description']       ?? '');
-$difficulty       = sanitize_string($_POST['difficulty']        ?? 'beginner');
-$is_recurring     = (int) ($_POST['is_recurring']              ?? 0) === 1;
-$recurring_weeks  = sanitize_int($_POST['recurring_weeks']      ?? 1);
+$class_datetime   = sanitize_string($_POST['class_datetime']    ?? '');
+$duration_minutes = sanitize_int($_POST['duration_minutes']     ?? 50);
+$max_participants = sanitize_int($_POST['max_participants']      ?? 20);
+$location         = sanitize_string($_POST['location']          ?? '');
+$description      = sanitize_string($_POST['class_description'] ?? '');
 
-$valid_difficulties = ['beginner','intermediate','advanced'];
+// Map display values to proper names
+$class_name_map = [
+    'yoga_flow'    => 'Yoga Flow',
+    'hiit_training'=> 'HIIT Training',
+    'zumba'        => 'Zumba',
+    'crossfit'     => 'CrossFit',
+    'boxing'       => 'Boxing',
+    'pilates'      => 'Pilates',
+    'spin_class'   => 'Spin Class',
+];
+$class_display = $class_name_map[$class_name] ?? $class_name;
 
-if (!$class_name)                                                error('Class name is required.');
-if (!$class_type)                                                error('Class type is required.');
-if (!$trainer_id || $trainer_id < 1)                             error('A valid trainer ID is required.');
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $schedule_date))       error('Schedule date must be YYYY-MM-DD format.');
-if ($schedule_date < date('Y-m-d'))                              error('Schedule date cannot be in the past.');
-if (!preg_match('/^\d{2}:\d{2}$/', $start_time))                error('Start time must be HH:MM format.');
-if (!preg_match('/^\d{2}:\d{2}$/', $end_time))                  error('End time must be HH:MM format.');
-if ($end_time <= $start_time)                                    error('End time must be after start time.');
-if (!$max_participants || $max_participants < 1)                  error('Max participants must be at least 1.');
-if (!in_array($difficulty, $valid_difficulties, true))           error('Invalid difficulty level.');
-if ($is_recurring && ($recurring_weeks === false || $recurring_weeks < 1 || $recurring_weeks > 12)) {
-    error('Recurring weeks must be between 1 and 12.');
-}
+$location_map = [
+    'studio_a'     => 'Studio A',
+    'studio_b'     => 'Studio B',
+    'main_gym'     => 'Main Gym',
+    'outdoor_area' => 'Outdoor Area',
+    'boxing_ring'  => 'Boxing Ring',
+];
+$location_display = $location_map[$location] ?? $location;
 
-// ─── TODO: replace stub with real DB insert ───────────────────────────────────
-/*
-    $pdo = new PDO(
-        'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET,
-        DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+if (!$class_name)                                  error('Class type is required.');
+if (!$trainer_id || $trainer_id < 1)               error('A valid trainer ID is required.');
+if (!$class_datetime)                              error('Date and time are required.');
+if (!$duration_minutes || $duration_minutes < 1)   error('Duration must be at least 1 minute.');
+if (!$max_participants || $max_participants < 1)    error('Max participants must be at least 1.');
 
-    // Confirm trainer exists and is active
+try {
+    $scheduled_at = date('Y-m-d H:i:s', strtotime($class_datetime));
+    if (!$scheduled_at || $scheduled_at < date('Y-m-d H:i:s')) {
+        error('Scheduled date/time cannot be in the past.');
+    }
+
+    $pdo = db();
+
     $stmt = $pdo->prepare("SELECT id FROM trainers WHERE id = ? AND status = 'active' LIMIT 1");
     $stmt->execute([$trainer_id]);
     if (!$stmt->fetch()) error('Trainer not found or is inactive.', 404);
 
-    $insert = $pdo->prepare("
+    $stmt = $pdo->prepare("
         INSERT INTO class_schedules
-            (class_name, class_type, trainer_id, schedule_date, start_time,
-             end_time, max_participants, current_participants,
-             description, difficulty, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'active', NOW())
+            (class_name, trainer_id, scheduled_at, duration_minutes, max_participants,
+             current_participants, location, status, created_at)
+        VALUES (?, ?, ?, ?, ?, 0, ?, 'active', NOW())
     ");
+    $stmt->execute([$class_display, $trainer_id, $scheduled_at, $duration_minutes, $max_participants, $location_display]);
+    $class_id = (int) $pdo->lastInsertId();
 
-    $slots_created = 0;
-    $first_id      = null;
-    $weeks         = $is_recurring ? $recurring_weeks : 1;
+    $pdo->prepare("
+        INSERT INTO audit_log (admin_id, action, target_type, target_id, details, ip_address, created_at)
+        VALUES (?, 'class_created', 'class', ?, ?, ?, NOW())
+    ")->execute([$admin['admin_id'], $class_id, json_encode(['class' => $class_display, 'trainer_id' => $trainer_id]), $_SERVER['REMOTE_ADDR'] ?? '']);
 
-    $pdo->beginTransaction();
-    try {
-        for ($i = 0; $i < $weeks; $i++) {
-            $slot_date = date('Y-m-d', strtotime($schedule_date . " +{$i} weeks"));
-            $insert->execute([
-                $class_name, $class_type, $trainer_id,
-                $slot_date, $start_time, $end_time,
-                $max_participants, $description, $difficulty,
-            ]);
-            if ($i === 0) $first_id = (int) $pdo->lastInsertId();
-            $slots_created++;
-        }
-
-        $pdo->prepare("
-            INSERT INTO admin_logs (admin_id, action, target_type, target_id, created_at)
-            VALUES (?, 'create_class', 'class_schedule', ?, NOW())
-        ")->execute([$admin['admin_id'], $first_id]);
-
-        $pdo->commit();
-        success('Class schedule created.', [
-            'class_id'     => $first_id,
-            'slots_created' => $slots_created,
-        ], 201);
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        error('Failed to create class schedule. Please try again.', 500);
-    }
-*/
-
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
+    success('Class scheduled successfully.', ['class_id' => $class_id, 'slots_created' => 1], 201);
+} catch (PDOException $e) {
+    error('Database error: ' . $e->getMessage(), 500);
+}

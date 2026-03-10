@@ -1,63 +1,30 @@
 <?php
 /**
  * GET /api/admin/classes/list.php
- *
- * Returns all class schedule slots with booking counts.
- *
- * Query params:
- *   search      string   Filter by class name or trainer name
- *   class_type  string   Filter by class type / category
- *   date_from   date     YYYY-MM-DD
- *   date_to     date     YYYY-MM-DD
- *   status      string   active | cancelled | completed
- *   page        int
- *   per_page    int      default 20
- *
- * Response 200:
- *   {
- *     "success": true,
- *     "classes": [ { id, class_name, class_type, trainer_id, trainer_name,
- *                    schedule_date, start_time, end_time, max_participants,
- *                    current_participants, spots_left, status, created_at } ],
- *     "pagination": { total, page, per_page, total_pages }
- *   }
- *
- * DB tables used:
- *   class_schedules, trainers
  */
-
 require_once __DIR__ . '/../../admin/config.php';
 require_method('GET');
 $admin = require_admin();
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-$search     = sanitize_string($_GET['search']     ?? '');
-$class_type = sanitize_string($_GET['class_type'] ?? '');
-$status     = sanitize_string($_GET['status']     ?? '');
-$date       = get_date_range();
+$search  = sanitize_string($_GET['search']  ?? '');
+$status  = sanitize_string($_GET['status']  ?? '');
+$date    = get_date_range();
 [$offset, $per_page, $page] = get_pagination();
 
-// ─── TODO: replace stub with real DB query ────────────────────────────────────
-/*
-    $pdo = new PDO(
-        'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET,
-        DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
+try {
+    $pdo = db();
 
-    $where  = ['cs.schedule_date BETWEEN :from AND :to'];
-    $params = [':from' => $date['from'], ':to' => $date['to']];
+    $where  = ["DATE(cs.scheduled_at) BETWEEN ? AND ?"];
+    $params = [$date['from'], $date['to']];
 
     if ($search) {
-        $where[]      = '(cs.class_name LIKE :s OR t.name LIKE :s)';
-        $params[':s'] = '%' . $search . '%';
-    }
-    if ($class_type) {
-        $where[]            = 'cs.class_type = :ct';
-        $params[':ct']      = $class_type;
+        $where[]  = "(cs.class_name LIKE ? OR CONCAT(t.first_name,' ',t.last_name) LIKE ?)";
+        $like = '%' . $search . '%';
+        $params[] = $like; $params[] = $like;
     }
     if ($status) {
-        $where[]            = 'cs.status = :status';
-        $params[':status']  = $status;
+        $where[]  = 'cs.status = ?';
+        $params[] = $status;
     }
 
     $whereSQL = implode(' AND ', $where);
@@ -71,19 +38,25 @@ $date       = get_date_range();
     $total = (int) $count->fetchColumn();
 
     $stmt = $pdo->prepare("
-        SELECT cs.*,
-               t.name AS trainer_name,
-               (cs.max_participants - cs.current_participants) AS spots_left
+        SELECT cs.id, cs.class_name, cs.trainer_id,
+               CONCAT(t.first_name,' ',t.last_name) AS trainer_name,
+               cs.scheduled_at, cs.duration_minutes, cs.max_participants,
+               cs.current_participants,
+               (cs.max_participants - cs.current_participants) AS spots_left,
+               cs.location, cs.status, cs.created_at
         FROM class_schedules cs
         LEFT JOIN trainers t ON t.id = cs.trainer_id
         WHERE $whereSQL
-        ORDER BY cs.schedule_date ASC, cs.start_time ASC
-        LIMIT :limit OFFSET :offset
+        ORDER BY cs.scheduled_at ASC
+        LIMIT $per_page OFFSET $offset
     ");
-    $params[':limit']  = $per_page;
-    $params[':offset'] = $offset;
     $stmt->execute($params);
-    $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $classes = $stmt->fetchAll();
+
+    // Stats for current range
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM class_schedules WHERE DATE(scheduled_at) BETWEEN ? AND ? AND status='active'");
+    $stmt->execute([$date['from'], $date['to']]);
+    $scheduled_count = (int) $stmt->fetchColumn();
 
     success('Classes retrieved.', [
         'classes'    => $classes,
@@ -91,10 +64,10 @@ $date       = get_date_range();
             'total'       => $total,
             'page'        => $page,
             'per_page'    => $per_page,
-            'total_pages' => (int) ceil($total / $per_page),
+            'total_pages' => (int) ceil($total / max($per_page, 1)),
         ],
+        'stats' => ['scheduled' => $scheduled_count],
     ]);
-*/
-
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
+} catch (PDOException $e) {
+    error('Database error: ' . $e->getMessage(), 500);
+}

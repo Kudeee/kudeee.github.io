@@ -1,40 +1,11 @@
 <?php
 /**
  * GET /api/admin/payments/list.php
- *
- * Returns all payment records with filters and totals.
- *
- * Query params:
- *   search      string   Member name or email or reference number
- *   type        string   membership | class | trainer | event
- *   status      string   completed | pending | refunded | failed
- *   method      string   cash | card | gcash
- *   date_from   date     YYYY-MM-DD  (defaults to start of current month)
- *   date_to     date     YYYY-MM-DD  (defaults to end of current month)
- *   member_id   int      Filter by specific member
- *   sort        string   date | amount | member | type  (default: date)
- *   order       string   asc | desc  (default: desc)
- *   page        int
- *   per_page    int      default 25
- *
- * Response 200:
- *   {
- *     "success": true,
- *     "payments": [ { id, member_name, member_email, amount, type,
- *                     payment_method, reference_number, status, created_at } ],
- *     "pagination": { total, page, per_page, total_pages },
- *     "totals": { gross_revenue, refunds, net_revenue, by_type, by_method }
- *   }
- *
- * DB tables used:
- *   payments, members
  */
-
 require_once __DIR__ . '/../../admin/config.php';
 require_method('GET');
 $admin = require_admin();
 
-// ─── Input ────────────────────────────────────────────────────────────────────
 $search    = sanitize_string($_GET['search']    ?? '');
 $type      = sanitize_string($_GET['type']      ?? '');
 $status    = sanitize_string($_GET['status']    ?? '');
@@ -45,32 +16,21 @@ $order     = strtoupper($_GET['order'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
 $date      = get_date_range();
 [$offset, $per_page, $page] = get_pagination(25);
 
-$valid_types   = ['', 'membership', 'class', 'trainer', 'event'];
-$valid_statuses = ['', 'completed', 'pending', 'refunded', 'failed'];
-$valid_methods  = ['', 'cash', 'card', 'gcash'];
+try {
+    $pdo = db();
 
-if (!in_array($type, $valid_types, true))     error('Invalid payment type filter.');
-if (!in_array($status, $valid_statuses, true)) error('Invalid status filter.');
-if (!in_array($method, $valid_methods, true))  error('Invalid payment method filter.');
-
-// ─── TODO: replace stub with real DB query ────────────────────────────────────
-/*
-    $pdo = new PDO(
-        'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET,
-        DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-
-    $where  = ['p.created_at BETWEEN :from AND :to'];
-    $params = [':from' => $date['from'].' 00:00:00', ':to' => $date['to'].' 23:59:59'];
+    $where  = ['p.created_at BETWEEN ? AND ?'];
+    $params = [$date['from'] . ' 00:00:00', $date['to'] . ' 23:59:59'];
 
     if ($search) {
-        $where[]      = "(CONCAT(m.first_name,' ',m.last_name) LIKE :s OR m.email LIKE :s OR p.reference_number LIKE :s)";
-        $params[':s'] = '%'.$search.'%';
+        $where[]  = "(CONCAT(m.first_name,' ',m.last_name) LIKE ? OR m.email LIKE ? OR p.transaction_id LIKE ?)";
+        $like = '%' . $search . '%';
+        $params[] = $like; $params[] = $like; $params[] = $like;
     }
-    if ($type)   { $where[] = 'p.type = :type';           $params[':type']   = $type;   }
-    if ($status) { $where[] = 'p.status = :status';       $params[':status'] = $status; }
-    if ($method) { $where[] = 'p.payment_method = :meth'; $params[':meth']   = $method; }
-    if ($member_id) { $where[] = 'p.member_id = :mid';    $params[':mid']    = $member_id; }
+    if ($type)      { $where[] = 'p.type = ?';   $params[] = $type;      }
+    if ($status)    { $where[] = 'p.status = ?'; $params[] = $status;    }
+    if ($method)    { $where[] = 'p.method = ?'; $params[] = $method;    }
+    if ($member_id) { $where[] = 'p.member_id = ?'; $params[] = $member_id; }
 
     $whereSQL = implode(' AND ', $where);
 
@@ -80,9 +40,8 @@ if (!in_array($method, $valid_methods, true))  error('Invalid payment method fil
         'member' => 'm.first_name',
         'type'   => 'p.type',
     ];
-    $orderSQL = $sort_map[$sort] . ' ' . $order;
+    $orderSQL = ($sort_map[$sort] ?? 'p.created_at') . ' ' . $order;
 
-    // Total count
     $count = $pdo->prepare("
         SELECT COUNT(*) FROM payments p
         JOIN members m ON m.id = p.member_id
@@ -91,55 +50,45 @@ if (!in_array($method, $valid_methods, true))  error('Invalid payment method fil
     $count->execute($params);
     $total = (int) $count->fetchColumn();
 
-    // Payments
     $stmt = $pdo->prepare("
         SELECT p.id, CONCAT(m.first_name,' ',m.last_name) AS member_name,
-               m.email AS member_email, p.amount, p.type, p.payment_method,
-               p.reference_number, p.status, p.created_at
+               m.email AS member_email, p.amount, p.type, p.method,
+               p.transaction_id, p.status, p.description, p.created_at
         FROM payments p
         JOIN members m ON m.id = p.member_id
         WHERE $whereSQL
         ORDER BY $orderSQL
-        LIMIT :limit OFFSET :offset
+        LIMIT $per_page OFFSET $offset
     ");
-    $params[':limit']  = $per_page;
-    $params[':offset'] = $offset;
     $stmt->execute($params);
-    $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $payments = $stmt->fetchAll();
 
-    // Revenue totals
+    // Revenue totals for the filtered period
     $totals_stmt = $pdo->prepare("
         SELECT
-            SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) AS gross_revenue,
-            SUM(CASE WHEN status = 'refunded'  THEN amount ELSE 0 END) AS refunds,
-            SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END)
-              - SUM(CASE WHEN status = 'refunded' THEN amount ELSE 0 END) AS net_revenue
+            COALESCE(SUM(CASE WHEN p.status='completed' AND p.amount>0 THEN p.amount ELSE 0 END), 0) AS gross_revenue,
+            COALESCE(SUM(CASE WHEN p.status='refunded' THEN p.amount ELSE 0 END), 0) AS refunds,
+            COALESCE(SUM(CASE WHEN p.status='completed' AND p.amount>0 THEN p.amount ELSE 0 END), 0)
+              - COALESCE(SUM(CASE WHEN p.status='refunded' THEN p.amount ELSE 0 END), 0) AS net_revenue,
+            COUNT(CASE WHEN p.status='completed' AND p.amount>0 THEN 1 END) AS total_transactions,
+            COUNT(CASE WHEN p.status='failed' THEN 1 END) AS failed_count,
+            COUNT(CASE WHEN p.status='pending' THEN 1 END) AS pending_count
         FROM payments p
         JOIN members m ON m.id = p.member_id
         WHERE $whereSQL
     ");
     $totals_stmt->execute($params);
-    $totals = $totals_stmt->fetch(PDO::FETCH_ASSOC);
+    $totals = $totals_stmt->fetch();
 
-    // Breakdown by type
+    // By type
     $by_type_stmt = $pdo->prepare("
-        SELECT type, SUM(amount) AS total FROM payments p
-        JOIN members m ON m.id = p.member_id
-        WHERE $whereSQL AND p.status = 'completed'
-        GROUP BY type
+        SELECT p.type, COALESCE(SUM(p.amount), 0) AS total, COUNT(*) AS count
+        FROM payments p JOIN members m ON m.id=p.member_id
+        WHERE $whereSQL AND p.status='completed' AND p.amount>0
+        GROUP BY p.type
     ");
     $by_type_stmt->execute($params);
-    $totals['by_type'] = $by_type_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Breakdown by method
-    $by_method_stmt = $pdo->prepare("
-        SELECT payment_method, SUM(amount) AS total FROM payments p
-        JOIN members m ON m.id = p.member_id
-        WHERE $whereSQL AND p.status = 'completed'
-        GROUP BY payment_method
-    ");
-    $by_method_stmt->execute($params);
-    $totals['by_method'] = $by_method_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $totals['by_type'] = $by_type_stmt->fetchAll();
 
     success('Payments retrieved.', [
         'payments'   => $payments,
@@ -147,11 +96,10 @@ if (!in_array($method, $valid_methods, true))  error('Invalid payment method fil
             'total'       => $total,
             'page'        => $page,
             'per_page'    => $per_page,
-            'total_pages' => (int) ceil($total / $per_page),
+            'total_pages' => (int) ceil($total / max($per_page, 1)),
         ],
         'totals' => $totals,
     ]);
-*/
-
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
+} catch (PDOException $e) {
+    error('Database error: ' . $e->getMessage(), 500);
+}
