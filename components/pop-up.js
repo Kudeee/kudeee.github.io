@@ -1,4 +1,4 @@
-const icon = ["../assests/icons/alert.svg", "../assests/icons/checked.svg", ];
+const icon = ["assests/icons/alert.svg", "assests/icons/checked.svg", ];
 
 export function renderPopUP(popUpContent = 'warning') {
   document.getElementById("pop-up").style.display = "none";

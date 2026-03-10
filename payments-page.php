@@ -145,4 +145,5 @@
           </div>
     </div>
   </body>
+  <script type="module" src="js/payments-page.js"></script>
 </html>

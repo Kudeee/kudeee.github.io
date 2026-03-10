@@ -93,7 +93,7 @@
             </div>
 
             <div class="already-have-account">
-              Already have an account? <a href="login-page.html">Login Here</a>
+              Already have an account? <a href="login-page.php">Login Here</a>
             </div>
           </div>
 

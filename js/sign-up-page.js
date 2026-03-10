@@ -143,7 +143,7 @@ export async function handleSignUp(event) {
   try {
     const formData = new FormData(event.target);
 
-    const response = await fetch("/api/auth/register.php", {
+    const response = await fetch("api/auth/register.php", {
       method: "POST",
       body: formData,
     });

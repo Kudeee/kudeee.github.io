@@ -19,8 +19,6 @@
 
         <!-- POST to PHP login handler -->
         <form id="submit" method="POST" action="/api/auth/login.php">
-          <!-- CSRF token for security -->
-          <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
 
           <label for="email">Email</label>
           <input

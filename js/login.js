@@ -22,7 +22,7 @@ export async function handleLogin(event) {
   try {
     const formData = new FormData(event.target);
 
-    const response = await fetch("/api/auth/login.php", {
+    const response = await fetch("api/auth/login.php", {
       method: "POST",
       body: formData,
     });
@@ -31,8 +31,9 @@ export async function handleLogin(event) {
     hideLoading();
 
     if (result.success) {
-      // Redirect based on role returned by server
-      if (result.role === "admin") {
+      // Redirect admins, staff, and super_admin to admin panel
+      const adminRoles = ['admin', 'super_admin', 'staff'];
+      if (adminRoles.includes(result.role)) {
         window.location.href = "admin-panel.php";
       } else {
         window.location.href = "homepage.php";
