@@ -10,7 +10,7 @@ async function checkAdminSession() {
   try {
     const res = await fetch('/api/admin/auth/check-session.php');
     if (res.status === 401 || res.status === 403) {
-      window.location.href = '/login-page.html';
+      window.location.href = '/login-page.php';
     }
   } catch {
     console.warn('Session check failed — offline or PHP not set up yet.');
@@ -35,15 +35,15 @@ function getContentEl() {
 // ─── Page Map & Loader ────────────────────────────────────────────────────────
 
 const pageMap = {
-  dashboard:     'Admin-pages/dashboard.html',
-  members:       'Admin-pages/members.html',
-  classes:       'Admin-pages/classes.html',
-  trainers:      'Admin-pages/trainers.html',
-  subscriptions: 'Admin-pages/subscriptions.html',
-  payments:      'Admin-pages/payments.html',
-  events:        'Admin-pages/events.html',
-  revenue:       'Admin-pages/revenue.html',
-  roles:         'Admin-pages/roles.html',
+  dashboard:     'Admin-pages/dashboard.php',
+  members:       'Admin-pages/members.php',
+  classes:       'Admin-pages/classes.php',
+  trainers:      'Admin-pages/trainers.php',
+  subscriptions: 'Admin-pages/subscriptions.php',
+  payments:      'Admin-pages/payments.php',
+  events:        'Admin-pages/events.php',
+  revenue:       'Admin-pages/revenue.php',
+  roles:         'Admin-pages/roles.php',
 };
 
 // Track current page for refresh
@@ -661,7 +661,7 @@ function bindModalTriggers() {
 async function postForm(endpoint, formData) {
   const res = await fetch(endpoint, { method: 'POST', body: formData });
   if (res.status === 401 || res.status === 403) {
-    window.location.href = '/login-page.html';
+    window.location.href = '/login-page.php';
     return null;
   }
   try { return await res.json(); } catch { return null; }

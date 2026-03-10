@@ -10,7 +10,7 @@
     <div class="container">
       <div class="login-container">
         <div class="logo">
-          <a href="index.html">
+          <a href="index.php">
             <img src="assests/logo/society-fit.png" alt="society-fit logo" />
           </a>
         </div>
@@ -43,7 +43,7 @@
           />
 
           <div class="forgot-password">
-            <a href="forgot-password.html">Forgot Password?</a>
+            <a href="forgot-password.php">Forgot Password?</a>
           </div>
 
           <div class="form-btn">
@@ -51,7 +51,7 @@
           </div>
 
           <div class="dont-have-acc">
-            Don't have an account? <a href="sign-up-page.html">Sign up here</a>
+            Don't have an account? <a href="sign-up-page.php">Sign up here</a>
           </div>
         </form>
       </div>

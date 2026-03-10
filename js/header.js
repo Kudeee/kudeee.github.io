@@ -1,14 +1,14 @@
 const header = `
         <div class="header-content">
         <div1 class="logo">
-          <a href="index.html">
+          <a href="index.php">
             <img src="assests/logo/society-fit.png" alt="society-fit logo" />
           </a>
         </div1>
         <ul class="header-nav">
-          <li><a href="homepage.html">Home</a></li>
-          <li><a href="schedule-page.html">Schedule</a></li>
-          <li><a href="trainers-page.html">Trainers</a></li>
+          <li><a href="homepage.php">Home</a></li>
+          <li><a href="schedule-page.php">Schedule</a></li>
+          <li><a href="trainers-page.php">Trainers</a></li>
         </ul>
         <div class="user-profile">
           <div>
@@ -21,7 +21,7 @@ const header = `
             </button>
           </h3>
           <div id="sect1" role="region" aria-labelledby="accordion1id" class="accordion-panel" hidden>
-            <div class="sign-out"><a href="login-page.html">Sign Out</a></div>
+            <div class="sign-out"><a href="login-page.php">Sign Out</a></div>
           </div>
         </div>
       </div>

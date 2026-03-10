@@ -54,7 +54,7 @@ The currency used throughout is **Philippine Peso (₱)**. Phone numbers follow 
 
 ### Member-Facing (MPA)
 
-Each page is a standalone `.html` file. Pages share a common header injected by `js/header.js`. JavaScript files are loaded as ES Modules (`type="module"`) where imports are needed, or as regular scripts for global utilities like `loading.js`.
+Each page is a standalone `.php` file. Pages share a common header injected by `js/header.js`. JavaScript files are loaded as ES Modules (`type="module"`) where imports are needed, or as regular scripts for global utilities like `loading.js`.
 
 ```
 Browser → HTML page → loads CSS + JS modules → JS calls /api/*.php → PHP returns JSON
@@ -62,10 +62,10 @@ Browser → HTML page → loads CSS + JS modules → JS calls /api/*.php → PHP
 
 ### Admin Panel (SPA inside a shell)
 
-`admin-panel.html` is the shell. `js/admin-js.js` intercepts sidebar nav clicks and `fetch()`-loads the HTML fragment from `Admin-pages/` into the `#content` div. No page reload happens.
+`admin-panel.php` is the shell. `js/admin-js.js` intercepts sidebar nav clicks and `fetch()`-loads the HTML fragment from `Admin-pages/` into the `#content` div. No page reload happens.
 
 ```
-admin-panel.html → admin-js.js → fetch(Admin-pages/xxx.html) → inject into #content
+admin-panel.php → admin-js.js → fetch(Admin-pages/xxx.php) → inject into #content
                                 → bindModalTriggers() + bindFormHandlers() after each inject
 ```
 
@@ -83,29 +83,29 @@ All backend routes live under `/api/`. Every endpoint:
 
 ```
 /
-├── index.html                  ← Public landing page (entry point for visitors)
-├── login-page.html             ← Member login
-├── sign-up-page.html           ← Multi-step registration (5 pages)
-├── homepage.html               ← Authenticated member dashboard
-├── schedule-page.html          ← Weekly class schedule grid + list view
-├── book-class-page.html        ← 4-step class booking wizard
-├── book-trainer-page.html      ← 4-step personal trainer booking wizard
-├── trainers-page.html          ← Full trainer directory
-├── my-membership.html          ← Membership plan management (subscription cards)
-├── payment.html                ← Renew / upgrade / change plan payment
-├── payments-page.html          ← Member payment history
-├── admin-panel.html            ← Admin SPA shell
+├── index.php                  ← Public landing page (entry point for visitors)
+├── login-page.php             ← Member login
+├── sign-up-page.php           ← Multi-step registration (5 pages)
+├── homepage.php               ← Authenticated member dashboard
+├── schedule-page.php          ← Weekly class schedule grid + list view
+├── book-class-page.php        ← 4-step class booking wizard
+├── book-trainer-page.php      ← 4-step personal trainer booking wizard
+├── trainers-page.php          ← Full trainer directory
+├── my-membership.php          ← Membership plan management (subscription cards)
+├── payment.php                ← Renew / upgrade / change plan payment
+├── payments-page.php          ← Member payment history
+├── admin-panel.php            ← Admin SPA shell
 │
 ├── Admin-pages/                ← HTML fragments (NOT standalone pages)
-│   ├── dashboard.html
-│   ├── members.html
-│   ├── classes.html
-│   ├── trainers.html
-│   ├── subscriptions.html
-│   ├── payments.html
-│   ├── events.html
-│   ├── roles.html
-│   └── revenue.html            ← Currently hard-coded display data
+│   ├── dashboard.php
+│   ├── members.php
+│   ├── classes.php
+│   ├── trainers.php
+│   ├── subscriptions.php
+│   ├── payments.php
+│   ├── events.php
+│   ├── roles.php
+│   └── revenue.php            ← Currently hard-coded display data
 │
 ├── api/                        ← PHP backend
 │   ├── config.php              ← Shared session, CSRF, helpers, sanitizers
@@ -198,7 +198,7 @@ php -S localhost:8000
 python3 -m http.server 8000
 
 # Option 3 — VS Code Live Server extension
-# Set defaultPreviewPath in .vscode/settings.json (already configured to admin-panel.html)
+# Set defaultPreviewPath in .vscode/settings.json (already configured to admin-panel.php)
 ```
 
 ### Import the database
@@ -230,13 +230,13 @@ The script creates the `society_fitness` database from scratch (`DROP DATABASE I
 ### Open the admin panel directly
 
 ```
-http://localhost:8000/admin-panel.html
+http://localhost:8000/admin-panel.php
 ```
 
 ### Open the landing page
 
 ```
-http://localhost:8000/index.html
+http://localhost:8000/index.php
 # or just
 http://localhost:8000/
 ```
@@ -261,7 +261,7 @@ There is currently no automated linter or formatter configured. Follow the conve
 
 ### Adding a new member-facing page
 
-1. Create `your-page.html` in the project root.
+1. Create `your-page.php` in the project root.
 2. Create `css/your-page.css`. Start with:
    ```css
    @import url("general.css"); /* gives you header, nav, container */
@@ -286,15 +286,15 @@ There is currently no automated linter or formatter configured. Follow the conve
 
 ### Adding a new admin sub-page
 
-1. Create `Admin-pages/your-page.html` as an **HTML fragment** (no `<!DOCTYPE>`, `<html>`, `<head>`, or `<body>` — just the inner content).
+1. Create `Admin-pages/your-page.php` as an **HTML fragment** (no `<!DOCTYPE>`, `<html>`, `<head>`, or `<body>` — just the inner content).
 2. Register it in `js/admin-js.js` inside the `pageMap` object:
    ```js
    const pageMap = {
      ...
-     yourpage: 'Admin-pages/your-page.html',
+     yourpage: 'Admin-pages/your-page.php',
    };
    ```
-3. Add a nav link in `admin-panel.html`:
+3. Add a nav link in `admin-panel.php`:
    ```html
    <a data-page="yourpage">Your Page</a>
    ```
@@ -302,7 +302,7 @@ There is currently no automated linter or formatter configured. Follow the conve
 
 ### Multi-step forms (booking wizard pattern)
 
-Both `book-class-page.html` and `book-trainer-page.html` use the same 4-step pattern:
+Both `book-class-page.php` and `book-trainer-page.php` use the same 4-step pattern:
 
 - All selection state is stored in a local `bookingData` object in the JS file.
 - `nextStep(n)` / `prevStep(n)` show/hide `.step-content` divs and update the `.step-indicator` styles.
@@ -312,7 +312,7 @@ Both `book-class-page.html` and `book-trainer-page.html` use the same 4-step pat
 
 ### Sign-up multi-step form
 
-`sign-up-page.html` has 5 pages (divs), navigated entirely in JS (`js/sign-up-page.js`):
+`sign-up-page.php` has 5 pages (divs), navigated entirely in JS (`js/sign-up-page.js`):
 
 | Page ID | Content |
 |---------|---------|
@@ -324,7 +324,7 @@ Both `book-class-page.html` and `book-trainer-page.html` use the same 4-step pat
 
 Hidden inputs `#hidden_selected_plan`, `#hidden_billing_cycle`, and `#hidden_plan_price` are synced by JS when a plan is chosen so that the final form POST includes them.
 
-### Payment page (`payment.html`)
+### Payment page (`payment.php`)
 
 `js/payment-content.js` reads URL params to determine what to render:
 
@@ -391,7 +391,7 @@ Hidden inputs `#hidden_selected_plan`, `#hidden_billing_cycle`, and `#hidden_pla
 ### Auth flow
 
 - `POST /api/auth/login.php` — validates credentials, creates session, returns `{ success, role }`
-- JS redirects: `role === 'admin'` or `role === 'super_admin'` or `role === 'staff'` → `admin-panel.html`, otherwise → `homepage.html`
+- JS redirects: `role === 'admin'` or `role === 'super_admin'` or `role === 'staff'` → `admin-panel.php`, otherwise → `homepage.php`
 - `POST /api/auth/register.php` — creates member, logs them in, returns `{ success }`
 - `POST /api/auth/logout.php` — destroys session, returns `{ success }`
 - `GET /api/auth/check-session.php` — returns member session data or 401
@@ -841,7 +841,7 @@ Radio buttons on the sign-up page use `name="membership_plan"` and carry `data-p
 
 Non-module script. Auto-injects the payment option HTML into every `.payment-method-js` element on the page. Exposes `window.handlePayment(event)` for form `onsubmit`. Includes GCash, GoTyme, Maya, and Credit/Debit Card options. Card details (number, expiry, CVV) are only shown when the card radio is selected.
 
-The heading `#head-title` ("Payment Method") is automatically hidden on `book-class-page.html` and `book-trainer-page.html` since those pages have their own section titles.
+The heading `#head-title` ("Payment Method") is automatically hidden on `book-class-page.php` and `book-trainer-page.php` since those pages have their own section titles.
 
 ### Header — `js/header.js`
 
@@ -869,14 +869,14 @@ render(containerSelector, prop, renderFn)
 
 ## 11. Admin Panel
 
-The admin panel is a **client-side SPA** inside `admin-panel.html`. There is no server-side routing — all navigation is done via `fetch()` in `admin-js.js`.
+The admin panel is a **client-side SPA** inside `admin-panel.php`. There is no server-side routing — all navigation is done via `fetch()` in `admin-js.js`.
 
 ### How page loading works
 
 ```
 Sidebar link click (data-page="members")
   → loadPage('members')
-  → fetch('Admin-pages/members.html')
+  → fetch('Admin-pages/members.php')
   → inject HTML into #content
   → bindModalTriggers()   ← re-binds Add Member, Add Trainer, Add User buttons
   → bindFormHandlers()    ← re-binds all form submit handlers
@@ -888,20 +888,20 @@ Because the admin HTML fragments are re-injected on every nav, **always re-bind 
 
 | Key | Fragment |
 |-----|---------|
-| `dashboard` | `Admin-pages/dashboard.html` |
-| `members` | `Admin-pages/members.html` |
-| `classes` | `Admin-pages/classes.html` |
-| `trainers` | `Admin-pages/trainers.html` |
-| `subscriptions` | `Admin-pages/subscriptions.html` |
-| `payments` | `Admin-pages/payments.html` |
-| `events` | `Admin-pages/events.html` |
-| `roles` | `Admin-pages/roles.html` |
+| `dashboard` | `Admin-pages/dashboard.php` |
+| `members` | `Admin-pages/members.php` |
+| `classes` | `Admin-pages/classes.php` |
+| `trainers` | `Admin-pages/trainers.php` |
+| `subscriptions` | `Admin-pages/subscriptions.php` |
+| `payments` | `Admin-pages/payments.php` |
+| `events` | `Admin-pages/events.php` |
+| `roles` | `Admin-pages/roles.php` |
 
-`revenue` is listed in the sidebar nav in `admin-panel.html` but not yet in `pageMap` — add it when `Admin-pages/revenue.html` is ready for DB integration.
+`revenue` is listed in the sidebar nav in `admin-panel.php` but not yet in `pageMap` — add it when `Admin-pages/revenue.php` is ready for DB integration.
 
 ### Session guard
 
-On every page load, `checkAdminSession()` hits `/api/admin/auth/check-session.php`. If the server returns 401 or 403, the user is redirected to `login-page.html`. A 404 is silently ignored (dev mode — PHP not yet built).
+On every page load, `checkAdminSession()` hits `/api/admin/auth/check-session.php`. If the server returns 401 or 403, the user is redirected to `login-page.php`. A 404 is silently ignored (dev mode — PHP not yet built).
 
 ### Toast notifications
 
@@ -925,7 +925,7 @@ Use `getCsrfToken()` when building `FormData` for inline action buttons (e.g., `
 
 ### Adding a new admin action button
 
-1. Add the button in the relevant `Admin-pages/*.html` fragment with an `onclick="myAction(id)"` attribute.
+1. Add the button in the relevant `Admin-pages/*.php` fragment with an `onclick="myAction(id)"` attribute.
 2. Expose the function on `window` in `admin-js.js`:
    ```js
    window.myAction = function(id) { ... };
@@ -1062,7 +1062,7 @@ else showAdminPopup(result?.message || 'Failed.', 'error');
 
 ### Naming conventions
 
-- **Files:** `kebab-case.js`, `kebab-case.css`, `kebab-case.html`
+- **Files:** `kebab-case.js`, `kebab-case.css`, `kebab-case.php`
 - **Functions:** `camelCase`
 - **Constants / data keys:** `camelCase`
 - **CSS classes:** `kebab-case`
@@ -1096,7 +1096,7 @@ The assets folder is named `assests/` (misspelled). This is used consistently ev
 
 ### Admin page fragments must not include `<html>` tags
 
-Files in `Admin-pages/` are injected via `innerHTML`. They must contain only the inner page content — no `<!DOCTYPE>`, `<html>`, `<head>`, `<body>`, or `<link>` tags. All styles are inherited from `admin-css.css` which is loaded in `admin-panel.html`.
+Files in `Admin-pages/` are injected via `innerHTML`. They must contain only the inner page content — no `<!DOCTYPE>`, `<html>`, `<head>`, `<body>`, or `<link>` tags. All styles are inherited from `admin-css.css` which is loaded in `admin-panel.php`.
 
 ### Event listeners must be re-bound after admin page injection
 
@@ -1120,7 +1120,7 @@ Trainer images in `data/Trainers.js` use paths like `../assests/trainers/nadjaCo
 
 ### Admin revenue numbers are display data only
 
-The values in `Admin-pages/revenue.html` are currently hard-coded HTML. When connecting to the database, replace them with data fetched from `GET /api/admin/reports/revenue.php`.
+The values in `Admin-pages/revenue.php` are currently hard-coded HTML. When connecting to the database, replace them with data fetched from `GET /api/admin/reports/revenue.php`.
 
 ### `specialtyTag` vs `specialtyTags` naming
 

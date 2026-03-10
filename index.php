@@ -10,13 +10,13 @@
     <header>
       <nav class="container">
         <div class="logo">
-          <a href="index.html">
+          <a href="index.php">
             <img src="assests/logo/society-fit.png" alt="society-fit logo" />
           </a>
         </div>
         <button class="menu-toggle" onclick="toggleMenu()">☰</button>
         <ul class="nav-links" id="navLinks">
-          <li><a href="homepage.html">Home</a></li>
+          <li><a href="homepage.php">Home</a></li>
           <li><a href="#profile" onclick="closeMenu()">Profile</a></li>
           <li><a href="#pricing" onclick="closeMenu()">Pricing</a></li>
           <li><a href="#classes" onclick="closeMenu()">Classes</a></li>
@@ -105,7 +105,7 @@
               <li>Locker rental available</li>
             </ul>
             <div class="button-container">
-              <a href="sign-up-page.html">Get Started</a>
+              <a href="sign-up-page.php">Get Started</a>
             </div>
           </div>
 
@@ -126,7 +126,7 @@
               <li>10% merchandise discount</li>
             </ul>
             <div class="button-container">
-              <a href="sign-up-page.html">Get Started</a>
+              <a href="sign-up-page.php">Get Started</a>
             </div>
           </div>
 
@@ -148,7 +148,7 @@
               <li>20% merchandise discount</li>
             </ul>
             <div class="button-container">
-              <a href="sign-up-page.html">Get Started</a>
+              <a href="sign-up-page.php">Get Started</a>
             </div>
           </div>
         </div>

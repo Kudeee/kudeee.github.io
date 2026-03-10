@@ -91,7 +91,7 @@ function initializePaymentMethods() {
 
   // Hide the "Payment Method" heading on booking pages (it has its own section title)
   const currentPage = window.location.pathname.split("/").pop();
-  if (currentPage === "book-class-page.html" || currentPage === "book-trainer-page.html") {
+  if (currentPage === "book-class-page.php" || currentPage === "book-trainer-page.php") {
     document.querySelectorAll("#head-title").forEach((el) => {
       el.style.display = "none";
     });

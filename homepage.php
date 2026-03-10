@@ -44,8 +44,8 @@
           </div>
         </div>
         <div class="status-actions">
-          <button class="btn" onclick="location.href='payment.html?type=renew'">Renew Now</button>
-          <button class="btn btn-outline" onclick="location.href='payment.html?type=upgrade'">Upgrade to VIP</button>
+          <button class="btn" onclick="location.href='payment.php?type=renew'">Renew Now</button>
+          <button class="btn btn-outline" onclick="location.href='payment.php?type=upgrade'">Upgrade to VIP</button>
           <button class="btn btn-secondary" id="pauseMem">Pause Membership</button>
         </div>
       </div>
@@ -74,7 +74,7 @@
           </div>
           <div class="action-buttons">
             <button class="btn btn-outline" id="CancelBooking">Cancel Booking</button>
-            <button class="btn btn-secondary" onclick="window.location.href='book-class-page.html'">Book Another</button>
+            <button class="btn btn-secondary" onclick="window.location.href='book-class-page.php'">Book Another</button>
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@
         <h2 class="section-title">Quick Actions</h2>
         <div class="quick-actions-grid">
 
-          <a href="book-class-page.html" class="quick-action-card">
+          <a href="book-class-page.php" class="quick-action-card">
             <div class="quick-action-icon">
               <img src="assests/icons/calendar2-plus-fill.svg" alt="" />
             </div>
@@ -92,14 +92,14 @@
             </div>
           </a>
 
-          <a href="schedule-page.html" class="quick-action-card">
+          <a href="schedule-page.php" class="quick-action-card">
             <div class="quick-action-icon">
               <img src="assests/icons/calendar-week-fill.svg" alt="" />
             </div>
             <div class="quick-action-label">View Schedule</div>
           </a>
 
-          <a class="quick-action-card" href="book-trainer-page.html">
+          <a class="quick-action-card" href="book-trainer-page.php">
             <div class="quick-action-icon">
               <img src="assests/icons/person-fill.svg" alt="" />
             </div>
@@ -108,14 +108,14 @@
             </div>
           </a>
 
-          <a class="quick-action-card" href="my-membership.html">
+          <a class="quick-action-card" href="my-membership.php">
             <div class="quick-action-icon">
               <img src="assests/icons/credit-card-fill.svg" alt="" />
             </div>
             <div class="quick-action-label">My Membership</div>
           </a>
 
-          <a class="quick-action-card" href="payments-page.html">
+          <a class="quick-action-card" href="payments-page.php">
             <div class="quick-action-icon">
               <img src="assests/icons/cash.svg" alt="" />
             </div>

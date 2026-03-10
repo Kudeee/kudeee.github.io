@@ -152,7 +152,7 @@ export async function handleSignUp(event) {
     hideLoading();
 
     if (result.success) {
-      window.location.href = "homepage.html";
+      window.location.href = "homepage.php";
     } else {
       showPopUP(result.message || "Sign up failed. Please try again.");
     }

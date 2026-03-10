@@ -94,7 +94,7 @@ export function renderSubscriptionCards(currentPlan = null, currentBilling = "mo
       const price      = isYearly ? subscription.yearlyPrice : subscription.monthlyPrice;
       const planParam  = encodeURIComponent(subscription.plan);
       const billingParam = isYearly ? "yearly" : "monthly";
-      buttonLink = `href="payment.html?type=billing-change&plan=${planParam}&price=${price}&billing=${billingParam}"`;
+      buttonLink = `href="payment.php?type=billing-change&plan=${planParam}&price=${price}&billing=${billingParam}"`;
     } else {
       const currentPrice = isYearly ? subscription.yearlyPrice : subscription.monthlyPrice;
       const isUpgrade    = currentPrice > getCurrentPlanPrice(currentPlan, currentBilling);
@@ -102,7 +102,7 @@ export function renderSubscriptionCards(currentPlan = null, currentBilling = "mo
       buttonText         = isUpgrade ? "Upgrade Plan" : "Downgrade Plan";
       const planParam    = encodeURIComponent(subscription.plan);
       const billingParam = isYearly ? "yearly" : "monthly";
-      buttonLink = `href="payment.html?type=change&plan=${planParam}&price=${currentPrice}&billing=${billingParam}"`;
+      buttonLink = `href="payment.php?type=change&plan=${planParam}&price=${currentPrice}&billing=${billingParam}"`;
     }
 
     html += `

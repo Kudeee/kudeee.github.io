@@ -33,9 +33,9 @@ export async function handleLogin(event) {
     if (result.success) {
       // Redirect based on role returned by server
       if (result.role === "admin") {
-        window.location.href = "admin-panel.html";
+        window.location.href = "admin-panel.php";
       } else {
-        window.location.href = "homepage.html";
+        window.location.href = "homepage.php";
       }
     } else {
       showPopUP(result.message || "Invalid email or password.");

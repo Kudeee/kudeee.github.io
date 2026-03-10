@@ -144,7 +144,7 @@ function renderPayment(paymentType) {
     const backBtn = document.querySelector(".back-btn");
 
     backBtn.addEventListener("click", () => {
-      location.href = "homepage.html";
+      location.href = "homepage.php";
     });
   }
 }
