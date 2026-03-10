@@ -1,3 +1,6 @@
 {
-    "livePreview.defaultPreviewPath": "/admin-panel.html"
+    "livePreview.defaultPreviewPath": "/admin-panel.html",
+    "intelephense.environment.includePaths": [
+        "./api"
+    ]
 }
