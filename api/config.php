@@ -2,18 +2,14 @@
 /**
  * config.php
  * Society Fitness — Shared configuration & helper functions.
- * Place this file at /api/config.php
- *
- * Database connection is intentionally NOT opened here yet.
- * Replace the constants below with your XAMPP credentials when ready.
  */
 
-// ─── Database credentials (fill in when connecting) ──────────────────────────
-define('DB_HOST',     'localhost');
-define('DB_NAME',     'society_fitness');
-define('DB_USER',     'root');
-define('DB_PASS',     '');
-define('DB_CHARSET',  'utf8mb4');
+// ─── Database credentials ─────────────────────────────────────────────────────
+define('DB_HOST',    'localhost');
+define('DB_NAME',    'society_fitness');
+define('DB_USER',    'root');
+define('DB_PASS',    '');
+define('DB_CHARSET', 'utf8mb4');
 
 // ─── App settings ─────────────────────────────────────────────────────────────
 define('APP_NAME',    'Society Fitness');
@@ -25,28 +21,35 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Generate a CSRF token once per session
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// ─── Response helpers ─────────────────────────────────────────────────────────
+// ─── DB connection helper ─────────────────────────────────────────────────────
 
 /**
- * Send a JSON response and exit.
- *
- * @param bool   $success
- * @param string $message   Human-readable message
- * @param array  $data      Extra payload merged into root of response
- * @param int    $httpCode
+ * Returns a singleton PDO connection.
+ * Throws on connection failure so the caller can catch and return a 503.
  */
+function db(): PDO {
+    static $pdo = null;
+    if ($pdo === null) {
+        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]);
+    }
+    return $pdo;
+}
+
+// ─── Response helpers ─────────────────────────────────────────────────────────
+
 function json_response(bool $success, string $message = '', array $data = [], int $httpCode = 200): void {
     http_response_code($httpCode);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(array_merge(
-        ['success' => $success, 'message' => $message],
-        $data
-    ));
+    echo json_encode(array_merge(['success' => $success, 'message' => $message], $data));
     exit;
 }
 
@@ -60,9 +63,6 @@ function error(string $message = 'An error occurred.', int $code = 400): void {
 
 // ─── CSRF validation ──────────────────────────────────────────────────────────
 
-/**
- * Abort with 403 if the CSRF token in the POST body doesn't match the session token.
- */
 function require_csrf(): void {
     $token = $_POST['csrf_token'] ?? '';
     if (!$token || !hash_equals($_SESSION['csrf_token'], $token)) {
@@ -72,31 +72,24 @@ function require_csrf(): void {
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
-/**
- * Abort with 401 if no authenticated member session exists.
- * Returns the current member's session data.
- */
 function require_member(): array {
     if (empty($_SESSION['member_id'])) {
         error('You must be logged in to access this resource.', 401);
     }
     return [
-        'member_id'   => (int) $_SESSION['member_id'],
-        'name'        => $_SESSION['member_name']  ?? '',
-        'email'       => $_SESSION['member_email'] ?? '',
-        'plan'        => $_SESSION['member_plan']  ?? '',
-        'role'        => $_SESSION['role']         ?? 'member',
+        'member_id' => (int) $_SESSION['member_id'],
+        'name'      => $_SESSION['member_name']  ?? '',
+        'email'     => $_SESSION['member_email'] ?? '',
+        'plan'      => $_SESSION['member_plan']  ?? '',
+        'role'      => $_SESSION['role']         ?? 'member',
     ];
 }
 
-/**
- * Returns true if a valid member session is active.
- */
 function is_logged_in(): bool {
     return !empty($_SESSION['member_id']);
 }
 
-// ─── Input sanitisation helpers ───────────────────────────────────────────────
+// ─── Input sanitisation ───────────────────────────────────────────────────────
 
 function sanitize_string(string $value): string {
     return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
@@ -112,10 +105,6 @@ function sanitize_int(mixed $value): int|false {
 
 // ─── Method guard ─────────────────────────────────────────────────────────────
 
-/**
- * Abort if the HTTP method is not one of the allowed methods.
- * Usage: require_method('POST');  or  require_method('GET', 'POST');
- */
 function require_method(string ...$methods): void {
     if (!in_array($_SERVER['REQUEST_METHOD'], $methods, true)) {
         http_response_code(405);

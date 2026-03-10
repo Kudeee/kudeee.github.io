@@ -10,13 +10,14 @@
 6. [Frontend Development Workflow](#6-frontend-development-workflow)
 7. [Backend (PHP API) Workflow](#7-backend-php-api-workflow)
 8. [Data Layer](#8-data-layer)
-9. [Component System](#9-component-system)
-10. [Admin Panel](#10-admin-panel)
-11. [Styling Conventions](#11-styling-conventions)
-12. [JavaScript Conventions](#12-javascript-conventions)
-13. [Security Checklist](#13-security-checklist)
-14. [Common Gotchas](#14-common-gotchas)
-15. [API Reference](#15-api-reference)
+9. [Database Schema](#9-database-schema)
+10. [Component System](#10-component-system)
+11. [Admin Panel](#11-admin-panel)
+12. [Styling Conventions](#12-styling-conventions)
+13. [JavaScript Conventions](#13-javascript-conventions)
+14. [Security Checklist](#14-security-checklist)
+15. [Common Gotchas](#15-common-gotchas)
+16. [API Reference](#16-api-reference)
 
 ---
 
@@ -41,13 +42,11 @@ The currency used throughout is **Philippine Peso (₱)**. Phone numbers follow 
 | Styling | CSS3 — custom, no framework |
 | Scripting | Vanilla JavaScript (ES Modules) |
 | Backend | PHP 7.4+ (REST-style JSON API) |
-| Database | MySQL (via PDO — not yet connected) |
+| Database | MySQL (via PDO) |
 | Server | Apache / Nginx / `php -S` (local dev) |
 | No build tools | No npm, webpack, Vite, or transpiler |
 
 **Key design decision:** The project intentionally avoids build tools and JS frameworks to keep the stack simple, portable, and easy to onboard onto a shared hosting environment (which is common in the PH market).
-
-> **Current status:** All PHP endpoints are fully written with validation, business logic, and DB query stubs — but the database is not yet connected. Every endpoint returns a `503` stub error until the PDO connection is activated. The commented-out SQL blocks are ready for integration.
 
 ---
 
@@ -77,7 +76,6 @@ All backend routes live under `/api/`. Every endpoint:
 - Returns `{ "success": true/false, "message": "...", ...data }` as JSON
 - Validates the CSRF token on every POST
 - Returns HTTP 401/403 if the session is not authenticated or not authorized
-- Currently returns `503` (stub) until the DB is connected — remove the `error(...)` stub line and uncomment the PDO block to activate
 
 ---
 
@@ -118,6 +116,8 @@ All backend routes live under `/api/`. Every endpoint:
 │   │   └── check-session.php
 │   ├── admin/
 │   │   ├── config.php          ← Admin-specific guards + pagination/date helpers
+│   │   ├── auth/
+│   │   │   └── check-session.php
 │   │   ├── bookings/           ← list.php, update.php
 │   │   ├── classes/            ← create.php, list.php, update.php
 │   │   ├── events/             ← create.php, list.php, update.php
@@ -127,14 +127,14 @@ All backend routes live under `/api/`. Every endpoint:
 │   │   ├── settings/           ← admins.php, audit-log.php
 │   │   └── trainers/           ← create.php, list.php, update.php, delete.php
 │   ├── bookings/               ← book-class.php, book-trainer.php, cancel.php
+│   ├── contact/                ← inquiry.php
 │   ├── payments/               ← process.php
-│   ├── user/
-│   │   ├── events/             ← list.php, register.php
-│   │   ├── membership/         ← info.php, pause.php
-│   │   ├── payments/           ← history.php
-│   │   ├── schedule/           ← list.php
-│   │   └── trainers/           ← availability.php, list.php
-│   └── contact/                ← inquiry.php
+│   └── user/
+│       ├── events/             ← list.php, register.php
+│       ├── membership/         ← info.php, pause.php
+│       ├── payments/           ← history.php
+│       ├── schedule/           ← list.php
+│       └── trainers/           ← availability.php, list.php
 │
 ├── css/                        ← All stylesheets
 │   ├── GENERAL-LAYOUT.css      ← Global * reset only — import this first
@@ -201,6 +201,32 @@ python3 -m http.server 8000
 # Set defaultPreviewPath in .vscode/settings.json (already configured to admin-panel.html)
 ```
 
+### Import the database
+
+```bash
+# Option 1 — MySQL CLI
+mysql -u root -p < database/society_fitness.sql
+
+# Option 2 — phpMyAdmin
+# Open phpMyAdmin → Import tab → select database/society_fitness.sql → Go
+
+# Option 3 — MySQL CLI (already inside mysql shell)
+source /path/to/database/society_fitness.sql;
+```
+
+The script creates the `society_fitness` database from scratch (`DROP DATABASE IF EXISTS` + `CREATE DATABASE`). It is safe to re-run at any time — all data will be reset.
+
+### Default login credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| super_admin | `admin@societyfitness.com` | `Admin@1234` |
+| admin | `reggie@societyfitness.com` | `Admin@1234` |
+| staff | `clarisse@societyfitness.com` | `Admin@1234` |
+| member (VIP yearly) | `juan.delacruz@email.com` | `Member@1234` |
+| member (Premium monthly) | `maria.santos@email.com` | `Member@1234` |
+| member (Basic monthly) | `carlo.reyes@email.com` | `Member@1234` |
+
 ### Open the admin panel directly
 
 ```
@@ -214,19 +240,6 @@ http://localhost:8000/index.html
 # or just
 http://localhost:8000/
 ```
-
-### Activate a PHP endpoint (connect to DB)
-
-Each endpoint has a commented-out PDO block and a stub line at the bottom:
-
-```php
-// ─── STUB ─────────────────────────────────────────────────────────────────────
-error('Database not connected yet. This endpoint is ready for integration.', 503);
-```
-
-To activate, update `api/config.php` credentials, then in each endpoint file:
-1. Uncomment the `/* ... */` PDO block
-2. Delete the `error(...)` stub line at the bottom
 
 ### Lint / format (no toolchain yet — manual conventions apply)
 
@@ -330,7 +343,7 @@ Hidden inputs `#hidden_selected_plan`, `#hidden_billing_cycle`, and `#hidden_pla
 
 | File | Purpose |
 |------|---------|
-| `api/config.php` | Session start, CSRF generation, `success()`, `error()`, `require_member()`, `is_logged_in()`, `sanitize_*()`, `require_method()` |
+| `api/config.php` | Session start, CSRF generation, `db()`, `success()`, `error()`, `require_member()`, `is_logged_in()`, `sanitize_*()`, `require_method()` |
 | `api/admin/config.php` | Extends root config; adds `require_admin()`, `is_super_admin()`, `get_pagination()`, `get_date_range()` |
 
 ### Every endpoint must
@@ -378,7 +391,7 @@ Hidden inputs `#hidden_selected_plan`, `#hidden_billing_cycle`, and `#hidden_pla
 ### Auth flow
 
 - `POST /api/auth/login.php` — validates credentials, creates session, returns `{ success, role }`
-- JS redirects: `role === 'admin'` → `admin-panel.html`, otherwise → `homepage.html`
+- JS redirects: `role === 'admin'` or `role === 'super_admin'` or `role === 'staff'` → `admin-panel.html`, otherwise → `homepage.html`
 - `POST /api/auth/register.php` — creates member, logs them in, returns `{ success }`
 - `POST /api/auth/logout.php` — destroys session, returns `{ success }`
 - `GET /api/auth/check-session.php` — returns member session data or 401
@@ -446,7 +459,329 @@ The yearly price formula: `monthlyPrice * 12 * 0.84` (16% annual discount).
 
 ---
 
-## 9. Component System
+## 9. Database Schema
+
+**Database name:** `society_fitness`
+**Charset:** `utf8mb4` / `utf8mb4_unicode_ci`
+**Engine:** InnoDB (all tables)
+**Schema file:** `database/society_fitness.sql`
+
+The SQL file contains the full schema followed by seed data. It is safe to re-run — it opens with `DROP DATABASE IF EXISTS society_fitness` so all tables and data are reset cleanly.
+
+---
+
+### Table: `members`
+
+Stores gym member accounts.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `first_name` | `VARCHAR(100)` | |
+| `last_name` | `VARCHAR(100)` | |
+| `email` | `VARCHAR(255)` | UNIQUE |
+| `phone` | `VARCHAR(20)` | PH format — `09XXXXXXXXX` |
+| `zip` | `VARCHAR(10)` | |
+| `password_hash` | `VARCHAR(255)` | bcrypt via `password_hash()` |
+| `plan` | `VARCHAR(50)` | `'BASIC PLAN'` \| `'PREMIUM PLAN'` \| `'VIP PLAN'` |
+| `billing_cycle` | `ENUM('monthly','yearly')` | |
+| `status` | `ENUM('active','suspended','deleted')` | Default `'active'` |
+| `join_date` | `DATE` | |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+---
+
+### Table: `admin_users`
+
+Stores admin and staff accounts.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `first_name` | `VARCHAR(100)` | |
+| `last_name` | `VARCHAR(100)` | |
+| `email` | `VARCHAR(255)` | UNIQUE |
+| `password_hash` | `VARCHAR(255)` | bcrypt |
+| `role` | `ENUM('staff','admin','super_admin')` | Default `'staff'` |
+| `status` | `ENUM('active','inactive')` | Default `'active'` |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+---
+
+### Table: `subscriptions`
+
+One row per subscription period per member. A member may have multiple rows (expired + active).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `member_id` | `INT UNSIGNED` | FK → `members.id` ON DELETE CASCADE |
+| `plan` | `VARCHAR(50)` | Matches `members.plan` values |
+| `billing_cycle` | `ENUM('monthly','yearly')` | |
+| `price` | `DECIMAL(10,2)` | Amount charged in ₱ |
+| `start_date` | `DATE` | |
+| `expiry_date` | `DATE` | Extended when a pause is resumed |
+| `status` | `ENUM('active','paused','expired','cancelled')` | Default `'active'` |
+| `paused_at` | `DATETIME` | NULL when not paused |
+| `resumed_at` | `DATETIME` | NULL until resumed |
+| `pause_count_days` | `INT UNSIGNED` | Running total days paused this year; max 90 |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Business rules:**
+- When pausing: set `status = 'paused'`, record `paused_at = NOW()`.
+- When resuming: calculate `days_paused = CEIL((NOW() - paused_at) / 86400)`, add to `pause_count_days`, extend `expiry_date` by that many days, set `status = 'active'`.
+- Maximum 90 pause days per calendar year per member.
+
+---
+
+### Table: `trainers`
+
+Trainer profiles. Used by the public trainer directory, booking wizard, and admin panel.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `first_name` | `VARCHAR(100)` | |
+| `last_name` | `VARCHAR(100)` | Queried as `CONCAT(first_name, ' ', last_name)` for full name matching |
+| `specialty` | `VARCHAR(150)` | Short specialty label |
+| `bio` | `TEXT` | Long-form bio |
+| `image_url` | `VARCHAR(255)` | Path relative to project root |
+| `exp_years` | `TINYINT UNSIGNED` | Years of experience |
+| `client_count` | `SMALLINT UNSIGNED` | |
+| `session_rate` | `DECIMAL(10,2)` | Base rate per **30-minute** session in ₱ |
+| `rating` | `DECIMAL(3,1)` | Out of 5.0 |
+| `availability` | `ENUM('available','limited')` | Default `'available'` |
+| `specialty_tags` | `JSON` | Array of tag strings, e.g. `["HIIT","Fat Loss"]` |
+| `status` | `ENUM('active','inactive')` | Default `'active'` |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Session rate multipliers** (applied in `book-trainer-page.js` and `book-trainer.php`):
+
+| Duration | Multiplier | Formula |
+|----------|-----------|---------|
+| 30 min | 1× | `session_rate * 1` |
+| 60 min | 2× | `session_rate * 2` |
+| 90 min | 3× | `session_rate * 3` |
+
+---
+
+### Table: `class_schedules`
+
+Each row is one scheduled class instance (a specific date/time slot).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `class_name` | `VARCHAR(100)` | e.g. `'HIIT Blast'`, `'Yoga Flow'` |
+| `trainer_id` | `INT UNSIGNED` | FK → `trainers.id` |
+| `scheduled_at` | `DATETIME` | Full datetime of class start |
+| `duration_minutes` | `SMALLINT UNSIGNED` | Typically 45 or 60 |
+| `max_participants` | `TINYINT UNSIGNED` | Hard cap |
+| `current_participants` | `TINYINT UNSIGNED` | Incremented on booking, decremented on cancel |
+| `location` | `VARCHAR(100)` | e.g. `'Main Studio'`, `'Weight Room'` |
+| `status` | `ENUM('active','cancelled')` | Default `'active'` |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Indexes:** `idx_cs_trainer (trainer_id)`, `idx_cs_scheduled (scheduled_at)`
+
+**Booking fee rule:**
+- `BASIC PLAN` members pay **₱200** per class booking.
+- `PREMIUM PLAN` and `VIP PLAN` members pay **₱0** (included in membership).
+
+---
+
+### Table: `class_bookings`
+
+Each row is a member's reservation for a specific class schedule slot.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `member_id` | `INT UNSIGNED` | FK → `members.id` ON DELETE CASCADE |
+| `class_schedule_id` | `INT UNSIGNED` | FK → `class_schedules.id` |
+| `booking_date` | `DATE` | Denormalised from `class_schedules.scheduled_at` for fast filtering |
+| `booking_time` | `VARCHAR(20)` | Human-readable, e.g. `'6:00 AM'` |
+| `class_name` | `VARCHAR(100)` | Denormalised for display |
+| `special_requirements` | `TEXT` | Optional member notes |
+| `emergency_name` | `VARCHAR(100)` | |
+| `emergency_phone` | `VARCHAR(20)` | |
+| `payment_method` | `VARCHAR(20)` | `'gcash'` \| `'maya'` \| `'gotyme'` \| `'card'` |
+| `status` | `ENUM('confirmed','cancelled','attended')` | Default `'confirmed'` |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Cancellation rule:** Must be cancelled at least **2 hours** before `class_schedules.scheduled_at`.
+
+---
+
+### Table: `trainer_bookings`
+
+Each row is a member's personal training session booking.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `member_id` | `INT UNSIGNED` | FK → `members.id` ON DELETE CASCADE |
+| `trainer_id` | `INT UNSIGNED` | FK → `trainers.id` |
+| `session_duration` | `VARCHAR(20)` | Display label: `'30 Min'` \| `'60 Min'` \| `'90 Min'` |
+| `session_minutes` | `TINYINT UNSIGNED` | Numeric: `30` \| `60` \| `90` |
+| `price_multiplier` | `DECIMAL(3,1)` | `1.0` \| `2.0` \| `3.0` |
+| `focus_area` | `VARCHAR(50)` | e.g. `'Strength'`, `'Fat Loss'` |
+| `booking_date` | `DATE` | |
+| `booking_time` | `VARCHAR(20)` | Slot label, e.g. `'8:00 AM'` |
+| `total_price` | `DECIMAL(10,2)` | `session_rate * price_multiplier` in ₱ |
+| `fitness_goals` | `TEXT` | Optional member notes |
+| `fitness_level` | `ENUM('beginner','intermediate','advanced')` | Default `'beginner'` |
+| `medical_info` | `TEXT` | Optional health notes |
+| `recurring` | `TINYINT(1)` | `0` = one-off, `1` = recurring weekly |
+| `payment_method` | `VARCHAR(20)` | |
+| `status` | `ENUM('confirmed','cancelled','completed')` | Default `'confirmed'` |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Indexes:** `idx_tb_member`, `idx_tb_trainer`, `idx_tb_date (booking_date, booking_time)`
+
+**Cancellation rule:** Must be cancelled at least **24 hours** before the session.
+
+**Available time slots** (fixed list used by availability endpoint):
+`6:00 AM`, `8:00 AM`, `10:00 AM`, `12:00 PM`, `2:00 PM`, `4:00 PM`, `6:00 PM`, `8:00 PM`
+
+---
+
+### Table: `payments`
+
+Unified payment ledger for all transaction types.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `member_id` | `INT UNSIGNED` | FK → `members.id` ON DELETE CASCADE |
+| `type` | `ENUM('subscription','class_booking','trainer_session','event','refund')` | |
+| `amount` | `DECIMAL(10,2)` | In ₱ |
+| `method` | `VARCHAR(20)` | `'gcash'` \| `'maya'` \| `'gotyme'` \| `'card'` |
+| `transaction_id` | `VARCHAR(50)` | Format: `TXN-YYYYMMDD-NNNNN` |
+| `reference_id` | `INT UNSIGNED` | NULL, or `class_bookings.id` / `trainer_bookings.id` / `event_registrations.id` |
+| `status` | `ENUM('pending','completed','refunded','failed')` | Default `'pending'` |
+| `description` | `VARCHAR(255)` | Human-readable label |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Indexes:** `idx_pay_member (member_id)`, `idx_pay_txn (transaction_id)`
+
+---
+
+### Table: `events`
+
+Gym events — workshops, challenges, seminars, wellness sessions.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `name` | `VARCHAR(150)` | |
+| `type` | `VARCHAR(50)` | e.g. `'challenge'`, `'workshop'`, `'seminar'`, `'wellness'`, `'competition'`, `'trial'` |
+| `event_date` | `DATE` | |
+| `event_time` | `TIME` | |
+| `location` | `VARCHAR(100)` | |
+| `fee` | `DECIMAL(10,2)` | `0.00` for free events |
+| `max_attendees` | `SMALLINT UNSIGNED` | |
+| `current_attendees` | `SMALLINT UNSIGNED` | Incremented on registration |
+| `is_members_only` | `TINYINT(1)` | `0` = public, `1` = members only |
+| `organizer_id` | `INT UNSIGNED` | FK → `trainers.id` ON DELETE SET NULL; NULL = gym-organised |
+| `description` | `TEXT` | |
+| `status` | `ENUM('active','cancelled')` | Default `'active'` |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+---
+
+### Table: `event_registrations`
+
+Each row is a member's registration for a specific event.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `event_id` | `INT UNSIGNED` | FK → `events.id` ON DELETE CASCADE |
+| `member_id` | `INT UNSIGNED` | FK → `members.id` ON DELETE CASCADE |
+| `payment_method` | `VARCHAR(20)` | NULL for free events |
+| `amount_paid` | `DECIMAL(10,2)` | `0.00` for free events |
+| `status` | `ENUM('registered','cancelled','attended')` | Default `'registered'` |
+| `registered_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Unique constraint:** `uq_er_event_member (event_id, member_id)` — one registration per member per event.
+
+---
+
+### Table: `contact_inquiries`
+
+Stores submissions from the public landing page contact form.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `name` | `VARCHAR(150)` | |
+| `email` | `VARCHAR(255)` | |
+| `phone` | `VARCHAR(30)` | Optional |
+| `interest` | `VARCHAR(100)` | Optional — e.g. `'membership'`, `'classes'` |
+| `message` | `TEXT` | |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+---
+
+### Table: `audit_log`
+
+Records admin actions for accountability.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | PK |
+| `admin_id` | `INT UNSIGNED` | NULL if system-generated; otherwise FK → `admin_users.id` |
+| `action` | `VARCHAR(100)` | e.g. `'member_suspended'`, `'trainer_added'` |
+| `target_type` | `VARCHAR(50)` | e.g. `'member'`, `'trainer'`, `'class'`, `'event'` |
+| `target_id` | `INT UNSIGNED` | ID of the affected record |
+| `details` | `JSON` | Arbitrary key/value context |
+| `ip_address` | `VARCHAR(45)` | Supports IPv6 |
+| `created_at` | `DATETIME` | Default `CURRENT_TIMESTAMP` |
+
+**Indexes:** `idx_al_admin (admin_id)`, `idx_al_target (target_type, target_id)`
+
+---
+
+### Foreign Key Summary
+
+| Table | Column | References | On Delete |
+|-------|--------|-----------|-----------|
+| `subscriptions` | `member_id` | `members.id` | CASCADE |
+| `class_schedules` | `trainer_id` | `trainers.id` | RESTRICT |
+| `class_bookings` | `member_id` | `members.id` | CASCADE |
+| `class_bookings` | `class_schedule_id` | `class_schedules.id` | RESTRICT |
+| `trainer_bookings` | `member_id` | `members.id` | CASCADE |
+| `trainer_bookings` | `trainer_id` | `trainers.id` | RESTRICT |
+| `payments` | `member_id` | `members.id` | CASCADE |
+| `events` | `organizer_id` | `trainers.id` | SET NULL |
+| `event_registrations` | `event_id` | `events.id` | CASCADE |
+| `event_registrations` | `member_id` | `members.id` | CASCADE |
+
+---
+
+### Seed Data Summary
+
+The schema file includes realistic seed data for local development and testing:
+
+| Table | Rows | Notes |
+|-------|------|-------|
+| `admin_users` | 3 | super_admin, admin, staff — password `Admin@1234` |
+| `trainers` | 8 | Marco, Sofia, Dante, Anika, Ryan, Lena, Brent, Jasmine — with bios, rates, tags |
+| `members` | 12 | Mix of Basic / Premium / VIP, monthly / yearly — password `Member@1234` |
+| `subscriptions` | 13 | 12 active + 1 expired (member 3, previous month) |
+| `class_schedules` | 37 | Two weeks of classes from March 2026, realistic fill rates |
+| `class_bookings` | 16 | Confirmed and attended statuses |
+| `trainer_bookings` | 11 | Upcoming confirmed + past completed |
+| `payments` | 38+ | Covers all payment types with `TXN-YYYYMMDD-NNNNN` IDs |
+| `events` | 6 | Mix of free/paid, public/members-only, various types |
+| `event_registrations` | 21 | Spread across all 6 events |
+| `contact_inquiries` | 4 | Sample public form submissions |
+| `audit_log` | 5 | Sample admin action history |
+
+---
+
+## 10. Component System
 
 ### Loading overlay — `components/loading.js`
 
@@ -532,7 +867,7 @@ render(containerSelector, prop, renderFn)
 
 ---
 
-## 10. Admin Panel
+## 11. Admin Panel
 
 The admin panel is a **client-side SPA** inside `admin-panel.html`. There is no server-side routing — all navigation is done via `fetch()` in `admin-js.js`.
 
@@ -621,7 +956,7 @@ These are defined in `admin-js.js` with `console.log` placeholders — implement
 
 ---
 
-## 11. Styling Conventions
+## 12. Styling Conventions
 
 ### CSS import order
 
@@ -665,7 +1000,7 @@ Every page stylesheet should begin with:
 
 ---
 
-## 12. JavaScript Conventions
+## 13. JavaScript Conventions
 
 ### Module vs. non-module scripts
 
@@ -735,7 +1070,7 @@ else showAdminPopup(result?.message || 'Failed.', 'error');
 
 ---
 
-## 13. Security Checklist
+## 14. Security Checklist
 
 Before deploying any PHP endpoint:
 
@@ -753,7 +1088,7 @@ Before deploying any PHP endpoint:
 
 ---
 
-## 14. Common Gotchas
+## 15. Common Gotchas
 
 ### `assests/` typo in asset paths
 
@@ -799,13 +1134,26 @@ The component file is spelled `subcriptionCards.js` (missing the 's' in 'subscri
 
 `components/selectTrainer.js` outputs trainer cards for the booking wizard. It references trainer image paths from `data/Trainers.js` which use `../assests/trainers/` — correct relative to `components/`. If the file is moved, update the paths.
 
+### `LIMIT` / `OFFSET` with PDO
+
+PDO cannot bind `LIMIT` and `OFFSET` values as named parameters in some MySQL driver versions. Cast them to `int` and interpolate directly into the query string:
+
+```php
+// WRONG — may throw or silently fail
+$stmt = $pdo->prepare('SELECT * FROM members LIMIT :limit OFFSET :offset');
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+
+// CORRECT
+$limit  = (int)$limit;
+$offset = (int)$offset;
+$stmt   = $pdo->prepare("SELECT * FROM members LIMIT $limit OFFSET $offset");
+```
+
 ---
 
-## 15. API Reference
+## 16. API Reference
 
 All endpoints return `{ "success": bool, "message": string, ...data }`. All POST endpoints require `csrf_token`. All admin endpoints require an active admin session.
-
-> **Current state:** All endpoints are coded and validated but return `503` until the DB (`api/config.php` credentials) is connected. Uncomment the PDO block and remove the stub line to activate any endpoint.
 
 ### Auth (`/api/auth/`)
 
@@ -852,6 +1200,12 @@ All endpoints return `{ "success": bool, "message": string, ...data }`. All POST
 |--------|----------|-------------|
 | GET | `/api/user/events/list.php` | Upcoming public events |
 | POST | `/api/user/events/register.php` | Register for an event |
+
+### Contact (`/api/contact/`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/contact/inquiry.php` | — | Submit a public contact form inquiry |
 
 ### Admin — Members (`/api/admin/members/`)
 
