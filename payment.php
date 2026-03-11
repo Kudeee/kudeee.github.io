@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="header">
-      <a href="homepage.html">
+      <a href="homepage.php">
         <img src="assests/logo/society-fit.png" alt="society-fit logo" />
       </a>
     </header>

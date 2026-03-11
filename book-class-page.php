@@ -202,7 +202,7 @@
               <p class="success-text">
                 You're all set for your class. We've sent a confirmation email with all the details.
               </p>
-              <button class="btn btn-primary" onclick="location.href = 'homepage.html'">
+              <button class="btn btn-primary" onclick="location.href = 'homepage.php'">
                 Back to Home
               </button>
             </div>

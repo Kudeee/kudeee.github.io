@@ -206,7 +206,7 @@
               </p>
               <button
                 class="btn btn-primary"
-                onclick="location.href = 'homepage.html'"
+                onclick="location.href = 'homepage.php'"
                 style="flex: none; padding: 15px 40px"
               >
                 Back to Home

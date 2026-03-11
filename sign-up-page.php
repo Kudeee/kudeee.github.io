@@ -10,7 +10,7 @@
     <div class="container">
       <div class="form-container">
         <header class="header">
-          <a href="index.html">
+          <a href="index.php">
             <img src="assests/logo/society-fit.png" alt="society-fit logo" />
           </a>
         </header>
@@ -19,8 +19,6 @@
 
         <!-- Multi-step form — final submit POSTs to registration endpoint -->
         <form id="form" method="POST" action="/api/auth/register.php">
-          <!-- CSRF token -->
-          <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
 
           <!-- ─── PAGE 1: Personal Info ─────────────────────────── -->
           <div class="page" id="first-page" style="display: block">
