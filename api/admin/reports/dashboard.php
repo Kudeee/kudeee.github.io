@@ -1,80 +1,56 @@
 <?php
-require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../../config.php';
 require_method('GET');
 require_admin();
 
 $pdo = db();
 
-// ── Member counts ───────────────────────────────────────────────────────────
-$stmt = $pdo->query("SELECT COUNT(*) FROM members WHERE status != 'deleted'");
-$totalMembers = (int)$stmt->fetchColumn();
+// Members
+$totalMembers  = (int)$pdo->query("SELECT COUNT(*) FROM members WHERE status != 'deleted'")->fetchColumn();
+$activeMembers = (int)$pdo->query("SELECT COUNT(*) FROM members WHERE status = 'active'")->fetchColumn();
+$newThisMonth  = (int)$pdo->query("SELECT COUNT(*) FROM members WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW()) AND status != 'deleted'")->fetchColumn();
 
-$stmt = $pdo->query("SELECT COUNT(DISTINCT member_id) FROM subscriptions WHERE status = 'active'");
-$activeMembers = (int)$stmt->fetchColumn();
+// Subscriptions
+$activeSubs    = (int)$pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active'")->fetchColumn();
+$expiringSoon  = (int)$pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
 
-$stmt = $pdo->query("SELECT COUNT(*) FROM members WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW()) AND status != 'deleted'");
-$newThisMonth = (int)$stmt->fetchColumn();
+// Revenue this month
+$monthlyRevenue = (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='completed' AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())")->fetchColumn();
 
-// ── Active subscriptions ────────────────────────────────────────────────────
-$stmt = $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active'");
-$activeSubs = (int)$stmt->fetchColumn();
+// Classes this month
+$classesThisMonth = (int)$pdo->query("SELECT COUNT(*) FROM class_schedules WHERE MONTH(scheduled_at)=MONTH(NOW()) AND YEAR(scheduled_at)=YEAR(NOW()) AND status='active'")->fetchColumn();
 
-// ── Revenue ─────────────────────────────────────────────────────────────────
-$stmt = $pdo->query("SELECT COALESCE(SUM(amount),0) FROM payments WHERE status='completed' AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())");
-$monthlyRevenue = (float)$stmt->fetchColumn();
+// Active trainers
+$activeTrainers = (int)$pdo->query("SELECT COUNT(*) FROM trainers WHERE status='active'")->fetchColumn();
 
-// ── Classes this month ───────────────────────────────────────────────────────
-$stmt = $pdo->query("SELECT COUNT(*) FROM class_schedules WHERE MONTH(scheduled_at)=MONTH(NOW()) AND YEAR(scheduled_at)=YEAR(NOW()) AND status='active'");
-$classesThisMonth = (int)$stmt->fetchColumn();
+// Plan distribution
+$planDist = $pdo->query("SELECT plan, COUNT(*) AS cnt FROM members WHERE status='active' GROUP BY plan ORDER BY cnt DESC")->fetchAll();
 
-// ── Active trainers ──────────────────────────────────────────────────────────
-$stmt = $pdo->query("SELECT COUNT(*) FROM trainers WHERE status='active'");
-$activeTrainers = (int)$stmt->fetchColumn();
-
-// ── Recent activity from audit log ──────────────────────────────────────────
-$stmt = $pdo->query("
-    SELECT al.*, CONCAT(au.first_name,' ',au.last_name) AS admin_name
+// Recent activity from audit_log
+$recentActivity = $pdo->query("
+    SELECT al.action, al.target_type, al.created_at,
+           CONCAT(au.first_name,' ',au.last_name) AS admin_name
     FROM audit_log al
     LEFT JOIN admin_users au ON au.id = al.admin_id
-    ORDER BY al.created_at DESC LIMIT 10
-");
-$recentActivity = $stmt->fetchAll();
+    ORDER BY al.created_at DESC LIMIT 8
+")->fetchAll();
 
-// ── Plan distribution ────────────────────────────────────────────────────────
-$stmt = $pdo->query("
-    SELECT plan, COUNT(*) as cnt
-    FROM members
-    WHERE status = 'active'
-    GROUP BY plan
-");
-$planDist = $stmt->fetchAll();
-
-// ── Subscriptions expiring soon (7 days) ────────────────────────────────────
-$stmt = $pdo->query("
-    SELECT COUNT(*) FROM subscriptions
-    WHERE status = 'active'
-      AND expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-");
-$expiringSoon = (int)$stmt->fetchColumn();
+// Monthly revenue chart (last 6 months)
+$monthlyChart = $pdo->query("
+    SELECT DATE_FORMAT(created_at,'%b %Y') AS label,
+           SUM(CASE WHEN status='completed' THEN amount ELSE 0 END) AS total
+    FROM payments
+    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(created_at,'%Y-%m')
+    ORDER BY DATE_FORMAT(created_at,'%Y-%m') ASC
+")->fetchAll();
 
 success('OK', [
-    'members' => [
-        'total'           => $totalMembers,
-        'active'          => $activeMembers,
-        'new_this_period' => $newThisMonth,
-    ],
-    'revenue' => [
-        'net'      => $monthlyRevenue,
-        'by_plan'  => $planDist,
-    ],
-    'classes' => [
-        'scheduled' => $classesThisMonth,
-    ],
-    'subscriptions' => [
-        'active'        => $activeSubs,
-        'expiring_soon' => $expiringSoon,
-    ],
+    'members'         => ['total' => $totalMembers, 'active' => $activeMembers, 'new_this_period' => $newThisMonth],
+    'revenue'         => ['net' => $monthlyRevenue, 'by_plan' => $planDist, 'monthly_chart' => $monthlyChart],
+    'classes'         => ['scheduled' => $classesThisMonth],
+    'subscriptions'   => ['active' => $activeSubs, 'expiring_soon' => $expiringSoon],
     'top_trainers'    => $activeTrainers,
     'recent_activity' => $recentActivity,
+    'plan_distribution' => $planDist,
 ]);

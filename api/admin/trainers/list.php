@@ -1,78 +1,57 @@
 <?php
 require_once __DIR__ . '/../../../config.php';
-require_once __DIR__ . '/../../config.php';
 require_method('GET');
 require_admin();
 
 $page     = max(1, sanitize_int($_GET['page']     ?? 1));
-$per_page = max(1, sanitize_int($_GET['per_page'] ?? 20));
+$per_page = max(1, sanitize_int($_GET['per_page'] ?? 50));
 $search   = sanitize_string($_GET['search'] ?? '');
 $status   = sanitize_string($_GET['status'] ?? '');
 
-$where  = ['1=1'];
-$params = [];
-
+$where  = ['1=1']; $params = [];
 if ($search !== '') {
-    $where[]  = "(t.first_name LIKE ? OR t.last_name LIKE ? OR t.email LIKE ? OR t.specialization LIKE ?)";
-    $like     = "%$search%";
-    $params[] = $like;
-    $params[] = $like;
-    $params[] = $like;
-    $params[] = $like;
+    $where[] = "(t.first_name LIKE ? OR t.last_name LIKE ? OR t.specialty LIKE ?)";
+    $like = "%$search%"; $params[] = $like; $params[] = $like; $params[] = $like;
 }
-if ($status !== '') {
-    $where[]  = "t.status = ?";
-    $params[] = $status;
-}
-
+if ($status !== '') { $where[] = "t.status = ?"; $params[] = $status; }
 $where_sql = 'WHERE ' . implode(' AND ', $where);
 
 $pdo = db();
+$total  = (int)$pdo->query("SELECT COUNT(*) FROM trainers")->fetchColumn();
+$active = (int)$pdo->query("SELECT COUNT(*) FROM trainers WHERE status='active'")->fetchColumn();
 
-// Summary stats
-$totalStmt  = $pdo->query("SELECT COUNT(*) FROM trainers");
-$total       = (int)$totalStmt->fetchColumn();
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM trainers t $where_sql");
+$countStmt->execute($params);
+$filtered = (int)$countStmt->fetchColumn();
+$pag = get_pagination($filtered, $page, $per_page);
 
-$activeStmt = $pdo->query("SELECT COUNT(*) FROM trainers WHERE status = 'active'");
-$active      = (int)$activeStmt->fetchColumn();
-
-// Count with filters
-$count_sql = "SELECT COUNT(*) FROM trainers t $where_sql";
-$stmt = $pdo->prepare($count_sql);
-$stmt->execute($params);
-$filtered_total = (int)$stmt->fetchColumn();
-
-$pag = get_pagination($filtered_total, $page, $per_page);
-
-// JS reads: first_name, last_name, specialty, rating, session_rate,
-//           total_sessions, upcoming_sessions, status
-$sql = "
-    SELECT t.id, t.first_name, t.last_name, t.email, t.phone,
-           t.specialization AS specialty,
-           t.bio, t.status, t.hire_date, t.created_at,
-           IFNULL(t.session_rate, 0)  AS session_rate,
-           IFNULL(t.rating, 0)        AS rating,
-           COUNT(DISTINCT cs.id)      AS total_sessions,
-           COUNT(DISTINCT CASE
-               WHEN cs.status = 'active' AND cs.schedule_date >= CURDATE()
-               THEN cs.id END)        AS upcoming_sessions,
-           COUNT(DISTINCT CASE WHEN cs.status = 'active' THEN cs.id END) AS active_classes
+$stmt = $pdo->prepare("
+    SELECT t.id, t.first_name, t.last_name, t.specialty, t.bio, t.image_url,
+           t.exp_years, t.client_count, t.session_rate, t.rating,
+           t.availability, t.specialty_tags, t.status, t.created_at,
+           COUNT(DISTINCT cs.id) AS total_sessions,
+           COUNT(DISTINCT CASE WHEN cs.scheduled_at >= NOW() AND cs.status='active' THEN cs.id END) AS upcoming_sessions
     FROM trainers t
     LEFT JOIN class_schedules cs ON cs.trainer_id = t.id
     $where_sql
     GROUP BY t.id
-    ORDER BY t.created_at DESC
+    ORDER BY t.rating DESC, t.first_name ASC
     LIMIT {$pag['per_page']} OFFSET {$pag['offset']}
-";
-$stmt = $pdo->prepare($sql);
+");
 $stmt->execute($params);
 $trainers = $stmt->fetchAll();
+
+// Parse specialty_tags JSON
+foreach ($trainers as &$tr) {
+    if ($tr['specialty_tags']) {
+        $tr['specialty_tags'] = json_decode($tr['specialty_tags'], true) ?? [];
+    } else {
+        $tr['specialty_tags'] = [];
+    }
+}
 
 success('Trainers retrieved.', [
     'trainers'   => $trainers,
     'pagination' => $pag,
-    'summary'    => [
-        'total'  => $total,
-        'active' => $active,
-    ],
+    'summary'    => ['total' => $total, 'active' => $active],
 ]);

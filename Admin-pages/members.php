@@ -1,145 +1,132 @@
-<div class="header">
-  <h1>Members</h1>
+<div class="header"><h1>Members</h1></div>
+
+<div class="grid" style="margin-bottom:20px;">
+  <div class="card"><h3>Total Members</h3><p class="stat-value" id="members-total">—</p></div>
+  <div class="card"><h3>Active Members</h3><p class="stat-value" id="members-active">—</p></div>
+  <div class="card"><h3>Expiring This Month</h3><p class="stat-value" id="members-expired">—</p></div>
+  <div class="card"><h3>New This Month</h3><p class="stat-value" id="members-new">—</p></div>
 </div>
 
-<!-- Search and Filter -->
-<div class="card" style="margin-bottom: 20px;">
-  <h3>Search &amp; Filter Members</h3>
+<div class="filter-bar">
+  <h3>Search &amp; Filter</h3>
   <form id="memberFilterForm">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-      <div>
-        <label style="display:block;margin-bottom:5px;font-weight:600;" for="search_name">Search by Name</label>
-        <input type="text" id="search_name" name="search_name" placeholder="Enter member name..."
-          style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;" />
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Search by Name / Email</label>
+        <input type="text" id="search_name" name="search_name" placeholder="Enter name or email…"/>
       </div>
-      <div>
-        <label style="display:block;margin-bottom:5px;font-weight:600;" for="status_filter">Filter by Status</label>
-        <select id="status_filter" name="status_filter" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="status_filter" name="status_filter">
           <option value="">All Status</option>
           <option value="active">Active</option>
-          <option value="expired">Expired</option>
           <option value="suspended">Suspended</option>
         </select>
       </div>
-      <div>
-        <label style="display:block;margin-bottom:5px;font-weight:600;" for="plan_filter">Filter by Plan</label>
-        <select id="plan_filter" name="plan_filter" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;">
+      <div class="form-group">
+        <label>Plan</label>
+        <select id="plan_filter" name="plan_filter">
           <option value="">All Plans</option>
           <option value="BASIC PLAN">Basic</option>
           <option value="PREMIUM PLAN">Premium</option>
           <option value="VIP PLAN">VIP</option>
         </select>
       </div>
-    </div>
-    <div style="margin-top:15px;">
-      <button type="submit" style="padding:10px 20px;">Search</button>
+      <div class="form-group" style="justify-content:flex-end;padding-top:22px;">
+        <button type="submit">Search</button>
+      </div>
     </div>
   </form>
 </div>
 
-<!-- Action Buttons -->
 <div class="option-bar">
-  <button id="addMemberBtn">Add Member</button>
-  <button id="exportBtn">Export Data</button>
+  <button id="addMemberBtn">+ Add Member</button>
+</div>
+
+<div class="table-wrap">
+  <table id="membersTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Email</th><th>Phone</th>
+        <th>Plan</th><th>Status</th><th>Join Date</th><th>Expiry</th><th>Last Payment</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody><tr><td colspan="10" class="loading">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button onclick="changePage('prev')">← Prev</button>
+  <span id="pageInfo">Page 1 of 1</span>
+  <button onclick="changePage('next')">Next →</button>
 </div>
 
 <!-- Add Member Modal -->
-<div id="addMemberModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
-  <div style="background:#fff;border-radius:15px;padding:30px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;">
-    <h3 style="margin-bottom:20px;">Add New Member</h3>
+<div class="modal-overlay" id="addMemberModal">
+  <div class="modal-box">
+    <h3>Add New Member</h3>
     <form id="addMemberForm">
-      <input type="hidden" name="csrf_token" value="" />
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-        <div class="form">
-          <label for="member_first_name">First Name</label>
-          <input type="text" id="member_first_name" name="first_name" placeholder="First name" required />
-        </div>
-        <div class="form">
-          <label for="member_last_name">Last Name</label>
-          <input type="text" id="member_last_name" name="last_name" placeholder="Last name" required />
-        </div>
-      </div>
-      <div class="form">
-        <label for="member_email">Email</label>
-        <input type="email" id="member_email" name="email" placeholder="member@email.com" required />
-      </div>
-      <div class="form">
-        <label for="member_phone">Phone</label>
-        <input type="tel" id="member_phone" name="phone" placeholder="09XX-XXX-XXXX" />
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
-        <div class="form">
-          <label for="member_plan">Membership Plan</label>
-          <select id="member_plan" name="plan" required>
-            <option value="">Select Plan</option>
-            <option value="BASIC PLAN">Basic</option>
-            <option value="PREMIUM PLAN">Premium</option>
-            <option value="VIP PLAN">VIP</option>
+      <div class="form-grid">
+        <div class="form-group"><label>First Name</label><input type="text" name="first_name" required placeholder="First name"/></div>
+        <div class="form-group"><label>Last Name</label><input type="text" name="last_name" required placeholder="Last name"/></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" required placeholder="email@example.com"/></div>
+        <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="09XX-XXX-XXXX"/></div>
+        <div class="form-group">
+          <label>Plan</label>
+          <select name="plan" required>
+            <option value="BASIC PLAN">Basic (₱499/mo)</option>
+            <option value="PREMIUM PLAN">Premium (₱899/mo)</option>
+            <option value="VIP PLAN">VIP (₱1,499/mo)</option>
           </select>
         </div>
-        <div class="form">
-          <label for="member_billing">Billing Cycle</label>
-          <select id="member_billing" name="billing_cycle">
+        <div class="form-group">
+          <label>Billing Cycle</label>
+          <select name="billing_cycle">
             <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
+            <option value="yearly">Yearly (10% off)</option>
           </select>
         </div>
+        <div class="form-group"><label>Join Date</label><input type="date" name="join_date" required/></div>
       </div>
-      <div class="form">
-        <label for="member_join_date">Join Date</label>
-        <input type="date" id="member_join_date" name="join_date" required />
-      </div>
-      <div style="display:flex;gap:10px;margin-top:15px;">
-        <button type="submit" style="flex:1;">Add Member</button>
-        <button type="button" style="flex:1;background:#e5e7eb;color:#333;" onclick="closeModal('addMemberModal')">Cancel</button>
+      <div class="modal-actions">
+        <button type="submit">Add Member</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('addMemberModal')">Cancel</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Member Statistics -->
-<div class="grid" style="margin-bottom:20px;">
-  <div class="card">
-    <h3>Total Members</h3>
-    <p class="stat-value" id="members-total">—</p>
+<!-- Edit Member Modal -->
+<div class="modal-overlay" id="editMemberModal">
+  <div class="modal-box">
+    <h3>Edit Member</h3>
+    <form id="editMemberForm">
+      <input type="hidden" id="edit_member_id" name="id"/>
+      <div class="form-grid">
+        <div class="form-group"><label>First Name</label><input type="text" id="edit_first_name" name="first_name" required/></div>
+        <div class="form-group"><label>Last Name</label><input type="text" id="edit_last_name" name="last_name" required/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="edit_email" name="email" required/></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="edit_phone" name="phone"/></div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="edit_status" name="status">
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="edit_plan" name="plan">
+            <option value="BASIC PLAN">Basic Plan</option>
+            <option value="PREMIUM PLAN">Premium Plan</option>
+            <option value="VIP PLAN">VIP Plan</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="submit">Save Changes</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('editMemberModal')">Cancel</button>
+      </div>
+    </form>
   </div>
-  <div class="card">
-    <h3>Active Members</h3>
-    <p class="stat-value" id="members-active">—</p>
-  </div>
-  <div class="card">
-    <h3>Expiring This Month</h3>
-    <p class="stat-value" id="members-expired">—</p>
-  </div>
-  <div class="card">
-    <h3>New This Month</h3>
-    <p class="stat-value" id="members-new">—</p>
-  </div>
-</div>
-
-<!-- Members Table -->
-<table id="membersTable">
-  <thead>
-    <tr>
-      <th>Member ID</th>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Phone</th>
-      <th>Status</th>
-      <th>Plan</th>
-      <th>Join Date</th>
-      <th>Last Payment</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td colspan="9" style="text-align:center;color:#999;padding:30px;">Loading members...</td></tr>
-  </tbody>
-</table>
-
-<!-- Pagination -->
-<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:20px;">
-  <button style="padding:8px 16px;" onclick="changePage('prev')">Previous</button>
-  <span style="font-weight:600;" id="pageInfo">Page 1 of 1</span>
-  <button style="padding:8px 16px;" onclick="changePage('next')">Next</button>
 </div>

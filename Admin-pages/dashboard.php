@@ -1,19 +1,20 @@
 <div class="header">
   <h1>Dashboard</h1>
-  <div class="user-box">Admin</div>
+  <div class="header-right">
+    <div class="user-box" id="dashAdminName">Admin</div>
+  </div>
 </div>
 
-<!-- Key Metrics -->
-<section class="grid">
+<div class="grid">
   <div class="card">
     <h3>Total Members</h3>
     <p class="stat-value" id="dash-total-members">—</p>
-    <p class="stat-status">↑ from last month</p>
+    <p class="stat-status">All registered</p>
   </div>
   <div class="card">
     <h3>Active Subscriptions</h3>
     <p class="stat-value" id="dash-active-subs">—</p>
-    <p class="stat-status">Current active</p>
+    <p class="stat-status">Currently active</p>
   </div>
   <div class="card">
     <h3>Monthly Revenue</h3>
@@ -25,19 +26,13 @@
     <p class="stat-value" id="dash-classes-today">—</p>
     <p class="stat-status">Scheduled sessions</p>
   </div>
-</section>
+</div>
 
-<!-- Additional Statistics -->
-<section class="grid">
+<div class="grid">
   <div class="card">
-    <h3>New Members (This Month)</h3>
+    <h3>New Members</h3>
     <p class="stat-value" id="dash-new-members">—</p>
-    <p class="stat-status">New sign-ups</p>
-  </div>
-  <div class="card">
-    <h3>Retention Rate</h3>
-    <p class="stat-value">89%</p>
-    <p class="stat-status">↑ 2% from last month</p>
+    <p class="stat-status">This month</p>
   </div>
   <div class="card">
     <h3>Active Trainers</h3>
@@ -45,49 +40,41 @@
     <p class="stat-status">All certified</p>
   </div>
   <div class="card">
-    <h3>Equipment Status</h3>
-    <p class="stat-value">98%</p>
-    <p class="stat-status">Operational</p>
+    <h3>Expiring Soon</h3>
+    <p class="stat-value" id="dash-expiring">—</p>
+    <p class="stat-status">Within 7 days</p>
   </div>
-</section>
-
-<!-- Recent Activity & Quick Actions -->
-<div class="grid">
   <div class="card">
-    <h3>Recent Activities</h3>
-    <div id="dash-recent-activity">
-      <p style="color:#999;">Loading...</p>
-    </div>
+    <h3>Retention Rate</h3>
+    <p class="stat-value">89%</p>
+    <p class="stat-status">↑ 2% from last month</p>
   </div>
+</div>
 
+<div class="two-col">
   <div class="card">
-    <h3>Quick Actions</h3>
-    <div class="action-buttons">
-      <button class="btn btn-primary" onclick="loadPage('members')">Add Member</button>
-      <button class="btn btn-primary" onclick="loadPage('classes')">Schedule Class</button>
-    </div>
-    <div class="action-buttons">
-      <button class="btn btn-secondary" onclick="loadPage('revenue')">View Reports</button>
-      <button class="btn btn-secondary" onclick="loadPage('payments')">Process Payments</button>
+    <h3 style="margin-bottom:14px;">Recent Activity</h3>
+    <div id="dash-recent-activity"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:14px;">Quick Actions</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="loadPage('members')">➕ Add Member</button>
+      <button onclick="loadPage('classes')">📅 Schedule Class</button>
+      <button class="btn-secondary" onclick="loadPage('revenue')">📊 View Revenue</button>
+      <button class="btn-secondary" onclick="loadPage('payments')">💳 View Payments</button>
     </div>
   </div>
 </div>
 
-<!-- Membership Breakdown -->
-<div class="card" style="margin-top: 20px;">
-  <h3>Membership Distribution</h3>
-  <div class="grid" style="margin-top: 15px;">
-    <div style="text-align: center;">
-      <p class="stat-value" style="font-size: 1.8rem;" id="sub-plan-count-basic">—</p>
-      <p style="color: #666; font-weight: 600;">Basic Plan</p>
-    </div>
-    <div style="text-align: center;">
-      <p class="stat-value" style="font-size: 1.8rem;" id="sub-plan-count-premium">—</p>
-      <p style="color: #666; font-weight: 600;">Premium Plan</p>
-    </div>
-    <div style="text-align: center;">
-      <p class="stat-value" style="font-size: 1.8rem;" id="sub-plan-count-vip">—</p>
-      <p style="color: #666; font-weight: 600;">VIP Plan</p>
-    </div>
+<div style="margin-top:20px;">
+  <p class="section-title">Membership Distribution</p>
+  <div class="grid" id="dash-plan-dist"><div class="loading"><div class="spinner"></div></div></div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h3 style="margin-bottom:16px;">Revenue (Last 6 Months)</h3>
+  <div id="dash-monthly-chart" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;min-height:100px;">
+    <div class="loading"><div class="spinner"></div></div>
   </div>
 </div>

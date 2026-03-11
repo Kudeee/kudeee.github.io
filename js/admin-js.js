@@ -1,39 +1,22 @@
 /**
- * admin-js.js
- * Society Fit — Admin Panel JS
- * Fully connected to PHP/MySQL backend.
+ * admin-js.js — Society Fitness Admin Panel
+ * Fully wired to real DB schema (society_fitness)
  */
 
-// ─── Session / Auth Guard ───────────────────────────────────────────────────
-
+// ─── Session Check ───────────────────────────────────────────────────────────
 async function checkAdminSession() {
   try {
-    const res = await fetch('/api/admin/auth/check-session.php');
+    const res = await fetch('api/admin/auth/check-session.php');
     if (res.status === 401 || res.status === 403) {
-      window.location.href = '/login-page.php';
+      window.location.href = 'login-page.php';
     }
-  } catch {
-    console.warn('Session check failed — offline or PHP not set up yet.');
+  } catch (e) {
+    console.warn('Session check failed:', e);
   }
 }
-
 checkAdminSession();
 
-// ─── Content Container ───────────────────────────────────────────────────────
-
-function getContentEl() {
-  return (
-    document.getElementById('main-content') ||
-    document.getElementById('content') ||
-    document.getElementById('admin-content') ||
-    document.querySelector('.content') ||
-    document.querySelector('.main-content') ||
-    document.querySelector('main')
-  );
-}
-
-// ─── Page Map & Loader ────────────────────────────────────────────────────────
-
+// ─── Page Loader ─────────────────────────────────────────────────────────────
 const pageMap = {
   dashboard:     'Admin-pages/dashboard.php',
   members:       'Admin-pages/members.php',
@@ -46,52 +29,40 @@ const pageMap = {
   roles:         'Admin-pages/roles.php',
 };
 
-// Track current page for refresh
 let currentPage = 'dashboard';
 
 async function loadPage(pageName) {
   const path = pageMap[pageName];
   if (!path) return;
-
   currentPage = pageName;
-  const container = getContentEl();
-  if (!container) return;
 
-  container.innerHTML = '<div style="padding:40px;text-align:center;color:#666;">Loading...</div>';
+  const container = document.getElementById('content');
+  if (!container) return;
+  container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
 
   try {
     const res = await fetch(path);
-    if (!res.ok) throw new Error(`Failed to load ${path}`);
-    const html = await res.text();
-    container.innerHTML = html;
+    if (!res.ok) throw new Error('Failed to load ' + path);
+    container.innerHTML = await res.text();
 
-    // Active nav
-    document.querySelectorAll('.sidebar a').forEach(link => {
-      link.classList.toggle('active', link.dataset.page === pageName);
-    });
-
-    // Inject CSRF token into all hidden inputs in the new fragment
-    document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
-      input.value = _csrfToken;
+    document.querySelectorAll('.sidebar .nav a').forEach(a => {
+      a.classList.toggle('active', a.dataset.page === pageName);
     });
 
     bindModalTriggers();
     bindFormHandlers();
-
-    // Fetch live data for this page
     await fetchPageData(pageName);
   } catch (err) {
-    const el = getContentEl();
-    if (el) el.innerHTML = `<div class="card"><p style="color:red;">Failed to load page. Please try again.</p></div>`;
+    container.innerHTML = '<div class="card"><p style="color:red;">Failed to load page. Please try again.</p></div>';
     console.error(err);
   }
 }
 
-// ─── Page Data Fetchers ───────────────────────────────────────────────────────
+window.loadPage = loadPage;
 
-async function fetchPageData(pageName) {
+async function fetchPageData(page) {
   try {
-    switch (pageName) {
+    switch (page) {
       case 'dashboard':     await loadDashboardData();     break;
       case 'members':       await loadMembersData();       break;
       case 'classes':       await loadClassesData();       break;
@@ -103,519 +74,673 @@ async function fetchPageData(pageName) {
       case 'roles':         await loadRolesData();         break;
     }
   } catch (err) {
-    console.warn('fetchPageData error for', pageName, err);
+    console.warn('fetchPageData error for', page, err);
   }
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
 async function loadDashboardData() {
-  const res = await fetch('/api/admin/reports/dashboard.php');
-  if (!res.ok) return;
+  const res  = await fetch('api/admin/reports/dashboard.php');
   const data = await res.json();
   if (!data.success) return;
 
-  const d = data;
+  setText('dash-total-members',   data.members?.total          ?? '—');
+  setText('dash-active-subs',     data.subscriptions?.active   ?? '—');
+  setText('dash-monthly-revenue', phpFormat(data.revenue?.net  ?? 0));
+  setText('dash-classes-today',   data.classes?.scheduled      ?? '—');
+  setText('dash-new-members',     data.members?.new_this_period ?? '—');
+  setText('dash-active-trainers', data.top_trainers            ?? '—');
+  setText('dash-expiring',        data.subscriptions?.expiring_soon ?? '—');
 
-  // Key metrics
-  setTextById('dash-total-members',   d.members?.total        ?? '—');
-  setTextById('dash-active-subs',     d.members?.active       ?? '—');
-  setTextById('dash-monthly-revenue', formatPHP(d.revenue?.net ?? 0));
-  setTextById('dash-classes-today',   d.classes?.scheduled    ?? '—');
-
-  // Additional stats
-  setTextById('dash-new-members',     d.members?.new_this_period ?? '—');
-  setTextById('dash-active-trainers', d.top_trainers?.length  ?? '—');
+  // Admin name
+  const nameEl = document.getElementById('dashAdminName');
+  if (nameEl) nameEl.textContent = window.ADMIN_NAME || 'Admin';
 
   // Recent activity
   const actEl = document.getElementById('dash-recent-activity');
-  if (actEl && d.recent_activity?.length) {
-    actEl.innerHTML = d.recent_activity.slice(0, 6).map(a =>
-      `<p>• ${formatActivityLog(a)}</p>`
-    ).join('');
-  }
-
-  // Membership distribution
-  if (d.revenue?.by_plan?.length) {
-    const planMap = {};
-    d.revenue.by_plan.forEach(p => { planMap[p.plan] = p.total; });
-  }
-}
-
-function formatActivityLog(a) {
-  const actionLabels = {
-    member_created:   'New member registered',
-    member_updated:   'Member updated',
-    member_suspended: 'Member suspended',
-    class_created:    'Class scheduled',
-    class_cancelled:  'Class cancelled',
-    trainer_added:    'Trainer added',
-    event_created:    'Event created',
-    refund_issued:    'Refund issued',
-  };
-  const label = actionLabels[a.action] || a.action.replace(/_/g, ' ');
-  const time = new Date(a.created_at).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  return `${label} — ${a.admin_name || 'System'} <span style="color:#999;font-size:0.85rem">${time}</span>`;
-}
-
-// ─── Members ──────────────────────────────────────────────────────────────────
-
-let membersPage = 1;
-let membersFilters = {};
-
-async function loadMembersData(page = 1, filters = {}) {
-  membersPage = page;
-  membersFilters = filters;
-
-  const params = new URLSearchParams({ page, per_page: 10, ...filters });
-  const res = await fetch('/api/admin/members/list.php?' + params);
-  if (!res.ok) return;
-  const data = await res.json();
-  if (!data.success) return;
-
-  // Stats
-  setTextById('members-total',   data.summary?.total_members  ?? '—');
-  setTextById('members-active',  data.summary?.active         ?? '—');
-  setTextById('members-expired', data.summary?.expiring_this_month ?? '—');
-  setTextById('members-new',     data.summary?.new_this_month ?? '—');
-
-  // Table
-  const tbody = document.querySelector('#membersTable tbody');
-  if (tbody) {
-    if (!data.members?.length) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;padding:30px;">No members found.</td></tr>`;
-      return;
+  if (actEl) {
+    if (data.recent_activity?.length) {
+      actEl.innerHTML = data.recent_activity.map(a => {
+        const labels = {
+          member_suspended: 'Member suspended',
+          member_unsuspended: 'Member unsuspended',
+          trainer_added: 'Trainer added',
+          event_created: 'Event created',
+          class_cancelled: 'Class cancelled',
+          member_created: 'New member registered',
+          refund_issued: 'Refund issued',
+        };
+        const label = labels[a.action] || a.action.replace(/_/g, ' ');
+        const time  = fmtDateTime(a.created_at);
+        return `<div class="activity-item"><div class="activity-dot"></div><div><span>${esc(label)}</span><br><span class="activity-time">${esc(a.admin_name || 'System')} — ${time}</span></div></div>`;
+      }).join('');
+    } else {
+      actEl.innerHTML = '<p style="color:#999;">No recent activity.</p>';
     }
-    tbody.innerHTML = data.members.map(m => {
-      const statusBadge = badgeHtml(m.status);
-      const joinDate = formatDate(m.join_date || m.joined_at);
-      const lastPay  = m.last_payment_date ? formatDate(m.last_payment_date) : '—';
-      return `
-        <tr>
-          <td>#M${m.id}</td>
-          <td>${escHtml(m.first_name + ' ' + m.last_name)}</td>
-          <td>${escHtml(m.email)}</td>
-          <td>${escHtml(m.phone || '—')}</td>
-          <td>${statusBadge}</td>
-          <td>${escHtml(m.plan || '—')}</td>
-          <td>${joinDate}</td>
-          <td>${lastPay}</td>
-          <td><button style="padding:6px 12px;font-size:0.8rem;" onclick="viewMember(${m.id})">View</button></td>
-        </tr>`;
-    }).join('');
   }
 
-  // Pagination
-  const pg = data.pagination;
-  setTextById('pageInfo', `Page ${pg.page} of ${pg.total_pages}`);
-  window._membersPageTotal = pg.total_pages;
-}
+  // Plan distribution
+  const planGrid = document.getElementById('dash-plan-dist');
+  if (planGrid && data.plan_distribution?.length) {
+    planGrid.innerHTML = data.plan_distribution.map(p => `
+      <div class="card">
+        <h3>${esc(p.plan)}</h3>
+        <p class="stat-value">${p.cnt}</p>
+        <p class="stat-status">Active members</p>
+      </div>`).join('');
+  }
 
-// ─── Classes ──────────────────────────────────────────────────────────────────
-
-async function loadClassesData() {
-  // Load upcoming classes (next 30 days)
-  const from = new Date().toISOString().split('T')[0];
-  const to   = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
-  const params = new URLSearchParams({ date_from: from, date_to: to, per_page: 20 });
-
-  const res = await fetch('/api/admin/classes/list.php?' + params);
-  if (!res.ok) return;
-  const data = await res.json();
-  if (!data.success) return;
-
-  // Stats
-  setTextById('classes-total',       data.stats?.scheduled   ?? data.pagination?.total ?? '—');
-  setTextById('classes-today',       countToday(data.classes, 'scheduled_at'));
-  setTextById('classes-avg-attend',  '—'); // Would need separate calc
-
-  // Upcoming classes grid
-  const grid = document.getElementById('upcoming-classes-grid');
-  if (grid) {
-    if (!data.classes?.length) {
-      grid.innerHTML = `<div class="card"><p style="color:#999;">No upcoming classes found.</p></div>`;
-      return;
-    }
-    grid.innerHTML = data.classes.map(c => {
-      const fill     = c.current_participants;
-      const max      = c.max_participants;
-      const pct      = max > 0 ? Math.round((fill / max) * 100) : 0;
-      const badgeCls = pct >= 100 ? '#e8f5e9;color:#2e7d32' : pct >= 75 ? '#fff3e0;color:#f57c00' : '#e3f2fd;color:#1565c0';
-      const dt       = new Date(c.scheduled_at);
-      const dateStr  = dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-      const timeStr  = dt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' });
+  // Monthly chart
+  const chartEl = document.getElementById('dash-monthly-chart');
+  if (chartEl && data.revenue?.monthly_chart?.length) {
+    const max = Math.max(...data.revenue.monthly_chart.map(m => parseFloat(m.total) || 0)) || 1;
+    chartEl.innerHTML = data.revenue.monthly_chart.map(m => {
+      const h = Math.round((parseFloat(m.total) / max) * 120);
       return `
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
-            <h3 style="margin:0;color:#ff6b35;">${escHtml(c.class_name)}</h3>
-            <span style="background:${badgeCls};padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:600;">${fill}/${max}${pct >= 100 ? ' Full' : ''}</span>
-          </div>
-          <p><strong>Trainer:</strong> ${escHtml(c.trainer_name || '—')}</p>
-          <p><strong>Date &amp; Time:</strong> ${dateStr} - ${timeStr}</p>
-          <p><strong>Duration:</strong> ${c.duration_minutes} minutes</p>
-          <p><strong>Location:</strong> ${escHtml(c.location || '—')}</p>
-          <div style="margin-top:15px;display:flex;gap:10px;">
-            <button style="flex:1;padding:8px;" onclick="editClass(${c.id})">Edit</button>
-            <button style="flex:1;padding:8px;background:#e5e7eb;color:#333;" onclick="cancelClass(${c.id})">Cancel</button>
-          </div>
+        <div style="text-align:center;flex:1;min-width:70px;">
+          <p style="font-size:0.8rem;font-weight:700;color:var(--primary);margin-bottom:6px;">₱${numShort(m.total)}</p>
+          <div style="height:${h}px;background:linear-gradient(180deg,var(--primary),var(--primary-light));border-radius:6px 6px 0 0;min-height:4px;"></div>
+          <p style="font-size:0.78rem;color:#888;margin-top:6px;">${esc(m.label)}</p>
         </div>`;
     }).join('');
   }
 }
 
-function countToday(items, dateField) {
-  if (!items) return 0;
-  const today = new Date().toISOString().split('T')[0];
-  return items.filter(i => (i[dateField] || '').startsWith(today)).length;
+// ─── MEMBERS ─────────────────────────────────────────────────────────────────
+let membersPage = 1;
+let membersFilters = {};
+window._membersPageTotal = 1;
+
+async function loadMembersData(page = 1, filters = {}) {
+  membersPage    = page;
+  membersFilters = filters;
+
+  const params = new URLSearchParams({ page, per_page: 15, ...filters });
+  const res    = await fetch('api/admin/members/list.php?' + params);
+  const data   = await res.json();
+  if (!data.success) return;
+
+  setText('members-total',   data.summary?.total_members        ?? '—');
+  setText('members-active',  data.summary?.active               ?? '—');
+  setText('members-expired', data.summary?.expiring_this_month  ?? '—');
+  setText('members-new',     data.summary?.new_this_month       ?? '—');
+
+  const tbody = document.querySelector('#membersTable tbody');
+  if (!tbody) return;
+
+  if (!data.members?.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#999;">No members found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.members.map(m => `
+    <tr>
+      <td style="font-family:monospace;font-size:0.82rem;">#M${m.id}</td>
+      <td><strong>${esc(m.first_name + ' ' + m.last_name)}</strong></td>
+      <td style="color:#666;font-size:0.88rem;">${esc(m.email)}</td>
+      <td>${esc(m.phone || '—')}</td>
+      <td><span class="tag" style="background:#e3f2fd;color:#1565c0;">${esc(m.plan || '—')}</span></td>
+      <td>${badge(m.status)}</td>
+      <td>${fmtDate(m.join_date)}</td>
+      <td style="font-size:0.88rem;">${m.expiry_date ? fmtDate(m.expiry_date) : '—'}</td>
+      <td style="font-size:0.88rem;">${m.last_payment_date ? fmtDate(m.last_payment_date) : '—'}</td>
+      <td>
+        <button class="btn-sm" onclick="openEditMember(${m.id},'${esc(m.first_name)}','${esc(m.last_name)}','${esc(m.email)}','${esc(m.phone||'')}','${esc(m.status)}','${esc(m.plan||'')}')">Edit</button>
+      </td>
+    </tr>`).join('');
+
+  const pg = data.pagination;
+  window._membersPageTotal = pg.total_pages;
+  setText('pageInfo', `Page ${pg.page} of ${pg.total_pages}`);
 }
 
-// ─── Trainers ─────────────────────────────────────────────────────────────────
+window.openEditMember = function(id, fn, ln, email, phone, status, plan) {
+  document.getElementById('edit_member_id').value    = id;
+  document.getElementById('edit_first_name').value   = fn;
+  document.getElementById('edit_last_name').value    = ln;
+  document.getElementById('edit_email').value        = email;
+  document.getElementById('edit_phone').value        = phone;
+  document.getElementById('edit_status').value       = status;
+  document.getElementById('edit_plan').value         = plan;
+  openModal('editMemberModal');
+};
 
-async function loadTrainersData() {
-  const res = await fetch('/api/admin/trainers/list.php?per_page=50');
-  if (!res.ok) return;
+// ─── CLASSES ─────────────────────────────────────────────────────────────────
+async function loadClassesData() {
+  const res  = await fetch('api/admin/classes/list.php?per_page=40');
   const data = await res.json();
   if (!data.success) return;
 
-  // Stats
-  const trainers   = data.trainers || [];
-  const activeOnes = trainers.filter(t => t.status === 'active');
-  setTextById('trainers-total',    trainers.length);
-  setTextById('trainers-sessions', trainers.reduce((s, t) => s + (parseInt(t.upcoming_sessions) || 0), 0));
+  setText('classes-total',    data.stats?.scheduled ?? '—');
+  setText('classes-today',    data.stats?.today     ?? '—');
+  setText('classes-upcoming', data.stats?.upcoming  ?? '—');
 
-  const avgRating = trainers.length
-    ? (trainers.reduce((s, t) => s + parseFloat(t.rating || 0), 0) / trainers.length).toFixed(1)
-    : '—';
-  setTextById('trainers-avg-rating', avgRating);
+  // Count unique trainers with classes
+  const trainerIds = [...new Set((data.classes || []).map(c => c.trainer_id).filter(Boolean))];
+  setText('classes-trainers', trainerIds.length || '—');
 
-  const top = [...trainers].sort((a, b) => (b.total_sessions || 0) - (a.total_sessions || 0))[0];
-  setTextById('trainers-top', top ? top.first_name + ' ' + top.last_name.charAt(0) + '.' : '—');
+  // Populate trainer select in form
+  await populateTrainerSelect('classTrainerSelect');
 
   // Grid
+  const grid = document.getElementById('upcoming-classes-grid');
+  if (!grid) return;
+
+  const upcoming = (data.classes || []).filter(c => new Date(c.scheduled_at) >= new Date() && c.status === 'active');
+
+  if (!upcoming.length) {
+    grid.innerHTML = '<div class="card"><p style="color:#999;">No upcoming classes.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = upcoming.map(c => {
+    const fill = parseInt(c.current_participants) || 0;
+    const max  = parseInt(c.max_participants)     || 20;
+    const pct  = max > 0 ? Math.round((fill / max) * 100) : 0;
+    const fillClr = pct >= 100 ? '#c62828' : pct >= 75 ? '#f57c00' : '#1565c0';
+    const dt    = new Date(c.scheduled_at);
+    return `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <h3 style="margin:0;color:var(--primary);font-size:1rem;">${esc(c.class_name)}</h3>
+          <span style="background:${fillClr}22;color:${fillClr};padding:3px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">${fill}/${max}</span>
+        </div>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;">👤 ${esc(c.trainer_name || '—')}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;">📅 ${fmtDateTime(c.scheduled_at)}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;">⏱ ${c.duration_minutes} min · 📍 ${esc(c.location || '—')}</p>
+        <div style="margin-top:12px;height:6px;background:var(--border);border-radius:3px;">
+          <div style="width:${Math.min(pct,100)}%;height:100%;background:${fillClr};border-radius:3px;transition:width 0.5s;"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn-sm btn-secondary" onclick="cancelClass(${c.id})">Cancel</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+window.cancelClass = async function(classId) {
+  if (!confirm('Cancel this class?')) return;
+  const res  = await apiFetch('api/admin/classes/cancel.php', { id: classId });
+  if (res?.success) { toast('Class cancelled.'); loadClassesData(); }
+  else toast(res?.message || 'Failed.', 'error');
+};
+
+// ─── TRAINERS ─────────────────────────────────────────────────────────────────
+async function loadTrainersData() {
+  const res  = await fetch('api/admin/trainers/list.php?per_page=50');
+  const data = await res.json();
+  if (!data.success) return;
+
+  const trainers = data.trainers || [];
+  setText('trainers-total',    data.summary?.total ?? trainers.length);
+  setText('trainers-sessions', trainers.reduce((s, t) => s + (parseInt(t.upcoming_sessions)||0), 0));
+
+  const avgR = trainers.length
+    ? (trainers.reduce((s,t) => s + parseFloat(t.rating||0), 0) / trainers.length).toFixed(1)
+    : '—';
+  setText('trainers-avg-rating', avgR);
+
+  const top = [...trainers].sort((a,b) => (b.total_sessions||0)-(a.total_sessions||0))[0];
+  setText('trainers-top', top ? top.first_name + ' ' + top.last_name : '—');
+
   const grid = document.getElementById('trainers-grid');
   if (!grid) return;
 
   if (!trainers.length) {
-    grid.innerHTML = `<div class="card"><p style="color:#999;">No trainers found.</p></div>`;
+    grid.innerHTML = '<div class="card"><p style="color:#999;">No trainers found.</p></div>';
     return;
   }
 
   grid.innerHTML = trainers.map(t => {
-    const name      = escHtml(t.first_name + ' ' + t.last_name);
-    const imgSrc    = t.image_url || `../assests/images/trainer-${t.first_name?.toLowerCase()}.jpg`;
-    const statusClr = t.status === 'active' ? '#2e7d32' : t.status === 'on_leave' ? '#f57c00' : '#c62828';
-    const statusLbl = t.status === 'on_leave' ? 'On Leave' : t.status.charAt(0).toUpperCase() + t.status.slice(1);
-    const tags      = (t.specialty_tags || []).slice(0, 2).join(' · ');
+    const name     = esc(t.first_name + ' ' + t.last_name);
+    const tags     = Array.isArray(t.specialty_tags) ? t.specialty_tags : [];
+    const avail    = t.availability === 'available'
+      ? '<span style="color:var(--green);font-weight:700;">Available</span>'
+      : '<span style="color:var(--orange);font-weight:700;">Limited</span>';
+    const initials = (t.first_name?.[0]||'?') + (t.last_name?.[0]||'');
     return `
       <div class="card">
-        <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
-          <img src="${imgSrc}" alt="${name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;background:#ddd;"
-               onerror="this.style.background='#ddd';this.src=''"/>
+        <div class="trainer-card-header">
+          <div class="trainer-avatar" style="background:var(--primary);">${initials.toUpperCase()}</div>
           <div>
-            <h3 style="margin:0;">${name}</h3>
-            <p style="margin:0;color:#ff6b35;font-weight:600;">${escHtml(t.specialty || tags || '—')}</p>
+            <h3 style="margin:0;font-size:1rem;">${name}</h3>
+            <p style="color:var(--primary);font-weight:600;font-size:0.88rem;">${esc(t.specialty || '—')}</p>
           </div>
         </div>
-        <p><strong>Sessions/mo:</strong> ${t.total_sessions ?? 0}</p>
-        <p><strong>Rating:</strong> ⭐ ${parseFloat(t.rating || 0).toFixed(1)}</p>
-        <p><strong>Rate:</strong> ₱${formatNum(t.session_rate)}/hr</p>
-        <p><strong>Status:</strong> <span style="color:${statusClr};font-weight:600;">${statusLbl}</span></p>
-        <div style="display:flex;gap:10px;margin-top:15px;">
-          <button style="flex:1;padding:8px;" onclick="editTrainer(${t.id})">Edit</button>
-          <button style="flex:1;padding:8px;" onclick="viewTrainerSchedule(${t.id})">Schedule</button>
+        <div style="font-size:0.88rem;color:#555;margin-bottom:10px;line-height:2;">
+          <p>⭐ ${parseFloat(t.rating||0).toFixed(1)} · ${t.exp_years || 0} yrs exp · ${t.client_count || 0} clients</p>
+          <p>💰 ₱${numFormat(t.session_rate)}/hr</p>
+          <p>📅 ${t.upcoming_sessions || 0} upcoming · ${avail}</p>
+        </div>
+        ${tags.length ? '<div>' + tags.slice(0,3).map(tag => `<span class="tag">${esc(tag)}</span>`).join('') + '</div>' : ''}
+        <div style="margin-top:12px;">
+          <span class="${t.status === 'active' ? 'badge badge-active' : 'badge badge-expired'}">${ucFirst(t.status)}</span>
         </div>
       </div>`;
   }).join('');
 }
 
-// ─── Payments ─────────────────────────────────────────────────────────────────
-
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────────
 let paymentsPage = 1;
+window._paymentsPageTotal = 1;
 
-async function loadPaymentsData(page = 1) {
+async function loadPaymentsData(page = 1, extraParams = {}) {
   paymentsPage = page;
-  // Default to current month
-  const from = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-  const to   = new Date().toISOString().split('T')[0];
-  const params = new URLSearchParams({ page, per_page: 15, date_from: from, date_to: to });
+  const from  = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const to    = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({ page, per_page: 15, date_from: from, date_to: to, ...extraParams });
 
-  const res = await fetch('/api/admin/payments/list.php?' + params);
-  if (!res.ok) return;
+  const res  = await fetch('api/admin/payments/list.php?' + params);
   const data = await res.json();
   if (!data.success) return;
 
   const t = data.totals || {};
+  setText('pay-total-revenue',   phpFormat(t.gross_revenue       ?? 0));
+  setText('pay-transactions',    t.total_transactions            ?? 0);
+  setText('pay-failed',          t.failed_count                  ?? 0);
+  setText('pay-pending-refunds', t.pending_count                 ?? 0);
 
-  // Stats
-  setTextById('pay-total-revenue',    formatPHP(t.gross_revenue  ?? 0));
-  setTextById('pay-transactions',     t.total_transactions ?? 0);
-  setTextById('pay-failed',           t.failed_count       ?? 0);
-  setTextById('pay-pending-refunds',  t.pending_count      ?? 0);
-
-  // Table
   const tbody = document.querySelector('#paymentsTable tbody');
-  if (tbody) {
-    if (!data.payments?.length) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px;">No payment records found.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = data.payments.map(p => {
-      const statusBadge = badgeHtml(p.status);
-      return `
-        <tr>
-          <td>#${escHtml(p.transaction_id || p.id.toString())}</td>
-          <td>${escHtml(p.member_name)}</td>
-          <td>${ucfirst(p.type?.replace('_', ' ') || '—')}</td>
-          <td>₱${formatNum(p.amount)}</td>
-          <td>${ucfirst(p.method || '—')}</td>
-          <td>${formatDate(p.created_at)}</td>
-          <td>${statusBadge}</td>
-          <td><button style="padding:5px 10px;font-size:0.8rem;" onclick="viewTransaction('${escHtml(p.transaction_id || p.id.toString())}')">View</button></td>
-        </tr>`;
-    }).join('');
-  }
+  if (!tbody) return;
 
-  const pg = data.pagination;
-  setTextById('pageInfo', `Page ${pg.page} of ${pg.total_pages}`);
-  window._paymentsPageTotal = pg.total_pages;
-}
-
-// ─── Events ───────────────────────────────────────────────────────────────────
-
-async function loadEventsData() {
-  // Fetch next 60 days
-  const from = new Date().toISOString().split('T')[0];
-  const to   = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0];
-  const params = new URLSearchParams({ date_from: from, date_to: to, per_page: 20 });
-
-  const res = await fetch('/api/admin/events/list.php?' + params);
-  if (!res.ok) return;
-  const data = await res.json();
-  if (!data.success) return;
-
-  setTextById('events-upcoming',       data.stats?.upcoming            ?? data.pagination?.total ?? '—');
-  setTextById('events-total-reg',      data.stats?.total_registrations ?? '—');
-  setTextById('events-this-week',      countThisWeek(data.events, 'event_date'));
-
-  // Most popular
-  if (data.events?.length) {
-    const popular = [...data.events].sort((a, b) => (b.current_attendees || 0) - (a.current_attendees || 0))[0];
-    setTextById('events-popular', popular ? popular.name : '—');
-  }
-
-  // Grid
-  const grid = document.getElementById('upcoming-events-grid');
-  if (!grid) return;
-
-  if (!data.events?.length) {
-    grid.innerHTML = `<div class="card"><p style="color:#999;">No upcoming events found.</p></div>`;
+  if (!data.payments?.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#999;">No payments found.</td></tr>';
     return;
   }
 
-  grid.innerHTML = data.events.map(e => {
-    const fill     = e.current_attendees || 0;
-    const max      = e.max_attendees || 0;
-    const pct      = max > 0 ? Math.round((fill / max) * 100) : 0;
-    const badgeCls = pct >= 100 ? '#e8f5e9;color:#2e7d32' : pct >= 75 ? '#fff3e0;color:#f57c00' : '#e3f2fd;color:#1565c0';
-    const dt       = new Date(e.event_date + 'T' + (e.event_time || '00:00'));
-    const dateStr  = dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-    const timeStr  = e.event_time ? new Date('1970-01-01T' + e.event_time).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }) : '';
-    const fee      = parseFloat(e.fee) > 0 ? `₱${formatNum(e.fee)}` : 'Free' + (e.is_members_only ? ' (Members)' : '');
+  tbody.innerHTML = data.payments.map(p => `
+    <tr>
+      <td style="font-family:monospace;font-size:0.82rem;">${esc(p.transaction_id)}</td>
+      <td><strong>${esc(p.member_name)}</strong><br><span style="color:#888;font-size:0.8rem;">${esc(p.member_email)}</span></td>
+      <td><span class="tag">${ucFirst((p.type||'').replace('_',' '))}</span></td>
+      <td style="font-weight:700;color:var(--primary);">₱${numFormat(p.amount)}</td>
+      <td>${ucFirst(p.method || '—')}</td>
+      <td style="font-size:0.88rem;">${fmtDate(p.created_at)}</td>
+      <td>${badge(p.status)}</td>
+      <td><button class="btn-sm btn-secondary" onclick="viewPayment(${p.id},'${esc(p.member_name)}','${p.amount}','${p.status}')">View</button></td>
+    </tr>`).join('');
+
+  const pg = data.pagination;
+  window._paymentsPageTotal = pg.total_pages;
+  setText('pageInfo', `Page ${pg.page} of ${pg.total_pages}`);
+}
+
+window.viewPayment = function(id, member, amount, status) {
+  toast(`Payment #${id} — ${member}: ₱${numFormat(amount)} (${status})`);
+};
+
+// ─── SUBSCRIPTIONS ────────────────────────────────────────────────────────────
+let subPage = 1;
+window._subPageTotal = 1;
+
+async function loadSubscriptionsData(page = 1) {
+  subPage = page;
+  const params = new URLSearchParams({ page, per_page: 15 });
+  const res    = await fetch('api/admin/subscriptions/list.php?' + params);
+  const data   = await res.json();
+  if (!data.success) return;
+
+  const s = data.stats || {};
+  setText('sub-active',   s.active_count    ?? '—');
+  setText('sub-revenue',  phpFormat(s.monthly_revenue ?? 0));
+  setText('sub-expiring', s.expiring_soon   ?? '—');
+  setText('sub-top-plan', s.top_plan        ?? '—');
+
+  // Plan counts
+  const pc = s.plan_counts || {};
+  setText('sub-plan-count-basic',   pc['BASIC PLAN']   ?? 0);
+  setText('sub-plan-count-premium', pc['PREMIUM PLAN'] ?? 0);
+  setText('sub-plan-count-vip',     pc['VIP PLAN']     ?? 0);
+
+  const tbody = document.querySelector('#subscriptionsTable tbody');
+  if (!tbody) return;
+
+  if (!data.subscriptions?.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">No subscriptions found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.subscriptions.map(s => `
+    <tr>
+      <td><strong>${esc(s.member_name)}</strong><br><span style="color:#888;font-size:0.8rem;">${esc(s.member_email)}</span></td>
+      <td><span class="tag" style="background:#e3f2fd;color:#1565c0;">${esc(s.plan)}</span></td>
+      <td>${ucFirst(s.billing_cycle)}</td>
+      <td>${fmtDate(s.start_date)}</td>
+      <td>${fmtDate(s.expiry_date)}</td>
+      <td style="font-weight:700;">₱${numFormat(s.price)}</td>
+      <td>${badge(s.status)}</td>
+    </tr>`).join('');
+
+  const pg = data.pagination;
+  window._subPageTotal = pg.total_pages;
+  setText('subPageInfo', `Page ${pg.page} of ${pg.total_pages}`);
+}
+
+window.changeSubPage = function(dir) {
+  const max = window._subPageTotal || 1;
+  if (dir === 'next' && subPage < max) loadSubscriptionsData(subPage + 1);
+  if (dir === 'prev' && subPage > 1)   loadSubscriptionsData(subPage - 1);
+};
+
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+async function loadEventsData() {
+  const res  = await fetch('api/admin/events/list.php?per_page=30');
+  const data = await res.json();
+  if (!data.success) return;
+
+  setText('events-upcoming',  data.stats?.upcoming            ?? '—');
+  setText('events-total-reg', data.stats?.total_registrations ?? '—');
+  setText('events-this-week', data.stats?.this_week           ?? '—');
+  setText('events-popular',   data.stats?.popular             ?? '—');
+
+  // Populate organizer select
+  await populateTrainerSelect('eventOrganizerSelect', true);
+
+  const grid = document.getElementById('upcoming-events-grid');
+  if (!grid) return;
+
+  const events = (data.events || []).filter(e => e.status === 'active');
+  if (!events.length) {
+    grid.innerHTML = '<div class="card"><p style="color:#999;">No upcoming events.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = events.map(e => {
+    const fill  = parseInt(e.current_attendees) || 0;
+    const max   = parseInt(e.max_attendees) || 50;
+    const pct   = max > 0 ? Math.round((fill / max) * 100) : 0;
+    const fee   = parseFloat(e.fee) > 0 ? `₱${numFormat(e.fee)}` : 'Free';
     return `
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
-          <h3 style="margin:0;color:#ff6b35;">${escHtml(e.name)}</h3>
-          <span style="background:${badgeCls};padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:600;">${fill}/${max}</span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <h3 style="margin:0;color:var(--primary);font-size:1rem;">${esc(e.name)}</h3>
+          <span style="background:var(--blue-bg);color:var(--blue);padding:3px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">${fill}/${max}</span>
         </div>
-        <p><strong>Type:</strong> ${ucfirst(e.type?.replace('_', ' ') || '—')}</p>
-        <p><strong>Date:</strong> ${dateStr}${timeStr ? ' — ' + timeStr : ''}</p>
-        <p><strong>Location:</strong> ${escHtml(e.location)}</p>
-        <p><strong>Fee:</strong> ${fee}</p>
-        <div style="margin-top:15px;display:flex;gap:10px;">
-          <button style="flex:1;padding:8px;" onclick="editEvent(${e.id})">Edit</button>
-          <button style="flex:1;padding:8px;background:#e5e7eb;color:#333;" onclick="cancelEvent(${e.id})">Cancel</button>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">🗂 ${ucFirst((e.type||'').replace('_',' '))}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">📅 ${fmtDate(e.event_date)} ${e.event_time ? '— ' + fmtTime(e.event_time) : ''}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">📍 ${esc(e.location)}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">💰 ${fee}${e.is_members_only ? ' · Members only' : ''}</p>
+        ${e.organizer_name ? `<p style="font-size:0.88rem;color:#555;">👤 ${esc(e.organizer_name)}</p>` : ''}
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn-sm btn-secondary" onclick="cancelEvent(${e.id})">Cancel</button>
         </div>
       </div>`;
   }).join('');
 }
 
-function countThisWeek(items, dateField) {
-  if (!items) return 0;
-  const now  = new Date();
-  const sun  = new Date(now); sun.setDate(now.getDate() - now.getDay());
-  const sat  = new Date(sun); sat.setDate(sun.getDate() + 6);
-  return items.filter(i => {
-    const d = new Date(i[dateField]);
-    return d >= sun && d <= sat;
-  }).length;
-}
+window.cancelEvent = async function(eventId) {
+  if (!confirm('Cancel this event?')) return;
+  const res = await apiFetch('api/admin/events/cancel.php', { id: eventId });
+  if (res?.success) { toast('Event cancelled.'); loadEventsData(); }
+  else toast(res?.message || 'Failed.', 'error');
+};
 
-// ─── Revenue ──────────────────────────────────────────────────────────────────
-
+// ─── REVENUE ─────────────────────────────────────────────────────────────────
 async function loadRevenueData() {
   const from = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
   const to   = new Date().toISOString().split('T')[0];
-  const params = new URLSearchParams({ date_from: from, date_to: to });
-
-  const res = await fetch('/api/admin/reports/revenue.php?' + params);
-  if (!res.ok) return;
+  const res  = await fetch(`api/admin/reports/revenue.php?date_from=${from}&date_to=${to}`);
   const data = await res.json();
   if (!data.success) return;
 
   const s = data.summary || {};
+  setText('rev-monthly',       phpFormat(s.gross             ?? 0));
+  setText('rev-transactions',  s.transaction_count           ?? 0);
+  setText('rev-total-exp',     phpFormat(data.total_expenses ?? 0));
+  setText('rev-net-profit',    phpFormat(data.net_profit     ?? 0));
+  setText('rev-net-profit-2',  phpFormat(data.net_profit     ?? 0));
+  setText('rev-expenses-ops',      phpFormat(data.expenses?.operating ?? 0));
+  setText('rev-expenses-salaries', phpFormat(data.expenses?.salaries  ?? 0));
+  setText('rev-expenses-marketing',phpFormat(data.expenses?.marketing ?? 0));
+  setText('rev-total-expenses',    phpFormat(data.total_expenses      ?? 0));
 
-  // Key metrics
-  setTextById('rev-monthly',      formatPHP(s.gross  ?? 0));
-  setTextById('rev-net-profit',   formatPHP(data.net_profit ?? 0));
-
-  // Monthly chart data
-  const chart = data.monthly_chart || [];
-  const chartContainer = document.getElementById('rev-monthly-chart');
-  if (chartContainer && chart.length) {
-    chartContainer.innerHTML = chart.map(m => `
-      <div style="text-align:center;">
-        <p style="font-weight:600;color:#666;">${m.label}</p>
-        <p style="font-size:1.2rem;font-weight:900;color:#ff6b35;">₱${formatNumShort(m.total)}</p>
-      </div>
-    `).join('');
-  }
-
-  // By type breakdown
-  const byType = data.by_type || [];
+  // By type
   const byTypeEl = document.getElementById('rev-by-type');
-  if (byTypeEl && byType.length) {
-    byTypeEl.innerHTML = byType.map(t => `
-      <p style="color:#666;margin:5px 0;">${ucfirst(t.type?.replace('_', ' '))}: ₱${formatNum(t.amount)} (${t.count} txns)</p>
-    `).join('');
+  if (byTypeEl) {
+    if (data.by_type?.length) {
+      byTypeEl.innerHTML = data.by_type.map(t => `
+        <div class="rev-type-row">
+          <span>${ucFirst((t.type||'').replace('_',' '))}</span>
+          <span class="rev-type-amount">₱${numFormat(t.amount)} <span style="color:#888;font-weight:400;font-size:0.82rem;">(${t.count} txns)</span></span>
+        </div>`).join('');
+    } else {
+      byTypeEl.innerHTML = '<p style="color:#999;">No data for this period.</p>';
+    }
   }
 
-  // Expenses
-  const exp = data.expenses || {};
-  setTextById('rev-expenses-ops',      formatPHP(exp.operating   ?? 0));
-  setTextById('rev-expenses-salaries', formatPHP(exp.salaries    ?? 0));
-  setTextById('rev-expenses-marketing',formatPHP(exp.marketing   ?? 0));
-  setTextById('rev-total-expenses',    formatPHP(data.total_expenses ?? 0));
+  // By plan
+  const byPlanEl = document.getElementById('rev-by-plan');
+  if (byPlanEl) {
+    if (data.by_plan?.length) {
+      byPlanEl.innerHTML = data.by_plan.map(p => `
+        <div class="rev-type-row">
+          <span>${esc(p.plan)}</span>
+          <span class="rev-type-amount">₱${numFormat(p.revenue)}</span>
+        </div>`).join('');
+    } else {
+      byPlanEl.innerHTML = '<p style="color:#999;">No plan breakdown available.</p>';
+    }
+  }
 
-  // Goals
-  const goals = data.goals || {};
-  const goalBar = document.getElementById('rev-goal-bar');
-  const goalPct = document.getElementById('rev-goal-pct');
-  if (goalBar)  goalBar.style.width  = Math.min(goals.achieved_pct ?? 0, 100) + '%';
-  if (goalPct)  goalPct.textContent  = (goals.achieved_pct ?? 0) + '% achieved';
-}
-
-// ─── Subscriptions ────────────────────────────────────────────────────────────
-
-async function loadSubscriptionsData() {
-  const res = await fetch('/api/admin/subscriptions/list.php?per_page=10');
-  if (!res.ok) return;
-  const data = await res.json();
-  if (!data.success) return;
-
-  const s = data.stats || {};
-
-  setTextById('sub-active',       s.active_count    ?? '—');
-  setTextById('sub-revenue',      formatPHP(s.monthly_revenue ?? 0));
-  setTextById('sub-expiring',     s.expiring_soon   ?? '—');
-  setTextById('sub-top-plan',     s.top_plan        ?? '—');
-
-  // Recent subscriptions table
-  const tbody = document.querySelector('#subscriptionsTable tbody');
-  if (tbody && data.subscriptions?.length) {
-    tbody.innerHTML = data.subscriptions.map(sub => {
-      const statusBadge = badgeHtml(sub.status);
+  // Monthly chart
+  const chartEl = document.getElementById('rev-monthly-chart');
+  if (chartEl && data.monthly_chart?.length) {
+    const maxV = Math.max(...data.monthly_chart.map(m => parseFloat(m.total)||0)) || 1;
+    chartEl.innerHTML = data.monthly_chart.map(m => {
+      const h = Math.round((parseFloat(m.total)/maxV)*120);
       return `
-        <tr>
-          <td>${escHtml(sub.member_name)}</td>
-          <td>${escHtml(sub.plan)}</td>
-          <td>${ucfirst(sub.billing_cycle)}</td>
-          <td>${formatDate(sub.start_date)}</td>
-          <td>${formatDate(sub.expiry_date)}</td>
-          <td>${statusBadge}</td>
-          <td><button style="padding:5px 10px;font-size:0.8rem;" onclick="manageSub(${sub.member_id})">Manage</button></td>
-        </tr>`;
+        <div style="text-align:center;flex:1;min-width:80px;">
+          <p style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:4px;">₱${numShort(m.total)}</p>
+          <div style="height:${h}px;background:linear-gradient(180deg,var(--primary),var(--primary-light));border-radius:6px 6px 0 0;min-height:4px;"></div>
+          <p style="font-size:0.75rem;color:#888;margin-top:4px;">${esc(m.label)}</p>
+        </div>`;
     }).join('');
   }
 
-  // Plan distribution cards
-  const dist = s.plan_distribution || [];
-  dist.forEach(p => {
-    const planKey = p.plan?.toLowerCase().replace(' plan', '').replace(' ', '-');
-    setTextById(`sub-plan-count-${planKey}`, p.cnt ?? 0);
-  });
+  // Goal bar
+  const goals   = data.goals || {};
+  const goalBar = document.getElementById('rev-goal-bar');
+  const goalPct = document.getElementById('rev-goal-pct');
+  if (goalBar) goalBar.style.width = Math.min(goals.achieved_pct ?? 0, 100) + '%';
+  if (goalPct) goalPct.textContent = (goals.achieved_pct ?? 0) + '% achieved';
 }
 
-// ─── Roles ────────────────────────────────────────────────────────────────────
-
+// ─── ROLES ────────────────────────────────────────────────────────────────────
 async function loadRolesData() {
-  const res = await fetch('/api/admin/roles/list.php');
-  if (!res.ok) return;
+  const res  = await fetch('api/admin/roles/list.php');
   const data = await res.json();
   if (!data.success) return;
 
   const s = data.stats || {};
-
-  setTextById('roles-total-admins',  s.total        ?? '—');
-  setTextById('roles-super-admins',  s.super_admin  ?? '—');
-  setTextById('roles-staff',         s.staff        ?? '—');
-  setTextById('roles-trainers',      data.trainer_count ?? '—');
+  setText('roles-total-admins', s.total       ?? '—');
+  setText('roles-super-admins', s.super_admin ?? '—');
+  setText('roles-staff',        s.staff       ?? '—');
+  setText('roles-trainers',     data.trainer_count ?? '—');
 
   const tbody = document.querySelector('#usersTable tbody');
   if (!tbody || !data.users?.length) return;
 
   const roleBadges = {
-    super_admin:  'background:#ffebee;color:#b71c1c',
-    admin:        'background:#fff3e0;color:#e65100',
-    staff:        'background:#f5f5f5;color:#757575',
-    trainer:      'background:#e8f5e9;color:#2e7d32',
-    receptionist: 'background:#e3f2fd;color:#1565c0',
+    super_admin: 'background:#ffebee;color:#b71c1c',
+    admin:       'background:#fff3e0;color:#e65100',
+    staff:       'background:#f5f5f5;color:#757575',
   };
 
   tbody.innerHTML = data.users.map(u => {
-    const roleStyle = roleBadges[u.role] || 'background:#e5e7eb;color:#333';
-    const roleLabel = ucfirst(u.role?.replace('_', ' ') || '—');
-    const statusClr = u.status === 'active' ? '#2e7d32' : '#c62828';
-    const lastLogin = u.last_login_at ? formatDate(u.last_login_at) : 'Never';
+    const rStyle = roleBadges[u.role] || 'background:#e5e7eb;color:#333';
     return `
       <tr>
-        <td>${escHtml(u.first_name + ' ' + u.last_name)}</td>
-        <td>${escHtml(u.email)}</td>
-        <td><span style="${roleStyle};padding:4px 10px;border-radius:10px;font-weight:600;">${roleLabel}</span></td>
-        <td>${lastLogin}</td>
-        <td><span style="color:${statusClr};font-weight:600;">${ucfirst(u.status)}</span></td>
-        <td><button style="padding:5px 10px;font-size:0.8rem;" onclick="editUser(${u.id})">Edit</button></td>
+        <td><strong>${esc(u.full_name)}</strong></td>
+        <td style="color:#666;font-size:0.88rem;">${esc(u.email)}</td>
+        <td><span style="${rStyle};padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;">${ucFirst((u.role||'').replace('_',' '))}</span></td>
+        <td>${badge(u.status)}</td>
+        <td style="font-size:0.88rem;">${fmtDate(u.created_at)}</td>
+        <td>
+          <button class="btn-sm" onclick="openEditUser(${u.id},'${esc(u.role)}','${esc(u.status)}')">Edit</button>
+        </td>
       </tr>`;
   }).join('');
 }
 
-// ─── CSRF Token Injection ─────────────────────────────────────────────────────
+window.openEditUser = function(id, role, status) {
+  document.getElementById('edit_user_id').value     = id;
+  document.getElementById('edit_user_role').value   = role;
+  document.getElementById('edit_user_status').value = status;
+  openModal('editUserModal');
+};
 
-let _csrfToken = '';
-
-async function fetchAndInjectCsrf() {
+// ─── TRAINER SELECT HELPER ────────────────────────────────────────────────────
+async function populateTrainerSelect(selectId, addEmpty = false) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
   try {
-    const res = await fetch('/api/csrf-token.php');
+    const res  = await fetch('api/admin/trainers/list.php?per_page=50&status=active');
     const data = await res.json();
-    _csrfToken = data.csrf_token || '';
-  } catch {
-    // PHP not yet running, ignore
+    if (!data.success) return;
+    el.innerHTML = (addEmpty ? '<option value="">Select Organizer</option>' : '<option value="">Select Trainer</option>') +
+      (data.trainers || []).map(t =>
+        `<option value="${t.id}">${esc(t.first_name + ' ' + t.last_name)} — ${esc(t.specialty)}</option>`
+      ).join('');
+  } catch (e) { console.warn('Could not load trainers:', e); }
+}
+
+// ─── PAGINATION ───────────────────────────────────────────────────────────────
+window.changePage = function(dir) {
+  if (currentPage === 'members') {
+    const max = window._membersPageTotal || 1;
+    if (dir === 'next' && membersPage < max) loadMembersData(membersPage + 1, membersFilters);
+    if (dir === 'prev' && membersPage > 1)   loadMembersData(membersPage - 1, membersFilters);
   }
-  // Inject into all csrf_token inputs currently in DOM
-  document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
-    input.value = _csrfToken;
+  if (currentPage === 'payments') {
+    const max = window._paymentsPageTotal || 1;
+    if (dir === 'next' && paymentsPage < max) loadPaymentsData(paymentsPage + 1);
+    if (dir === 'prev' && paymentsPage > 1)   loadPaymentsData(paymentsPage - 1);
+  }
+};
+
+// ─── MODAL HELPERS ────────────────────────────────────────────────────────────
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.add('open');
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+}
+window.openModal  = openModal;
+window.closeModal = closeModal;
+
+document.addEventListener('click', e => {
+  document.querySelectorAll('.modal-overlay.open').forEach(m => {
+    if (e.target === m) m.classList.remove('open');
+  });
+});
+
+function bindModalTriggers() {
+  const map = {
+    addMemberBtn:  'addMemberModal',
+    addTrainerBtn: 'addTrainerModal',
+    addUserBtn:    'addUserModal',
+  };
+  Object.entries(map).forEach(([btnId, modalId]) => {
+    const btn = document.getElementById(btnId);
+    if (btn) btn.onclick = () => openModal(modalId);
   });
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// ─── FORM HANDLERS ────────────────────────────────────────────────────────────
+function bindFormHandlers() {
+  bindForm('addMemberForm',    'api/admin/members/create.php',    'Member added!',   'addMemberModal',  () => loadMembersData());
+  bindForm('editMemberForm',   'api/admin/members/update.php',    'Member updated!', 'editMemberModal', () => loadMembersData());
+  bindForm('scheduleClassForm','api/admin/classes/create.php',    'Class scheduled!', null,             () => loadClassesData());
+  bindForm('addTrainerForm',   'api/admin/trainers/create.php',   'Trainer added!',  'addTrainerModal', () => loadTrainersData());
+  bindForm('createEventForm',  'api/admin/events/create.php',     'Event created!',  null,              () => loadEventsData());
+  bindForm('addUserForm',      'api/admin/roles/create-user.php', 'User created!',   'addUserModal',    () => loadRolesData());
+  bindForm('editUserForm',     'api/admin/roles/update-user.php', 'User updated!',   'editUserModal',   () => loadRolesData());
 
-function init() {
-  document.querySelectorAll('.sidebar a[data-page]').forEach(link => {
-    link.addEventListener('click', e => {
+  // Member filter
+  const mf = document.getElementById('memberFilterForm');
+  if (mf) {
+    mf.onsubmit = e => {
       e.preventDefault();
-      loadPage(link.dataset.page);
+      const fd = new FormData(mf);
+      const filters = {};
+      if (fd.get('search_name'))   filters.search = fd.get('search_name');
+      if (fd.get('status_filter')) filters.status = fd.get('status_filter');
+      if (fd.get('plan_filter'))   filters.plan   = fd.get('plan_filter');
+      loadMembersData(1, filters);
+    };
+  }
+
+  // Payment filter
+  const pf = document.getElementById('paymentFilterForm');
+  if (pf) {
+    pf.onsubmit = e => {
+      e.preventDefault();
+      const fd = new FormData(pf);
+      const extra = {};
+      if (fd.get('member'))    extra.search    = fd.get('member');
+      if (fd.get('type'))      extra.type      = fd.get('type');
+      if (fd.get('status'))    extra.status    = fd.get('status');
+      if (fd.get('method'))    extra.method    = fd.get('method');
+      if (fd.get('date_from')) extra.date_from = fd.get('date_from');
+      if (fd.get('date_to'))   extra.date_to   = fd.get('date_to');
+      loadPaymentsData(1, extra);
+    };
+  }
+}
+
+function bindForm(formId, endpoint, successMsg, modalId, onSuccess) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+    const body = Object.fromEntries(new FormData(form));
+
+    const res  = await apiFetch(endpoint, body);
+    if (btn)   { btn.disabled = false; btn.textContent = successMsg.includes('!') ? successMsg.split('!')[0] + '!' : 'Submit'; }
+
+    if (res?.success) {
+      toast(successMsg);
+      if (modalId) closeModal(modalId);
+      form.reset();
+      if (onSuccess) onSuccess();
+    } else {
+      toast(res?.message || 'Action failed.', 'error');
+    }
+  };
+}
+
+// ─── LOGOUT ───────────────────────────────────────────────────────────────────
+window.logout = async function() {
+  await apiFetch('api/admin/auth/logout.php', {});
+  window.location.href = 'login-page.php';
+};
+
+// ─── API HELPERS ──────────────────────────────────────────────────────────────
+async function apiFetch(url, body) {
+  try {
+    const res = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
     });
+    if (res.status === 401) { window.location.href = 'login-page.php'; return null; }
+    return await res.json();
+  } catch (err) {
+    console.error(url, err);
+    return null;
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  document.querySelectorAll('.sidebar .nav a[data-page]').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); loadPage(a.dataset.page); });
   });
-  fetchAndInjectCsrf();
   loadPage('dashboard');
 }
 
@@ -625,318 +750,75 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// ─── Modal Helpers ────────────────────────────────────────────────────────────
-
-function openModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.style.display = 'flex';
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.getElementById('adminToast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.background = type === 'success' ? '#2e7d32' : '#c62828';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3500);
 }
+window.toast = toast;
+window.showAdminPopup = toast;
 
-function closeModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.style.display = 'none';
-}
-
-window.closeModal = closeModal;
-
-document.addEventListener('click', e => {
-  const modals = document.querySelectorAll('[id$="Modal"]');
-  modals.forEach(m => { if (e.target === m) m.style.display = 'none'; });
-});
-
-function bindModalTriggers() {
-  const triggers = {
-    addMemberBtn:  'addMemberModal',
-    addTrainerBtn: 'addTrainerModal',
-    addUserBtn:    'addUserModal',
-  };
-  Object.entries(triggers).forEach(([btnId, modalId]) => {
-    const btn = document.getElementById(btnId);
-    if (btn) btn.addEventListener('click', () => openModal(modalId));
-  });
-}
-
-// ─── Generic POST helper ─────────────────────────────────────────────────────
-
-async function postForm(endpoint, formData) {
-  const res = await fetch(endpoint, { method: 'POST', body: formData });
-  if (res.status === 401 || res.status === 403) {
-    window.location.href = '/login-page.php';
-    return null;
-  }
-  try { return await res.json(); } catch { return null; }
-}
-
-// ─── Form Handlers ────────────────────────────────────────────────────────────
-
-function bindFormHandlers() {
-  bindForm('scheduleClassForm', '/api/admin/classes/create.php', 'Class scheduled!', null, () => loadClassesData());
-  bindForm('addMemberForm',     '/api/admin/members/create.php', 'Member added!', 'addMemberModal', () => loadMembersData());
-  bindForm('createEventForm',   '/api/admin/events/create.php',  'Event created!', null, () => loadEventsData());
-  bindForm('addTrainerForm',    '/api/admin/trainers/create.php', 'Trainer added!', 'addTrainerModal', () => loadTrainersData());
-  bindForm('refundForm',        '/api/admin/payments/refund.php', 'Refund issued!', 'refundModal', () => loadPaymentsData());
-  bindForm('addUserForm',       '/api/admin/roles/create-user.php', 'User created!', 'addUserModal', () => loadRolesData());
-  bindForm('editUserForm',      '/api/admin/roles/update-user.php', 'User updated!', 'editUserModal', () => loadRolesData());
-}
-
-function bindForm(formId, endpoint, successMsg, modalId, onSuccess) {
-  const form = document.getElementById(formId);
-  if (!form) return;
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const result = await postForm(endpoint, new FormData(form));
-    if (!result) return;
-    if (result.success) {
-      showAdminPopup(successMsg, 'success');
-      if (modalId) closeModal(modalId);
-      form.reset();
-      if (onSuccess) onSuccess();
-    } else {
-      showAdminPopup(result.message || 'Action failed.', 'error');
-    }
-  });
-}
-
-// ─── Action Functions ─────────────────────────────────────────────────────────
-
-window.editClass = async function(classId) {
-  showAdminPopup('Edit class ID: ' + classId + ' (modal coming soon)', 'success');
-};
-
-window.cancelClass = async function(classId) {
-  if (!confirm('Cancel this class? Members will be notified.')) return;
-  const fd = new FormData();
-  fd.append('class_id', classId);
-  fd.append('csrf_token', getCsrfToken());
-  const result = await postForm('/api/admin/classes/cancel.php', fd);
-  if (result?.success) { showAdminPopup('Class cancelled.', 'success'); loadClassesData(); }
-  else showAdminPopup(result?.message || 'Failed to cancel class.', 'error');
-};
-
-window.viewMember = async function(memberId) {
-  const res = await fetch('/api/admin/members/view.php?id=' + memberId);
-  const data = await res.json();
-  if (!data.success) { showAdminPopup('Could not load member.', 'error'); return; }
-
-  const m   = data.member;
-  const sub = data.subscription;
-  const payments = data.payments || [];
-
-  // Build and show a simple info popup
-  const info = [
-    `<strong>${escHtml(m.first_name + ' ' + m.last_name)}</strong>`,
-    `Email: ${escHtml(m.email)}`,
-    `Phone: ${escHtml(m.phone || '—')}`,
-    `Plan: ${escHtml(m.plan)} (${m.billing_cycle || '—'})`,
-    `Status: ${ucfirst(m.status)}`,
-    sub ? `Subscription expires: ${formatDate(sub.expiry_date)} (${sub.days_remaining} days left)` : 'No active subscription',
-    `Recent payments: ${payments.length}`,
-  ].join('<br>');
-
-  showAdminPopup('Member #' + memberId + ' loaded — detail modal coming soon', 'success');
-  console.log('Member data:', data);
-};
-
-window.changePage = function(direction) {
-  if (currentPage === 'members') {
-    const max = window._membersPageTotal || 1;
-    if (direction === 'next' && membersPage < max) loadMembersData(membersPage + 1, membersFilters);
-    if (direction === 'prev' && membersPage > 1)   loadMembersData(membersPage - 1, membersFilters);
-  }
-  if (currentPage === 'payments') {
-    const max = window._paymentsPageTotal || 1;
-    if (direction === 'next' && paymentsPage < max) loadPaymentsData(paymentsPage + 1);
-    if (direction === 'prev' && paymentsPage > 1)   loadPaymentsData(paymentsPage - 1);
-  }
-};
-
-window.editEvent   = function(id) { showAdminPopup('Edit event #' + id + ' (modal coming soon)', 'success'); };
-window.cancelEvent = async function(eventId) {
-  if (!confirm('Cancel this event? All registrations will be cancelled.')) return;
-  const fd = new FormData();
-  fd.append('event_id', eventId);
-  fd.append('csrf_token', getCsrfToken());
-  const result = await postForm('/api/admin/events/cancel.php', fd);
-  if (result?.success) { showAdminPopup('Event cancelled.', 'success'); loadEventsData(); }
-  else showAdminPopup(result?.message || 'Failed to cancel event.', 'error');
-};
-
-window.editTrainer         = function(id) { showAdminPopup('Edit trainer #' + id + ' (modal coming soon)', 'success'); };
-window.viewTrainerSchedule = function(id) { showAdminPopup('Schedule for trainer #' + id + ' (coming soon)', 'success'); };
-
-window.editPlan   = function(id)  { showAdminPopup('Edit plan #' + id + ' (modal coming soon)', 'success'); };
-window.archivePlan= async function(planId) {
-  if (!confirm('Archive this plan?')) return;
-  showAdminPopup('Plan archive endpoint not yet connected.', 'error');
-};
-window.manageSub  = function(id)  { showAdminPopup('Manage subscription for member #' + id + ' (coming soon)', 'success'); };
-
-window.viewTransaction = function(txnId) {
-  showAdminPopup('Transaction #' + txnId + ' — detail modal coming soon', 'success');
-};
-window.openRefundModal = function(txnId, amount) {
-  const txnInput = document.getElementById('refund_transaction_id');
-  const amtInput = document.getElementById('refund_amount');
-  if (txnInput) txnInput.value = txnId;
-  if (amtInput) amtInput.value = amount || '';
-  openModal('refundModal');
-};
-
-window.editUser = function(userId) {
-  const input = document.getElementById('edit_user_id');
-  if (input) input.value = userId;
-  openModal('editUserModal');
-};
-
-// Export buttons
-document.addEventListener('click', e => {
-  const map = {
-    exportBtn:         '/api/admin/members/export.php',
-    exportPaymentsBtn: '/api/admin/payments/export.php',
-    exportTrainersBtn: '/api/admin/trainers/export.php',
-  };
-  if (map[e.target.id]) window.location.href = map[e.target.id];
-});
-
-// ─── Member filter form ───────────────────────────────────────────────────────
-
-document.addEventListener('submit', e => {
-  if (e.target.id === 'memberFilterForm') {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const filters = {};
-    if (fd.get('search_name'))  filters.search = fd.get('search_name');
-    if (fd.get('status_filter')) filters.status = fd.get('status_filter');
-    if (fd.get('plan_filter'))   filters.plan   = fd.get('plan_filter');
-    loadMembersData(1, filters);
-  }
-  if (e.target.id === 'paymentFilterForm') {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    paymentsPage = 1;
-    const params = new URLSearchParams({ page: 1, per_page: 15 });
-    if (fd.get('member'))    params.set('search',    fd.get('member'));
-    if (fd.get('type'))      params.set('type',      fd.get('type'));
-    if (fd.get('status'))    params.set('status',    fd.get('status'));
-    if (fd.get('method'))    params.set('method',    fd.get('method'));
-    if (fd.get('date_from')) params.set('date_from', fd.get('date_from'));
-    if (fd.get('date_to'))   params.set('date_to',   fd.get('date_to'));
-    fetch('/api/admin/payments/list.php?' + params)
-      .then(r => r.json())
-      .then(data => {
-        if (!data.success) return;
-        const tbody = document.querySelector('#paymentsTable tbody');
-        if (!tbody) return;
-        if (!data.payments?.length) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px;">No payment records found.</td></tr>`;
-          return;
-        }
-        tbody.innerHTML = data.payments.map(p => `
-          <tr>
-            <td>#${escHtml(p.transaction_id || p.id.toString())}</td>
-            <td>${escHtml(p.member_name)}</td>
-            <td>${ucfirst(p.type?.replace('_', ' ') || '—')}</td>
-            <td>₱${formatNum(p.amount)}</td>
-            <td>${ucfirst(p.method || '—')}</td>
-            <td>${formatDate(p.created_at)}</td>
-            <td>${badgeHtml(p.status)}</td>
-            <td><button style="padding:5px 10px;font-size:0.8rem;" onclick="viewTransaction('${escHtml(p.transaction_id || p.id.toString())}')">View</button></td>
-          </tr>`).join('');
-        setTextById('pageInfo', `Page ${data.pagination.page} of ${data.pagination.total_pages}`);
-      });
-  }
-});
-
-// ─── CSRF Helper ─────────────────────────────────────────────────────────────
-
-function getCsrfToken() {
-  // Use cached token or grab from any CSRF hidden input currently in the DOM
-  if (_csrfToken) return _csrfToken;
-  const input = document.querySelector('input[name="csrf_token"]');
-  return input ? input.value : '';
-}
-
-// ─── Toast Popup ─────────────────────────────────────────────────────────────
-
-function showAdminPopup(message, type = 'success') {
-  let toast = document.getElementById('adminToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'adminToast';
-    toast.style.cssText = `
-      position:fixed;bottom:30px;right:30px;z-index:9999;
-      padding:15px 25px;border-radius:10px;font-weight:600;
-      font-size:0.95rem;box-shadow:0 4px 20px rgba(0,0,0,0.15);
-      transition:opacity 0.3s;max-width:350px;word-wrap:break-word;
-    `;
-    document.body.appendChild(toast);
-  }
-  toast.textContent = message;
-  toast.style.background = type === 'success' ? '#2e7d32' : '#c62828';
-  toast.style.color = '#fff';
-  toast.style.opacity = '1';
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
-}
-
-window.showAdminPopup = showAdminPopup;
-
-// ─── Utility Helpers ─────────────────────────────────────────────────────────
-
-function setTextById(id, val) {
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function setText(id, val) {
   const el = document.getElementById(id);
-  if (el) el.textContent = val;
+  if (el) el.textContent = val ?? '—';
 }
 
-function escHtml(str) {
+function esc(str) {
   if (str == null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function formatPHP(amount) {
-  return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+function phpFormat(n) {
+  return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits:0, maximumFractionDigits:0 });
 }
-
-function formatNum(num) {
-  return Number(num).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+function numFormat(n) {
+  return Number(n).toLocaleString('en-PH', { minimumFractionDigits:0, maximumFractionDigits:0 });
 }
-
-function formatNumShort(num) {
-  const n = Number(num);
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000)    return (n / 1000).toFixed(0) + 'K';
-  return formatNum(n);
+function numShort(n) {
+  const v = parseFloat(n) || 0;
+  if (v >= 1000000) return (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000)    return (v/1000).toFixed(0) + 'K';
+  return numFormat(v);
 }
-
-function formatDate(str) {
+function ucFirst(s) {
+  if (!s) return '';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function fmtDate(str) {
   if (!str) return '—';
   const d = new Date(str);
   if (isNaN(d)) return str;
-  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' });
 }
-
-function ucfirst(str) {
+function fmtDateTime(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleDateString('en-PH',{month:'short',day:'numeric'}) + ' ' +
+         d.toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'});
+}
+function fmtTime(str) {
   if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
+  try {
+    const d = new Date('1970-01-01T' + str);
+    return d.toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit' });
+  } catch { return str; }
 }
 
-function badgeHtml(status) {
+function badge(status) {
   const map = {
-    active:    'background:#e8f5e9;color:#2e7d32',
-    confirmed: 'background:#e8f5e9;color:#2e7d32',
-    completed: 'background:#e8f5e9;color:#2e7d32',
-    expired:   'background:#ffebee;color:#c62828',
-    failed:    'background:#ffebee;color:#c62828',
-    cancelled: 'background:#ffebee;color:#c62828',
-    suspended: 'background:#ffebee;color:#c62828',
-    pending:   'background:#fff3e0;color:#f57c00',
-    refunded:  'background:#e3f2fd;color:#1565c0',
-    paused:    'background:#e3f2fd;color:#1565c0',
+    active:'badge-active', completed:'badge-completed', confirmed:'badge-confirmed',
+    expired:'badge-expired', failed:'badge-failed', cancelled:'badge-cancelled', deleted:'badge-deleted',
+    pending:'badge-pending', paused:'badge-paused',
+    refunded:'badge-refunded', suspended:'badge-suspended',
+    inactive:'badge-expired',
   };
-  const style = map[status?.toLowerCase()] || 'background:#e5e7eb;color:#333';
-  return `<span style="${style};padding:4px 10px;border-radius:10px;font-weight:600;">${ucfirst(status || '—')}</span>`;
+  const cls = map[(status||'').toLowerCase()] || 'badge';
+  return `<span class="badge ${cls}">${ucFirst(status || '—')}</span>`;
 }
