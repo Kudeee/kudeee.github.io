@@ -27,6 +27,7 @@ const pageMap = {
   events:        'Admin-pages/events.php',
   revenue:       'Admin-pages/revenue.php',
   roles:         'Admin-pages/roles.php',
+  plans:         'Admin-pages/plans.php',   // ← NEW
 };
 
 let currentPage = 'dashboard';
@@ -72,6 +73,7 @@ async function fetchPageData(page) {
       case 'revenue':       await loadRevenueData();       break;
       case 'subscriptions': await loadSubscriptionsData(); break;
       case 'roles':         await loadRolesData();         break;
+      case 'plans':         await loadPlansData();         break;  // ← NEW
     }
   } catch (err) {
     console.warn('fetchPageData error for', page, err);
@@ -92,11 +94,9 @@ async function loadDashboardData() {
   setText('dash-active-trainers', data.top_trainers            ?? '—');
   setText('dash-expiring',        data.subscriptions?.expiring_soon ?? '—');
 
-  // Admin name
   const nameEl = document.getElementById('dashAdminName');
   if (nameEl) nameEl.textContent = window.ADMIN_NAME || 'Admin';
 
-  // Recent activity
   const actEl = document.getElementById('dash-recent-activity');
   if (actEl) {
     if (data.recent_activity?.length) {
@@ -109,6 +109,7 @@ async function loadDashboardData() {
           class_cancelled: 'Class cancelled',
           member_created: 'New member registered',
           refund_issued: 'Refund issued',
+          plan_updated: 'Subscription plan updated',
         };
         const label = labels[a.action] || a.action.replace(/_/g, ' ');
         const time  = fmtDateTime(a.created_at);
@@ -119,7 +120,6 @@ async function loadDashboardData() {
     }
   }
 
-  // Plan distribution
   const planGrid = document.getElementById('dash-plan-dist');
   if (planGrid && data.plan_distribution?.length) {
     planGrid.innerHTML = data.plan_distribution.map(p => `
@@ -130,7 +130,6 @@ async function loadDashboardData() {
       </div>`).join('');
   }
 
-  // Monthly chart
   const chartEl = document.getElementById('dash-monthly-chart');
   if (chartEl && data.revenue?.monthly_chart?.length) {
     const max = Math.max(...data.revenue.monthly_chart.map(m => parseFloat(m.total) || 0)) || 1;
@@ -215,14 +214,11 @@ async function loadClassesData() {
   setText('classes-today',    data.stats?.today     ?? '—');
   setText('classes-upcoming', data.stats?.upcoming  ?? '—');
 
-  // Count unique trainers with classes
   const trainerIds = [...new Set((data.classes || []).map(c => c.trainer_id).filter(Boolean))];
   setText('classes-trainers', trainerIds.length || '—');
 
-  // Populate trainer select in form
   await populateTrainerSelect('classTrainerSelect');
 
-  // Grid
   const grid = document.getElementById('upcoming-classes-grid');
   if (!grid) return;
 
@@ -238,7 +234,6 @@ async function loadClassesData() {
     const max  = parseInt(c.max_participants)     || 20;
     const pct  = max > 0 ? Math.round((fill / max) * 100) : 0;
     const fillClr = pct >= 100 ? '#c62828' : pct >= 75 ? '#f57c00' : '#1565c0';
-    const dt    = new Date(c.scheduled_at);
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
@@ -386,7 +381,6 @@ async function loadSubscriptionsData(page = 1) {
   setText('sub-expiring', s.expiring_soon   ?? '—');
   setText('sub-top-plan', s.top_plan        ?? '—');
 
-  // Plan counts
   const pc = s.plan_counts || {};
   setText('sub-plan-count-basic',   pc['BASIC PLAN']   ?? 0);
   setText('sub-plan-count-premium', pc['PREMIUM PLAN'] ?? 0);
@@ -433,7 +427,6 @@ async function loadEventsData() {
   setText('events-this-week', data.stats?.this_week           ?? '—');
   setText('events-popular',   data.stats?.popular             ?? '—');
 
-  // Populate organizer select
   await populateTrainerSelect('eventOrganizerSelect', true);
 
   const grid = document.getElementById('upcoming-events-grid');
@@ -448,7 +441,6 @@ async function loadEventsData() {
   grid.innerHTML = events.map(e => {
     const fill  = parseInt(e.current_attendees) || 0;
     const max   = parseInt(e.max_attendees) || 50;
-    const pct   = max > 0 ? Math.round((fill / max) * 100) : 0;
     const fee   = parseFloat(e.fee) > 0 ? `₱${numFormat(e.fee)}` : 'Free';
     return `
       <div class="card">
@@ -494,7 +486,6 @@ async function loadRevenueData() {
   setText('rev-expenses-marketing',phpFormat(data.expenses?.marketing ?? 0));
   setText('rev-total-expenses',    phpFormat(data.total_expenses      ?? 0));
 
-  // By type
   const byTypeEl = document.getElementById('rev-by-type');
   if (byTypeEl) {
     if (data.by_type?.length) {
@@ -508,7 +499,6 @@ async function loadRevenueData() {
     }
   }
 
-  // By plan
   const byPlanEl = document.getElementById('rev-by-plan');
   if (byPlanEl) {
     if (data.by_plan?.length) {
@@ -522,7 +512,6 @@ async function loadRevenueData() {
     }
   }
 
-  // Monthly chart
   const chartEl = document.getElementById('rev-monthly-chart');
   if (chartEl && data.monthly_chart?.length) {
     const maxV = Math.max(...data.monthly_chart.map(m => parseFloat(m.total)||0)) || 1;
@@ -537,7 +526,6 @@ async function loadRevenueData() {
     }).join('');
   }
 
-  // Goal bar
   const goals   = data.goals || {};
   const goalBar = document.getElementById('rev-goal-bar');
   const goalPct = document.getElementById('rev-goal-pct');
@@ -587,6 +575,147 @@ window.openEditUser = function(id, role, status) {
   document.getElementById('edit_user_role').value   = role;
   document.getElementById('edit_user_status').value = status;
   openModal('editUserModal');
+};
+
+// ─── PLANS (Subscription Plan Editor) ────────────────────────────────────────
+async function loadPlansData() {
+  // Pull subscriber counts
+  const subRes  = await fetch('api/admin/subscriptions/list.php?per_page=1');
+  const subData = await subRes.json();
+  const pc      = subData.stats?.plan_counts || {};
+
+  setText('plans-basic-count',   pc['BASIC PLAN']   ?? '—');
+  setText('plans-premium-count', pc['PREMIUM PLAN'] ?? '—');
+  setText('plans-vip-count',     pc['VIP PLAN']     ?? '—');
+
+  // Load plan configs
+  const res  = await fetch('api/admin/plans/list.php');
+  const data = await res.json();
+  if (!data.success) return;
+
+  const plans  = data.plans || [];
+  const active = plans.filter(p => p.is_active).length;
+  setText('plans-active-count', active);
+
+  const grid = document.getElementById('plans-edit-grid');
+  if (!grid) return;
+
+  grid.innerHTML = plans.map(p => {
+    const savingsAmt  = Math.round((p.monthly_price * 12) - p.yearly_price);
+    const benefits    = Array.isArray(p.benefits) ? p.benefits : [];
+    const statusBadge = p.is_active
+      ? '<span class="badge badge-active">Active</span>'
+      : '<span class="badge badge-expired">Inactive</span>';
+
+    // Safely encode plan object for onclick
+    const planJson = JSON.stringify(p).replace(/'/g, "\\'");
+
+    return `
+      <div class="card" style="border-top:4px solid ${esc(p.color)};">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="color:${esc(p.color)};margin:0;">${esc(p.plan)}</h3>
+          ${statusBadge}
+        </div>
+
+        <p style="font-size:1.6rem;font-weight:900;margin-bottom:2px;">
+          ₱${numFormat(p.monthly_price)} <span style="font-size:0.85rem;font-weight:400;color:#888;">/mo</span>
+        </p>
+        <p style="color:#888;font-size:0.88rem;margin-bottom:14px;">
+          ₱${numFormat(p.yearly_price)}/yr
+          <span style="color:#2e7d32;font-weight:600;"> · Save ₱${numFormat(savingsAmt)}</span>
+        </p>
+
+        <ul style="padding-left:18px;color:#555;font-size:0.88rem;line-height:1.9;margin-bottom:16px;">
+          ${benefits.map(b => `<li>${esc(b)}</li>`).join('')}
+        </ul>
+
+        <div style="font-size:0.82rem;color:#777;margin-bottom:14px;line-height:1.9;padding:10px;background:#f9f9f9;border-radius:8px;">
+          <p>🏋️ Classes/wk: <strong>${p.max_classes === -1 ? 'Unlimited' : p.max_classes}</strong></p>
+          <p>🧑‍💼 PT sessions/mo: <strong>${p.pt_sessions}</strong></p>
+          <p>🎟️ Guest passes/mo: <strong>${p.guest_passes}</strong></p>
+        </div>
+
+        <button onclick='openEditPlan(${JSON.stringify(JSON.stringify(p))})'>
+          ✏️ Edit Plan
+        </button>
+      </div>`;
+  }).join('');
+}
+
+// Open the plan edit modal
+window.openEditPlan = function(planJsonStr) {
+  const p = JSON.parse(planJsonStr);
+
+  document.getElementById('ep_plan').value         = p.plan;
+  document.getElementById('ep_plan_label').value   = p.plan;
+  document.getElementById('ep_monthly').value      = p.monthly_price;
+  document.getElementById('ep_yearly').value       = p.yearly_price;
+  document.getElementById('ep_color').value        = p.color || '#ff6b35';
+  document.getElementById('ep_color_hex').value    = p.color || '#ff6b35';
+  document.getElementById('ep_active').value       = p.is_active ? '1' : '0';
+  document.getElementById('ep_max_classes').value  = p.max_classes ?? -1;
+  document.getElementById('ep_pt_sessions').value  = p.pt_sessions ?? 0;
+  document.getElementById('ep_guest_passes').value = p.guest_passes ?? 0;
+
+  const benefits = Array.isArray(p.benefits) ? p.benefits : [];
+  document.getElementById('ep_benefits').value = benefits.join('\n');
+
+  updatePlanPreview();
+  openModal('editPlanModal');
+
+  // Wire live preview
+  ['ep_monthly', 'ep_yearly', 'ep_active', 'ep_benefits'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.oninput = updatePlanPreview;
+  });
+  const colorPicker = document.getElementById('ep_color');
+  const colorHex    = document.getElementById('ep_color_hex');
+  if (colorPicker) colorPicker.addEventListener('input', function() {
+    if (colorHex) colorHex.value = this.value;
+    updatePlanPreview();
+  });
+  if (colorHex) colorHex.oninput = function() {
+    if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+      if (colorPicker) colorPicker.value = this.value;
+      updatePlanPreview();
+    }
+  };
+};
+
+// Live preview
+window.updatePlanPreview = function() {
+  const name    = document.getElementById('ep_plan_label')?.value  || '';
+  const monthly = document.getElementById('ep_monthly')?.value     || '0';
+  const yearly  = document.getElementById('ep_yearly')?.value      || '0';
+  const color   = document.getElementById('ep_color')?.value       || '#ff6b35';
+  const active  = document.getElementById('ep_active')?.value      === '1';
+  const rawBen  = document.getElementById('ep_benefits')?.value    || '';
+  const benefits = rawBen.split('\n').map(b => b.trim()).filter(Boolean);
+
+  const prevName = document.getElementById('prev_name');
+  if (prevName) { prevName.textContent = name; prevName.style.color = color; }
+
+  const prevStatus = document.getElementById('prev_status');
+  if (prevStatus) {
+    prevStatus.textContent      = active ? 'Active' : 'Inactive';
+    prevStatus.style.background = active ? '#e8f5e9' : '#ffebee';
+    prevStatus.style.color      = active ? '#2e7d32' : '#c62828';
+  }
+
+  const prevPrice = document.getElementById('prev_price');
+  if (prevPrice) {
+    const savingsAmt = Math.round((parseFloat(monthly) * 12) - parseFloat(yearly));
+    prevPrice.innerHTML = `₱${Number(monthly).toLocaleString('en-PH')}<span style="font-size:1rem;font-weight:400;color:#888;"> /mo</span>
+      <span style="font-size:0.85rem;color:#2e7d32;font-weight:600;margin-left:8px;">Save ₱${Number(savingsAmt > 0 ? savingsAmt : 0).toLocaleString('en-PH')}/yr</span>`;
+  }
+
+  const prevBenefits = document.getElementById('prev_benefits');
+  if (prevBenefits) {
+    prevBenefits.innerHTML = benefits.map(b => `<li>${esc(b)}</li>`).join('') || '<li style="color:#aaa;">No benefits listed</li>';
+  }
+
+  const preview = document.getElementById('ep_preview');
+  if (preview) preview.style.borderColor = color;
 };
 
 // ─── TRAINER SELECT HELPER ────────────────────────────────────────────────────
@@ -658,6 +787,9 @@ function bindFormHandlers() {
   bindForm('addUserForm',      'api/admin/roles/create-user.php', 'User created!',   'addUserModal',    () => loadRolesData());
   bindForm('editUserForm',     'api/admin/roles/update-user.php', 'User updated!',   'editUserModal',   () => loadRolesData());
 
+  // Plans edit form (custom handler — uses JSON payload)
+  bindPlanEditForm();
+
   // Member filter
   const mf = document.getElementById('memberFilterForm');
   if (mf) {
@@ -690,6 +822,43 @@ function bindFormHandlers() {
   }
 }
 
+function bindPlanEditForm() {
+  const form = document.getElementById('editPlanForm');
+  if (!form) return;
+
+  form.onsubmit = async function(e) {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+    const rawBenefits = document.getElementById('ep_benefits')?.value || '';
+    const benefitsArr = rawBenefits.split('\n').map(b => b.trim()).filter(Boolean);
+
+    const payload = {
+      plan:          document.getElementById('ep_plan')?.value,
+      monthly_price: parseFloat(document.getElementById('ep_monthly')?.value),
+      yearly_price:  parseFloat(document.getElementById('ep_yearly')?.value),
+      color:         document.getElementById('ep_color')?.value,
+      is_active:     document.getElementById('ep_active')?.value === '1' ? 1 : 0,
+      max_classes:   parseInt(document.getElementById('ep_max_classes')?.value),
+      pt_sessions:   parseInt(document.getElementById('ep_pt_sessions')?.value),
+      guest_passes:  parseInt(document.getElementById('ep_guest_passes')?.value),
+      benefits:      benefitsArr,
+    };
+
+    const res = await apiFetch('api/admin/plans/update.php', payload);
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+
+    if (res?.success) {
+      toast('Plan updated successfully!');
+      closeModal('editPlanModal');
+      loadPlansData();
+    } else {
+      toast(res?.message || 'Failed to update plan.', 'error');
+    }
+  };
+}
+
 function bindForm(formId, endpoint, successMsg, modalId, onSuccess) {
   const form = document.getElementById(formId);
   if (!form) return;
@@ -699,7 +868,6 @@ function bindForm(formId, endpoint, successMsg, modalId, onSuccess) {
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
     const body = Object.fromEntries(new FormData(form));
-
     const res  = await apiFetch(endpoint, body);
     if (btn)   { btn.disabled = false; btn.textContent = successMsg.includes('!') ? successMsg.split('!')[0] + '!' : 'Submit'; }
 
