@@ -18,7 +18,7 @@
         <h1>Welcome Back!</h1>
 
         <!-- POST to PHP login handler -->
-        <form id="submit" method="POST" action="/api/auth/login.php">
+        <form id="loginForm" method="POST" action="/api/auth/login.php">
 
           <label for="email">Email</label>
           <input

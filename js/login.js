@@ -4,7 +4,7 @@ import { render } from "./renderer.js";
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp = closePopUp;
 
-document.getElementById('submit').addEventListener("submit", handleLogin);
+document.getElementById('loginForm').addEventListener("submit", handleLogin);
 
 export async function handleLogin(event) {
   event.preventDefault();
