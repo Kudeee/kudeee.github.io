@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../config.php';
 require_method('GET');
-require_admin();
-
 // Return static plan definitions (could be moved to a DB table later)
 $plans = [
     [
