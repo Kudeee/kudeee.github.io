@@ -3,73 +3,65 @@ import { render } from './renderer.js';
 
 render('#pop-up', "popUPOpt", renderPopUP);
 
-window.handleOk   = handleOk;
-window.closePopUp = closePopUp;
+window.handleOk    = handleOk;
+window.closePopUp  = closePopUp;
+window.switchTab   = switchTab;
+window.registerEvent = registerEvent;
 
 // ─── Plan upgrade map ─────────────────────────────────────────────────────────
 const PLAN_UPGRADE = {
   'BASIC PLAN': {
     label: 'Upgrade to Premium',
-    nextPlan: 'PREMIUM PLAN',
     paymentUrl: 'payment.php?type=change&plan=PREMIUM%20PLAN&billing=monthly',
   },
   'PREMIUM PLAN': {
     label: 'Upgrade to VIP',
-    nextPlan: 'VIP PLAN',
     paymentUrl: 'payment.php?type=upgrade',
   },
 };
 
 // ─── Load member + subscription data ─────────────────────────────────────────
-
 async function loadMemberData() {
   try {
     const res  = await fetch('api/user/membership/info.php');
     const data = await res.json();
 
-    if (!data.success) {
-      window.location.href = 'login-page.php';
-      return;
-    }
+    if (!data.success) { window.location.href = 'login-page.php'; return; }
 
     const m   = data.member;
     const sub = data.subscription;
 
-    // Greeting
-    const welcomeEl = document.querySelector('.status-info h2');
+    const welcomeEl = document.getElementById('welcomeHeading');
     if (welcomeEl) welcomeEl.textContent = `Welcome Back, ${m.first_name}!`;
 
-    // Plan badge
-    const premBadge = document.querySelector('.badge-premium');
-    if (premBadge) premBadge.textContent = m.plan;
+    const planBadge = document.getElementById('planBadge');
+    if (planBadge) planBadge.textContent = m.plan;
 
-    // Status details
-    const items = document.querySelectorAll('.status-value');
+    const planNameEl = document.getElementById('planName');
+    if (planNameEl) planNameEl.textContent = m.plan.replace(' PLAN', '');
+
     if (sub) {
       const expiry   = new Date(sub.expiry_date);
       const today    = new Date();
       const daysLeft = Math.max(0, Math.ceil((expiry - today) / 86400000));
       const options  = { month: 'short', day: 'numeric', year: 'numeric' };
 
-      if (items[0]) items[0].textContent = expiry.toLocaleDateString('en-PH', options);
-      if (items[1]) items[1].textContent = daysLeft + ' Days';
-      if (items[2]) items[2].textContent = m.plan.replace(' PLAN', '');
+      const nextBillingEl = document.getElementById('nextBilling');
+      if (nextBillingEl) nextBillingEl.textContent = expiry.toLocaleDateString('en-PH', options);
+
+      const daysEl = document.getElementById('daysRemaining');
+      if (daysEl) daysEl.textContent = daysLeft + ' Days';
     }
 
-    // Update header user info
+    // Header user info
     try {
       const userNameEl = document.querySelector('.user-profile div div:first-child');
       const userPlanEl = document.querySelector('.user-profile div div:last-child');
       if (userNameEl) userNameEl.textContent = m.first_name + ' ' + m.last_name;
       if (userPlanEl) userPlanEl.textContent = m.plan;
-
       const avatarEl = document.querySelector('.user-avatar');
-      if (avatarEl) {
-        avatarEl.textContent = (m.first_name[0] + m.last_name[0]).toUpperCase();
-      }
-    } catch (headerErr) {
-      console.warn('Could not update header:', headerErr);
-    }
+      if (avatarEl) avatarEl.textContent = (m.first_name[0] + m.last_name[0]).toUpperCase();
+    } catch (_) {}
 
     updateUpgradeButton(m.plan);
 
@@ -81,41 +73,25 @@ async function loadMemberData() {
 function updateUpgradeButton(currentPlan) {
   const upgradeBtn = document.getElementById('upgradeBtn');
   if (!upgradeBtn) return;
-
   const upgrade = PLAN_UPGRADE[currentPlan];
-  if (!upgrade) {
-    upgradeBtn.style.display = 'none';
-    return;
-  }
-
+  if (!upgrade) { upgradeBtn.style.display = 'none'; return; }
   upgradeBtn.textContent = upgrade.label;
   upgradeBtn.onclick = () => { location.href = upgrade.paymentUrl; };
 }
 
-// ─── Load next booking (dynamic next-action section) ─────────────────────────
-
-// Stores the current booking info for cancel use
+// ─── Next booking ─────────────────────────────────────────────────────────────
 let currentBooking = null;
 
 async function loadNextBooking() {
-  const section    = document.querySelector('.next-action-section');
-  const titleEl    = document.querySelector('.next-action-title');
-  const timeEl     = document.querySelector('.class-info-grid .class-info-item:nth-child(1) .class-info-value');
-  const dateEl     = document.querySelector('.class-info-grid .class-info-item:nth-child(2) .class-info-value');
-  const trainerEl  = document.querySelector('.class-info-grid .class-info-item:nth-child(3) .class-info-value');
-  const durationEl = document.querySelector('.class-info-grid .class-info-item:nth-child(4) .class-info-value');
-  const cancelBtn  = document.getElementById('CancelBooking');
-
   try {
     const res  = await fetch('api/user/schedule/upcoming.php');
     const data = await res.json();
-
     if (!data.success) return;
 
     const booking = data.next_booking;
 
     if (!booking) {
-      // No upcoming booking — show "No Class Yet" empty state
+      const section = document.querySelector('.next-action-section');
       if (section) {
         section.innerHTML = `
           <div class="next-action-content" style="text-align:center;padding:20px 0;">
@@ -130,18 +106,19 @@ async function loadNextBooking() {
       return;
     }
 
-    // Store for cancel button
     currentBooking = booking;
 
-    // Populate the section
+    const titleEl    = document.getElementById('nextClassName');
+    const timeEl     = document.getElementById('nextClassTime');
+    const dateEl     = document.getElementById('nextClassDate');
+    const trainerEl  = document.getElementById('nextClassTrainer');
+    const durationEl = document.getElementById('nextClassDuration');
+
     if (titleEl)    titleEl.textContent    = booking.class_name.toUpperCase();
     if (timeEl)     timeEl.textContent     = booking.time_label;
     if (dateEl)     dateEl.textContent     = booking.date_label;
     if (trainerEl)  trainerEl.textContent  = booking.trainer_name || '—';
     if (durationEl) durationEl.textContent = booking.duration_label;
-
-    // Show cancel button (it may have been hidden)
-    if (cancelBtn) cancelBtn.style.display = '';
 
   } catch (err) {
     console.warn('Could not load next booking:', err);
@@ -149,36 +126,26 @@ async function loadNextBooking() {
 }
 
 // ─── Cancel booking ───────────────────────────────────────────────────────────
-
-document.querySelector("#CancelBooking").addEventListener("click", () => {
-  if (!currentBooking) {
-    showPopUP('No booking to cancel.');
-    return;
-  }
+document.getElementById('CancelBooking').addEventListener('click', () => {
+  if (!currentBooking) { showPopUP('No booking to cancel.'); return; }
   showPopUP(`Cancel your ${currentBooking.class_name} booking?`);
 
   window.handleOk = async function () {
     closePopUp();
     showLoading('Cancelling booking...');
-
     try {
       const fd = new FormData();
       fd.append('type',       currentBooking.booking_type);
       fd.append('booking_id', currentBooking.booking_id);
-
       const res    = await fetch('api/bookings/cancel.php', { method: 'POST', body: fd });
       const result = await res.json();
       hideLoading();
-
       if (result.success) {
         currentBooking = null;
-        // Reload the next booking section to reflect the cancellation
         await loadNextBooking();
-        // Switch pop-up to info style for success message
         render('#pop-up', 'done', renderPopUP);
         window.closePopUp = closePopUp;
         showPopUP('Booking cancelled successfully.');
-        document.querySelector('.popClose')?.addEventListener('click', closePopUp);
       } else {
         render('#pop-up', 'warning', renderPopUP);
         window.closePopUp = closePopUp;
@@ -186,16 +153,13 @@ document.querySelector("#CancelBooking").addEventListener("click", () => {
       }
     } catch (err) {
       hideLoading();
-      render('#pop-up', 'warning', renderPopUP);
-      window.closePopUp = closePopUp;
       showPopUP('Something went wrong. Please try again.');
     }
   };
 });
 
 // ─── Pause membership ─────────────────────────────────────────────────────────
-
-document.querySelector("#pauseMem").addEventListener("click", () => {
+document.getElementById('pauseMem').addEventListener('click', () => {
   showPopUP('Are you sure you want to pause membership?');
   window.handleOk = async function () {
     closePopUp();
@@ -206,11 +170,8 @@ document.querySelector("#pauseMem").addEventListener("click", () => {
       const res    = await fetch('api/user/membership/pause.php', { method: 'POST', body: fd });
       const result = await res.json();
       hideLoading();
-      if (result.success) {
-        showPopUP('Membership paused successfully.');
-      } else {
-        showPopUP(result.message || 'Could not pause membership.');
-      }
+      if (result.success) showPopUP('Membership paused successfully.');
+      else showPopUP(result.message || 'Could not pause membership.');
     } catch (err) {
       hideLoading();
       showPopUP('Something went wrong. Please try again.');
@@ -218,55 +179,159 @@ document.querySelector("#pauseMem").addEventListener("click", () => {
   };
 });
 
-// ─── Load upcoming events ─────────────────────────────────────────────────────
+// ─── Events helpers ───────────────────────────────────────────────────────────
 
-async function loadUpcomingEvents() {
+const MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function fmtEventDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return { day: d.getDate(), month: MONTH_ABBR[d.getMonth()] };
+}
+
+function fmtEventTime(timeStr) {
+  if (!timeStr) return '';
   try {
-    const res  = await fetch('api/user/events/list.php');
+    return new Date('1970-01-01T' + timeStr).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' });
+  } catch { return timeStr; }
+}
+
+function buildEventItem(ev, showRegisterBtn) {
+  const { day, month } = fmtEventDate(ev.event_date);
+  const time  = fmtEventTime(ev.event_time);
+  const fee   = parseFloat(ev.fee) > 0 ? `₱${Number(ev.fee).toLocaleString('en-PH')}` : 'Free';
+  const spots = ev.spots_remaining ?? (ev.max_attendees - ev.current_attendees);
+
+  const badges = [];
+  if (ev.registration_status === 'registered') badges.push(`<span class="event-badge badge-registered">✓ Registered</span>`);
+  if (ev.is_members_only)                      badges.push(`<span class="event-badge badge-members">Members Only</span>`);
+  if (parseFloat(ev.fee) <= 0)                 badges.push(`<span class="event-badge badge-free">Free</span>`);
+  else                                         badges.push(`<span class="event-badge badge-paid">${fee}</span>`);
+
+  const actionBtn = showRegisterBtn
+    ? (ev.already_registered || ev.registration_status === 'registered'
+        ? `<button class="btn" disabled style="opacity:0.55;cursor:default;">Registered</button>`
+        : `<button class="btn btn-outline" onclick="registerEvent(${ev.id})">Register</button>`)
+    : '';
+
+  return `
+    <div class="event-item" data-event-id="${ev.id}">
+      <div class="event-date">
+        <div class="event-day">${day}</div>
+        <div class="event-month">${month}</div>
+      </div>
+      <div class="event-details">
+        <div class="event-title">${ev.name}</div>
+        <div class="event-meta">
+          ${ev.location}${time ? ' • ' + time : ''}${spots != null ? ' • ' + spots + ' spots left' : ''}
+          ${ev.organizer_name ? ' • ' + ev.organizer_name : ''}
+        </div>
+        <div>${badges.join('')}</div>
+      </div>
+      ${actionBtn}
+    </div>`;
+}
+
+// ─── Load My Events (registered by this member) ───────────────────────────────
+async function loadMyEvents() {
+  const container = document.getElementById('myEventsScroll');
+  if (!container) return;
+  container.innerHTML = '<div class="events-loading">Loading your events…</div>';
+
+  try {
+    const res  = await fetch('api/user/events/my-events.php');
     const data = await res.json();
-    if (!data.success || !data.events?.length) return;
 
-    const existing = document.querySelectorAll('.event-item');
-    existing.forEach(e => e.remove());
+    if (!data.success) {
+      if (res.status === 401) { window.location.href = 'login-page.php'; return; }
+      container.innerHTML = '<div class="events-empty"><div class="events-empty-icon">⚠️</div><p>Could not load events.</p></div>';
+      return;
+    }
 
-    const eventsSection = document.querySelector('.events-section');
-
-    data.events.slice(0, 3).forEach(ev => {
-      const d      = new Date(ev.event_date);
-      const day    = d.getDate();
-      const month  = d.toLocaleDateString('en-PH', { month: 'short' }).toUpperCase();
-      const btnHtml= ev.already_registered
-        ? `<button class="btn" disabled style="opacity:0.6;">Registered</button>`
-        : `<button class="btn btn-outline" onclick="registerEvent(${ev.id})">Register</button>`;
-      const feeLabel = parseFloat(ev.fee) > 0 ? `₱${ev.fee}` : 'Free';
-
-      const html = `
-        <div class="event-item" data-event-id="${ev.id}">
-          <div class="event-date">
-            <div class="event-day">${day}</div>
-            <div class="event-month">${month}</div>
-          </div>
-          <div class="event-details">
-            <div class="event-title">${ev.name}</div>
-            <div class="event-meta">${ev.location} • ${feeLabel} • ${ev.spots_remaining} spots left</div>
-          </div>
-          ${btnHtml}
+    if (!data.events?.length) {
+      container.innerHTML = `
+        <div class="events-empty">
+          <div class="events-empty-icon">📅</div>
+          <p>You haven't registered for any upcoming events.</p>
+          <p style="margin-top:6px;"><a href="#" onclick="switchTab('all');return false;" style="color:#ff6b35;font-weight:600;">Browse all events →</a></p>
         </div>`;
-      eventsSection.insertAdjacentHTML('beforeend', html);
-    });
+      return;
+    }
+
+    container.innerHTML = data.events.map(ev => buildEventItem(ev, false)).join('');
+
   } catch (err) {
-    console.warn('Could not load events:', err);
+    console.warn('Could not load my events:', err);
+    container.innerHTML = '<div class="events-empty"><div class="events-empty-icon">⚠️</div><p>Failed to load events.</p></div>';
   }
 }
 
-window.registerEvent = async function (eventId) {
+// ─── Load All Events (from DB, admin-controlled) ──────────────────────────────
+async function loadAllEvents() {
+  const container = document.getElementById('allEventsScroll');
+  if (!container) return;
+  container.innerHTML = '<div class="events-loading">Loading events…</div>';
+
+  try {
+    const res  = await fetch('api/user/events/list.php');
+    const data = await res.json();
+
+    if (!data.success) {
+      if (res.status === 401) { window.location.href = 'login-page.php'; return; }
+      container.innerHTML = '<div class="events-empty"><div class="events-empty-icon">⚠️</div><p>Could not load events.</p></div>';
+      return;
+    }
+
+    if (!data.events?.length) {
+      container.innerHTML = `
+        <div class="events-empty">
+          <div class="events-empty-icon">🎉</div>
+          <p>No upcoming events at the moment.</p>
+          <p style="margin-top:6px;color:#bbb;font-size:0.85rem;">Check back soon!</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = data.events.map(ev => buildEventItem(ev, true)).join('');
+
+  } catch (err) {
+    console.warn('Could not load all events:', err);
+    container.innerHTML = '<div class="events-empty"><div class="events-empty-icon">⚠️</div><p>Failed to load events.</p></div>';
+  }
+}
+
+// ─── Tab switcher ─────────────────────────────────────────────────────────────
+let allEventsLoaded = false;
+
+function switchTab(tab) {
+  const myPanel  = document.getElementById('panelMyEvents');
+  const allPanel = document.getElementById('panelAllEvents');
+  const myTab    = document.getElementById('tabMyEvents');
+  const allTab   = document.getElementById('tabAllEvents');
+
+  if (tab === 'my') {
+    myPanel.style.display  = '';
+    allPanel.style.display = 'none';
+    myTab.classList.add('active');
+    allTab.classList.remove('active');
+  } else {
+    myPanel.style.display  = 'none';
+    allPanel.style.display = '';
+    myTab.classList.remove('active');
+    allTab.classList.add('active');
+    // Lazy-load all events only on first open
+    if (!allEventsLoaded) { loadAllEvents(); allEventsLoaded = true; }
+  }
+}
+
+// ─── Register for event ───────────────────────────────────────────────────────
+async function registerEvent(eventId) {
   const method = prompt('Enter payment method (gcash / maya / gotyme / card):');
   if (!method) return;
 
-  showLoading('Registering...');
+  showLoading('Registering…');
   try {
     const fd = new FormData();
-    fd.append('event_id', eventId);
+    fd.append('event_id',       eventId);
     fd.append('payment_method', method);
 
     const res    = await fetch('api/user/events/register.php', { method: 'POST', body: fd });
@@ -274,19 +339,26 @@ window.registerEvent = async function (eventId) {
     hideLoading();
 
     if (result.success) {
+      render('#pop-up', 'done', renderPopUP);
+      window.closePopUp = closePopUp;
       showPopUP('Successfully registered for the event!');
-      loadUpcomingEvents();
+      // Refresh both panels so buttons update
+      loadMyEvents();
+      allEventsLoaded = false;
+      loadAllEvents();
+      allEventsLoaded = true;
     } else {
+      render('#pop-up', 'warning', renderPopUP);
+      window.closePopUp = closePopUp;
       showPopUP(result.message || 'Registration failed.');
     }
   } catch (err) {
     hideLoading();
     showPopUP('Something went wrong. Please try again.');
   }
-};
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-
 loadMemberData();
 loadNextBooking();
-loadUpcomingEvents();
+loadMyEvents();   // pre-load My Events tab on page load
