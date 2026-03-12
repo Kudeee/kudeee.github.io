@@ -28,7 +28,8 @@ async function loadTrainerOptions() {
                  onclick="selectTrainer(
                      '${trainer.full_name.replace(/'/g, "\\'")}',
                      '${trainer.specialty.replace(/'/g, "\\'")}',
-                     '${trainer.session_rate}'
+                     '${trainer.session_rate}',
+                     ${trainer.id}
                  )">
                 <div class="trainer-photo">
                     <img src="${trainer.image_url || 'assests/trainers/default.png'}"

@@ -4,6 +4,62 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/book-trainer-page.css" />
+    <style>
+      /* Calendar day headers row */
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+      }
+      .calendar-day-header {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #aaa;
+        text-align: center;
+        padding: 4px 0;
+      }
+      .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: #fff;
+        border: 2px solid transparent;
+      }
+      .calendar-day:hover:not(.disabled) {
+        background: #fff3e0;
+        border-color: #ff6b35;
+      }
+      .calendar-day.selected {
+        background: #ff6b35 !important;
+        color: #fff;
+        border-color: #ff6b35;
+      }
+      .calendar-day.disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        background: #f5f5f5;
+      }
+      /* Time slots */
+      #step3 .time-slots {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .time-slot.unavailable {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: #f5f5f5;
+        border-color: #ddd;
+        color: #999;
+      }
+    </style>
     <title>Book a Trainer</title>
   </head>
   <body>
@@ -84,44 +140,27 @@
 
           <!-- Step 3: Schedule -->
           <div id="step3" class="step-content">
-            <h2 class="section-title">Select Date & Time</h2>
+            <h2 class="section-title">Select Date &amp; Time</h2>
 
             <div class="calendar">
               <div class="calendar-header">
-                <div class="calendar-month">January 2026</div>
+                <div class="calendar-month">Loading…</div>
                 <div class="calendar-nav">
-                  <button type="button">◀</button>
-                  <button type="button">▶</button>
+                  <button type="button" onclick="prevMonth()">◀</button>
+                  <button type="button" onclick="nextMonth()">▶</button>
                 </div>
               </div>
-              <div class="calendar-grid">
-                <div class="calendar-day disabled">1</div>
-                <div class="calendar-day disabled">2</div>
-                <div class="calendar-day disabled">3</div>
-                <div class="calendar-day" onclick="selectDate('Jan 20', '2026-01-20')">20</div>
-                <div class="calendar-day" onclick="selectDate('Jan 21', '2026-01-21')">21</div>
-                <div class="calendar-day" onclick="selectDate('Jan 22', '2026-01-22')">22</div>
-                <div class="calendar-day" onclick="selectDate('Jan 23', '2026-01-23')">23</div>
-                <div class="calendar-day" onclick="selectDate('Jan 24', '2026-01-24')">24</div>
-                <div class="calendar-day" onclick="selectDate('Jan 25', '2026-01-25')">25</div>
-                <div class="calendar-day" onclick="selectDate('Jan 26', '2026-01-26')">26</div>
-                <div class="calendar-day" onclick="selectDate('Jan 27', '2026-01-27')">27</div>
-                <div class="calendar-day" onclick="selectDate('Jan 28', '2026-01-28')">28</div>
-                <div class="calendar-day" onclick="selectDate('Jan 29', '2026-01-29')">29</div>
-                <div class="calendar-day" onclick="selectDate('Jan 30', '2026-01-30')">30</div>
-              </div>
+              <!-- JS builds day-header row + day cells dynamically -->
+              <div class="calendar-grid"></div>
             </div>
 
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 15px">Available Time Slots</h3>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">
+              Available Time Slots
+            </h3>
             <div class="time-slots">
-              <div class="time-slot" onclick="selectTime('6:00 AM')">6:00 AM</div>
-              <div class="time-slot" onclick="selectTime('8:00 AM')">8:00 AM</div>
-              <div class="time-slot unavailable">10:00 AM</div>
-              <div class="time-slot" onclick="selectTime('12:00 PM')">12:00 PM</div>
-              <div class="time-slot" onclick="selectTime('2:00 PM')">2:00 PM</div>
-              <div class="time-slot" onclick="selectTime('4:00 PM')">4:00 PM</div>
-              <div class="time-slot unavailable">6:00 PM</div>
-              <div class="time-slot" onclick="selectTime('8:00 PM')">8:00 PM</div>
+              <p style="grid-column:1/-1;text-align:center;color:#aaa;padding:20px;">
+                Select a date to see available times.
+              </p>
             </div>
 
             <div class="action-buttons">
@@ -135,7 +174,6 @@
             <h2 class="section-title">Session Details</h2>
 
             <form id="trainerBookingForm">
-              <!-- Hidden fields populated by JS across all steps -->
               <input type="hidden" name="trainer_name"         id="hidden_trainer_name"      value="" />
               <input type="hidden" name="trainer_specialty"    id="hidden_trainer_specialty" value="" />
               <input type="hidden" name="session_duration"     id="hidden_session_duration"  value="" />

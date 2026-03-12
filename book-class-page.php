@@ -4,6 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/book-class-page.css" />
+    <style>
+      /* Time slot sub-label (trainer name / spots) */
+      .time-slot .time-spots {
+        font-size: 0.78rem;
+        margin-top: 3px;
+        opacity: 0.8;
+      }
+      .time-slot.full {
+        opacity: 0.45;
+        cursor: not-allowed;
+        background: #f5f5f5;
+        border-color: #ddd;
+      }
+      .time-slot.full .time-text,
+      .time-slot.full .time-spots {
+        color: #999;
+      }
+    </style>
     <title>Book a Class</title>
   </head>
   <body>
@@ -65,40 +83,12 @@
             </div>
           </div>
 
-          <!-- Step 2: Select Date -->
+          <!-- Step 2: Select Date — built dynamically by JS -->
           <div id="step2" class="step-content">
             <h2 class="section-title">Select Date</h2>
             <div class="date-selector">
-              <div class="date-grid">
-                <div class="date-option" onclick="selectDate('Mon, Jan 20', '2026-01-20')">
-                  <div class="date-day">Mon</div>
-                  <div class="date-number">20</div>
-                </div>
-                <div class="date-option" onclick="selectDate('Tue, Jan 21', '2026-01-21')">
-                  <div class="date-day">Tue</div>
-                  <div class="date-number">21</div>
-                </div>
-                <div class="date-option" onclick="selectDate('Wed, Jan 22', '2026-01-22')">
-                  <div class="date-day">Wed</div>
-                  <div class="date-number">22</div>
-                </div>
-                <div class="date-option" onclick="selectDate('Thu, Jan 23', '2026-01-23')">
-                  <div class="date-day">Thu</div>
-                  <div class="date-number">23</div>
-                </div>
-                <div class="date-option" onclick="selectDate('Fri, Jan 24', '2026-01-24')">
-                  <div class="date-day">Fri</div>
-                  <div class="date-number">24</div>
-                </div>
-                <div class="date-option" onclick="selectDate('Sat, Jan 25', '2026-01-25')">
-                  <div class="date-day">Sat</div>
-                  <div class="date-number">25</div>
-                </div>
-                <div class="date-option" onclick="selectDate('Sun, Jan 26', '2026-01-26')">
-                  <div class="date-day">Sun</div>
-                  <div class="date-number">26</div>
-                </div>
-              </div>
+              <!-- JS populates this with the next 7 days -->
+              <div class="date-grid"></div>
             </div>
             <div class="action-buttons">
               <button class="btn btn-secondary" onclick="prevStep(1)">Back</button>
@@ -106,34 +96,13 @@
             </div>
           </div>
 
-          <!-- Step 3: Pick Time -->
+          <!-- Step 3: Pick Time — populated dynamically after date is chosen -->
           <div id="step3" class="step-content">
             <h2 class="section-title">Pick Time Slot</h2>
             <div class="time-slots">
-              <div class="time-slot" onclick="selectTime('6:00 AM')">
-                <div class="time-text">6:00 AM</div>
-                <div class="time-spots">8 spots left</div>
-              </div>
-              <div class="time-slot" onclick="selectTime('9:00 AM')">
-                <div class="time-text">9:00 AM</div>
-                <div class="time-spots">3 spots left</div>
-              </div>
-              <div class="time-slot" onclick="selectTime('12:00 PM')">
-                <div class="time-text">12:00 PM</div>
-                <div class="time-spots">5 spots left</div>
-              </div>
-              <div class="time-slot full">
-                <div class="time-text">3:00 PM</div>
-                <div class="time-spots">Full</div>
-              </div>
-              <div class="time-slot" onclick="selectTime('5:00 PM')">
-                <div class="time-text">5:00 PM</div>
-                <div class="time-spots">2 spots left</div>
-              </div>
-              <div class="time-slot" onclick="selectTime('7:00 PM')">
-                <div class="time-text">7:00 PM</div>
-                <div class="time-spots">6 spots left</div>
-              </div>
+              <p style="grid-column:1/-1;text-align:center;color:#aaa;padding:20px;">
+                Select a date first to see available times.
+              </p>
             </div>
             <div class="action-buttons">
               <button class="btn btn-secondary" onclick="prevStep(2)">Back</button>
@@ -146,10 +115,9 @@
             <h2 class="section-title">Additional Information</h2>
 
             <form id="bookingForm">
-              <!-- Hidden fields populated by JS as user moves through steps -->
-              <input type="hidden" name="class_name"        id="hidden_class_name"   value="" />
-              <input type="hidden" name="booking_date"      id="hidden_booking_date" value="" />
-              <input type="hidden" name="booking_time"      id="hidden_booking_time" value="" />
+              <input type="hidden" name="class_name"    id="hidden_class_name"   value="" />
+              <input type="hidden" name="booking_date"  id="hidden_booking_date" value="" />
+              <input type="hidden" name="booking_time"  id="hidden_booking_time" value="" />
 
               <div class="form-group">
                 <label class="form-label" for="special_requirements">Special Requirements (Optional)</label>
