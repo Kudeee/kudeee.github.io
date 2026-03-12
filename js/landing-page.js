@@ -36,6 +36,10 @@ async function fetchLandingPlans() {
     }
   } catch (e) {
     console.warn('landing-page: could not fetch plans, using fallback.', e);
+  }
+
+  // If API failed or returned no plans, use hardcoded fallback
+  if (!landingPlans.length) {
     landingPlans = [
       {
         plan: 'BASIC PLAN', monthlyPrice: 499, yearlyPrice: 5028,
@@ -54,6 +58,7 @@ async function fetchLandingPlans() {
       },
     ];
   }
+
   return landingPlans;
 }
 
