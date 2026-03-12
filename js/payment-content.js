@@ -1,201 +1,278 @@
-// Import the subscription data
-import { subscriptions } from '../data/subscription-data.js';
+/**
+ * payment-content.js
+ * Renders the correct payment UI based on URL params (type, plan, billing).
+ * Uses live plan data from the API and re-injects payment methods after
+ * each HTML injection so the payment-method-js containers are always filled.
+ */
 
-const successPaymentHTML = `
-<div class="payment-successful">
-        <img src="assests/icons/check.png" alt="">
-        <p>Payment Successful!</p>
-        <button class="back-btn button" >Back to Homepage</button>
-</div>
-`;
+// ─── Plan data (fetched once from API, with hardcoded fallback) ───────────────
 
-// Function to generate subscription card HTML
-function generateSubscriptionCard(planName, isYearly = false) {
-  const plan = subscriptions.find(sub => sub.plan === planName);
-  
-  if (!plan) {
-    return '<div class="card"><h1>Plan not found</h1></div>';
+let plansCache = [];
+
+async function fetchPlans() {
+  if (plansCache.length) return plansCache;
+  try {
+    const res  = await fetch('api/admin/plans/list.php');
+    const data = await res.json();
+    if (data.success && Array.isArray(data.plans)) {
+      plansCache = data.plans.map(p => ({
+        plan:         p.plan,
+        monthlyPrice: parseFloat(p.monthly_price),
+        yearlyPrice:  parseFloat(p.yearly_price),
+        color:        p.color || '#ff6b35',
+        benefits:     Array.isArray(p.benefits) ? p.benefits : [],
+      }));
+    }
+  } catch (e) {
+    console.warn('payment-content: could not fetch plans, using fallback.', e);
   }
-  
-  const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+
+  if (!plansCache.length) {
+    plansCache = [
+      { plan: 'BASIC PLAN',   monthlyPrice: 499,  yearlyPrice: 5028,  color: '#9e9e9e', benefits: ['Gym access (6AM–10PM)', 'Locker room access', '2 group classes/week'] },
+      { plan: 'PREMIUM PLAN', monthlyPrice: 899,  yearlyPrice: 9067,  color: '#ff6b35', benefits: ['24/7 gym access', 'Unlimited group classes', '1 PT session/month'] },
+      { plan: 'VIP PLAN',     monthlyPrice: 1500, yearlyPrice: 15120, color: '#f9a825', benefits: ['All Premium features', '4 PT sessions/month', 'Priority class booking', '2 guest passes/month'] },
+    ];
+  }
+
+  return plansCache;
+}
+
+// ─── Card HTML builder ────────────────────────────────────────────────────────
+
+function buildPlanCard(plan, isYearly) {
+  const price  = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
   const period = isYearly ? '/year' : '/month';
-  const savings = isYearly ? `<div class="savings-badge">Save ₱${(plan.monthlyPrice * 12) - plan.yearlyPrice}</div>` : '';
-  
+  const savings = Math.round(plan.monthlyPrice * 12 - plan.yearlyPrice);
+  const savingsBadge = (isYearly && savings > 0)
+    ? `<div class="savings-badge" style="margin-bottom:8px;">Save ₱${savings.toLocaleString('en-PH')}</div>`
+    : '';
+
   return `
-    <div class="sub-card" style="border: 3px solid #ff6b35; max-width: 400px; margin: 0 auto;">
+    <div class="sub-card" style="border:3px solid ${plan.color};max-width:420px;margin:0 auto;">
       <div class="sub-header">
-        <h3>${plan.plan}</h3>
-        ${savings}
+        <h3 style="color:${plan.color};">${plan.plan}</h3>
+        ${savingsBadge}
       </div>
-      
       <div class="sub-price">
-        <span class="price">₱${price}</span><span class="month">${period}</span>
+        <span class="price">₱${price.toLocaleString('en-PH')}</span><span class="month">${period}</span>
       </div>
-      
       <ul class="sub-benefits">
-        ${plan.benefits.map(b => `<li>✓ ${b}</li>`).join("")}
+        ${plan.benefits.map(b => `<li>✓ ${b}</li>`).join('')}
       </ul>
-    </div>
-  `;
+    </div>`;
 }
 
-// Generate renew HTML
-function generateRenewHTML(isYearly = false) {
-  const premiumCard = generateSubscriptionCard("PREMIUM PLAN", isYearly);
-  
+// ─── Page builders ────────────────────────────────────────────────────────────
+
+function buildPaymentPage({ heading, buttonText, plan, isYearly, type, billing }) {
   return `
-<h1 class="header-name">Renew Membership</h1>
-
-      <div class="containers">
-        ${premiumCard}
-      </div>
-
-      <div class="containers">
-        <form onsubmit="handlePayment(event)">
-          <div class="payment-method-js"></div>
-          <button class="payment-btn button" type="submit" onClick="renderPayment('successPayment')">RENEW</button>
-        </form>
-      </div>
+    <h1 class="header-name">${heading}</h1>
+    <div class="containers">
+      ${buildPlanCard(plan, isYearly)}
     </div>
-`;
+    <div class="containers">
+      <form id="paymentForm" style="width:100%;max-width:420px;">
+        <input type="hidden" name="type"    value="${type}" />
+        <input type="hidden" name="plan"    value="${plan.plan}" />
+        <input type="hidden" name="billing" value="${billing}" />
+        <div class="payment-method-js"></div>
+        <button type="submit">${buttonText}</button>
+      </form>
+    </div>`;
 }
 
-// Generate upgrade HTML
-function generateUpgradeHTML(isYearly = false) {
-  const vipCard = generateSubscriptionCard("VIP PLAN", isYearly);
-  
-  return `
-<h1 class="header-name">Upgrade Membership</h1>
+const successHTML = `
+  <div class="payment-successful">
+    <img src="assests/icons/check.png" alt="Success" />
+    <p>Payment Successful!</p>
+    <button id="backBtn">Back to Homepage</button>
+  </div>`;
 
-      <div class="containers">
-        ${vipCard}
-      </div>
+// ─── Show success screen ──────────────────────────────────────────────────────
 
-      <div class="containers">
-        <form onsubmit="handlePayment(event)">
-          <div class="payment-method-js"></div>
-          <button class="payment-btn button" type="submit" onClick="renderPayment('successPayment')">UPGRADE</button>
-        </form>
-      </div>
-    </div>
-`;
+function showSuccess() {
+  const container = document.querySelector('.container');
+  container.innerHTML = successHTML;
+  document.getElementById('backBtn').addEventListener('click', () => {
+    location.href = 'homepage.php';
+  });
 }
 
-// Function to generate plan change HTML dynamically
-function generatePlanChangeHTML(planName, isUpgrade, isYearly = false) {
-  const actionText = isUpgrade ? "Upgrade" : "Downgrade";
-  const buttonText = isUpgrade ? "UPGRADE" : "CHANGE PLAN";
-  
-  const planCard = generateSubscriptionCard(planName, isYearly);
-  
-  return `
-<h1 class="header-name">${actionText} Membership</h1>
+// ─── Submit handler — POSTs to real API ──────────────────────────────────────
 
-      <div class="containers">
-        ${planCard}
-      </div>
+function bindPaymentForm() {
+  const form = document.getElementById('paymentForm');
+  if (!form) return;
 
-      <div class="containers">
-        <form onsubmit="handlePayment(event)">
-          <div class="payment-method-js"></div>
-          <button class="payment-btn button" type="submit" onClick="renderPayment('successPayment')">${buttonText}</button>
-        </form>
-      </div>
-    </div>
-`;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const method = form.querySelector('input[name="payment_method"]:checked')?.value;
+    if (!method) {
+      // showPopUP may not exist on this page — use alert as fallback
+      if (typeof showPopUP === 'function') showPopUP('Please select a payment method.');
+      else alert('Please select a payment method.');
+      return;
+    }
+
+    if (typeof showLoading === 'function') showLoading('Processing Payment...');
+
+    try {
+      const formData = new FormData(form);
+
+      const res    = await fetch('api/payments/process.php', { method: 'POST', body: formData });
+      const result = await res.json();
+
+      if (typeof hideLoading === 'function') hideLoading();
+
+      if (result.success) {
+        showSuccess();
+      } else {
+        const msg = result.message || 'Payment failed. Please try again.';
+        if (typeof showPopUP === 'function') showPopUP(msg);
+        else alert(msg);
+      }
+    } catch (err) {
+      if (typeof hideLoading === 'function') hideLoading();
+      const msg = 'Something went wrong. Please try again.';
+      if (typeof showPopUP === 'function') showPopUP(msg);
+      else alert(msg);
+    }
+  });
 }
 
-// Function to generate billing change HTML
-function generateBillingChangeHTML(planName, isYearly = false) {
-  const actionText = isYearly ? "Upgrade to Yearly Billing" : "Switch to Monthly Billing";
-  const buttonText = isYearly ? "UPGRADE TO YEARLY" : "SWITCH TO MONTHLY";
-  
-  const planCard = generateSubscriptionCard(planName, isYearly);
-  
-  return `
-<h1 class="header-name">${actionText}</h1>
+// ─── Re-inject payment method options ────────────────────────────────────────
+// payment-methods.js runs before our HTML is injected, so we must call
+// initializePaymentMethods() ourselves after setting innerHTML.
 
-      <div class="containers">
-        ${planCard}
-      </div>
-
-      <div class="containers">
-        <form onsubmit="handlePayment(event)">
-          <div class="payment-method-js"></div>
-          <button class="payment-btn button" type="submit" onClick="renderPayment('successPayment')">${buttonText}</button>
-        </form>
-      </div>
-    </div>
-`;
-}
-
-function renderPayment(paymentType) {
-  if (paymentType === "renew") {
-    document.querySelector(".container").innerHTML = generateRenewHTML();
+function injectPaymentMethods() {
+  if (typeof initializePaymentMethods === 'function') {
+    initializePaymentMethods();
   }
+}
 
-  if (paymentType === "upgrade") {
-    document.querySelector(".container").innerHTML = generateUpgradeHTML();
-  }
+// ─── Main init ────────────────────────────────────────────────────────────────
 
-  if (paymentType === "successPayment") {
-    document.querySelector(".container").innerHTML = successPaymentHTML;
+async function init() {
+  const params  = new URLSearchParams(window.location.search);
+  const type    = params.get('type')    || '';
+  const planParam = decodeURIComponent(params.get('plan') || '');
+  const billing = params.get('billing') || 'monthly';
+  const isYearly = billing === 'yearly';
 
-    const backBtn = document.querySelector(".back-btn");
+  const plans = await fetchPlans();
+  const container = document.querySelector('.container');
+  if (!container) return;
 
-    backBtn.addEventListener("click", () => {
-      location.href = "homepage.php";
+  // ── Renew ──────────────────────────────────────────────────────────────────
+  if (type === 'renew') {
+    // Fetch member's current plan from session API
+    let planName = 'PREMIUM PLAN';
+    try {
+      const res  = await fetch('api/user/membership/info.php');
+      const data = await res.json();
+      if (data.success) planName = data.member.plan;
+    } catch (_) {}
+
+    let renewIsYearly = false;
+    try {
+      const res2  = await fetch('api/user/membership/info.php');
+      const data2 = await res2.json();
+      if (data2.success) renewIsYearly = (data2.subscription?.billing_cycle === 'yearly');
+    } catch (_) {}
+
+    const plan = plans.find(p => p.plan === planName) || plans[1];
+    container.innerHTML = buildPaymentPage({
+      heading:    'Renew Membership',
+      buttonText: 'RENEW',
+      plan, isYearly: renewIsYearly,
+      type: 'renew', billing: renewIsYearly ? 'yearly' : 'monthly',
     });
+    document.title = 'Renew Membership';
+    injectPaymentMethods();
+    bindPaymentForm();
+    return;
   }
+
+  // ── Upgrade (straight to VIP) ──────────────────────────────────────────────
+  if (type === 'upgrade') {
+    const plan = plans.find(p => p.plan === 'VIP PLAN') || plans[2];
+    container.innerHTML = buildPaymentPage({
+      heading:    'Upgrade to VIP',
+      buttonText: 'UPGRADE TO VIP',
+      plan, isYearly: false,
+      type: 'upgrade', billing: 'monthly',
+    });
+    document.title = 'Upgrade to VIP';
+    injectPaymentMethods();
+    bindPaymentForm();
+    return;
+  }
+
+  // ── Change plan (upgrade/downgrade to a specific plan) ────────────────────
+  if (type === 'change' && planParam) {
+    const plan = plans.find(p => p.plan === planParam);
+    if (!plan) {
+      container.innerHTML = '<p style="text-align:center;padding:60px;color:#c00;">Plan not found.</p>';
+      return;
+    }
+
+    // Determine heading
+    const planOrder = ['BASIC PLAN', 'PREMIUM PLAN', 'VIP PLAN'];
+    let heading = 'Change Membership Plan';
+    let buttonText = 'CHANGE PLAN';
+    try {
+      const res  = await fetch('api/user/membership/info.php');
+      const data = await res.json();
+      if (data.success) {
+        const currentIdx = planOrder.indexOf(data.member.plan);
+        const targetIdx  = planOrder.indexOf(planParam);
+        if (targetIdx > currentIdx)  { heading = 'Upgrade Membership';   buttonText = 'UPGRADE'; }
+        if (targetIdx < currentIdx)  { heading = 'Downgrade Membership'; buttonText = 'CHANGE PLAN'; }
+      }
+    } catch (_) {}
+
+    container.innerHTML = buildPaymentPage({
+      heading, buttonText,
+      plan, isYearly,
+      type: 'change', billing,
+    });
+    document.title = heading;
+    injectPaymentMethods();
+    bindPaymentForm();
+    return;
+  }
+
+  // ── Billing change (same plan, different cycle) ────────────────────────────
+  if (type === 'billing-change' && planParam) {
+    const plan = plans.find(p => p.plan === planParam);
+    if (!plan) {
+      container.innerHTML = '<p style="text-align:center;padding:60px;color:#c00;">Plan not found.</p>';
+      return;
+    }
+
+    const heading    = isYearly ? 'Upgrade to Yearly Billing' : 'Switch to Monthly Billing';
+    const buttonText = isYearly ? 'UPGRADE TO YEARLY' : 'SWITCH TO MONTHLY';
+
+    container.innerHTML = buildPaymentPage({
+      heading, buttonText,
+      plan, isYearly,
+      type: 'billing-change', billing,
+    });
+    document.title = heading;
+    injectPaymentMethods();
+    bindPaymentForm();
+    return;
+  }
+
+  // ── Fallback: unknown/missing params ──────────────────────────────────────
+  container.innerHTML = '<p style="text-align:center;padding:60px;color:#999;">No payment action specified.</p>';
 }
 
-// Parse URL parameters
-const params = new URLSearchParams(window.location.search);
-const type = params.get("type");
-const planName = params.get("plan");
-const price = params.get("price");
-const billing = params.get("billing");
-
-const isYearly = billing === 'yearly';
-
-if (type === "billing-change" && planName && price) {
-  // User is changing billing cycle for same plan
-  const plan = subscriptions.find(sub => sub.plan === planName);
-  
-  if (plan) {
-    const billingChangeHTML = generateBillingChangeHTML(planName, isYearly);
-    document.querySelector(".container").innerHTML = billingChangeHTML;
-    
-    // Update page title
-    const pageTitle = isYearly ? "Upgrade to Yearly Billing" : "Switch to Monthly Billing";
-    const pageTitleElement = document.querySelector(".page-title");
-    if (pageTitleElement) {
-      pageTitleElement.textContent = pageTitle;
-    }
-    document.title = pageTitle;
-  }
-} else if (type === "change" && planName && price) {
-  // User is changing to a different plan
-  const plan = subscriptions.find(sub => sub.plan === planName);
-  
-  if (plan) {
-    // Determine if it's an upgrade or downgrade
-    const currentPrice = isYearly ? 9067 : 899; // Premium plan price
-    const isUpgrade = parseInt(price) > currentPrice;
-    
-    const planChangeHTML = generatePlanChangeHTML(planName, isUpgrade, isYearly);
-    document.querySelector(".container").innerHTML = planChangeHTML;
-    
-    // Update page title
-    const pageTitle = isUpgrade ? "Upgrade Membership" : "Change Membership";
-    const pageTitleElement = document.querySelector(".page-title");
-    if (pageTitleElement) {
-      pageTitleElement.textContent = pageTitle;
-    }
-    document.title = pageTitle;
-  }
-} else if (type === "renew") {
-  renderPayment(type);
-} else if (type === "upgrade") {
-  renderPayment(type);
+// Run after DOM + payment-methods.js are both ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
 }
