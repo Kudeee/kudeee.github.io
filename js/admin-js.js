@@ -240,9 +240,9 @@ async function loadClassesData() {
           <h3 style="margin:0;color:var(--primary);font-size:1rem;">${esc(c.class_name)}</h3>
           <span style="background:${fillClr}22;color:${fillClr};padding:3px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">${fill}/${max}</span>
         </div>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;">👤 ${esc(c.trainer_name || '—')}</p>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;">📅 ${fmtDateTime(c.scheduled_at)}</p>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;">⏱ ${c.duration_minutes} min · 📍 ${esc(c.location || '—')}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;"> ${esc(c.trainer_name || '—')}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;"> ${fmtDateTime(c.scheduled_at)}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:5px;"> ${c.duration_minutes} min ·  ${esc(c.location || '—')}</p>
         <div style="margin-top:12px;height:6px;background:var(--border);border-radius:3px;">
           <div style="width:${Math.min(pct,100)}%;height:100%;background:${fillClr};border-radius:3px;transition:width 0.5s;"></div>
         </div>
@@ -303,9 +303,9 @@ async function loadTrainersData() {
           </div>
         </div>
         <div style="font-size:0.88rem;color:#555;margin-bottom:10px;line-height:2;">
-          <p>⭐ ${parseFloat(t.rating||0).toFixed(1)} · ${t.exp_years || 0} yrs exp · ${t.client_count || 0} clients</p>
-          <p>💰 ₱${numFormat(t.session_rate)}/hr</p>
-          <p>📅 ${t.upcoming_sessions || 0} upcoming · ${avail}</p>
+          <p> ${parseFloat(t.rating||0).toFixed(1)} · ${t.exp_years || 0} yrs exp · ${t.client_count || 0} clients</p>
+          <p> ₱${numFormat(t.session_rate)}/hr</p>
+          <p> ${t.upcoming_sessions || 0} upcoming · ${avail}</p>
         </div>
         ${tags.length ? '<div>' + tags.slice(0,3).map(tag => `<span class="tag">${esc(tag)}</span>`).join('') + '</div>' : ''}
         <div style="margin-top:12px;">
@@ -448,11 +448,11 @@ async function loadEventsData() {
           <h3 style="margin:0;color:var(--primary);font-size:1rem;">${esc(e.name)}</h3>
           <span style="background:var(--blue-bg);color:var(--blue);padding:3px 10px;border-radius:12px;font-size:0.78rem;font-weight:700;">${fill}/${max}</span>
         </div>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">🗂 ${ucFirst((e.type||'').replace('_',' '))}</p>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">📅 ${fmtDate(e.event_date)} ${e.event_time ? '— ' + fmtTime(e.event_time) : ''}</p>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">📍 ${esc(e.location)}</p>
-        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;">💰 ${fee}${e.is_members_only ? ' · Members only' : ''}</p>
-        ${e.organizer_name ? `<p style="font-size:0.88rem;color:#555;">👤 ${esc(e.organizer_name)}</p>` : ''}
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;"> ${ucFirst((e.type||'').replace('_',' '))}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;"> ${fmtDate(e.event_date)} ${e.event_time ? '— ' + fmtTime(e.event_time) : ''}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;"> ${esc(e.location)}</p>
+        <p style="font-size:0.88rem;color:#555;margin-bottom:4px;"> ${fee}${e.is_members_only ? ' · Members only' : ''}</p>
+        ${e.organizer_name ? `<p style="font-size:0.88rem;color:#555;"> ${esc(e.organizer_name)}</p>` : ''}
         <div style="margin-top:12px;display:flex;gap:8px;">
           <button class="btn-sm btn-secondary" onclick="cancelEvent(${e.id})">Cancel</button>
         </div>
@@ -630,13 +630,13 @@ async function loadPlansData() {
         </ul>
 
         <div style="font-size:0.82rem;color:#777;margin-bottom:14px;line-height:1.9;padding:10px;background:#f9f9f9;border-radius:8px;">
-          <p>🏋️ Classes/wk: <strong>${p.max_classes === -1 ? 'Unlimited' : p.max_classes}</strong></p>
-          <p>🧑‍💼 PT sessions/mo: <strong>${p.pt_sessions}</strong></p>
-          <p>🎟️ Guest passes/mo: <strong>${p.guest_passes}</strong></p>
+          <p>️ Classes/wk: <strong>${p.max_classes === -1 ? 'Unlimited' : p.max_classes}</strong></p>
+          <p> PT sessions/mo: <strong>${p.pt_sessions}</strong></p>
+          <p>️ Guest passes/mo: <strong>${p.guest_passes}</strong></p>
         </div>
 
         <button onclick='openEditPlan(${JSON.stringify(JSON.stringify(p))})'>
-          ✏️ Edit Plan
+           Edit Plan
         </button>
       </div>`;
   }).join('');

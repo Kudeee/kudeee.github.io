@@ -59,10 +59,10 @@
   <div class="card">
     <h3 style="margin-bottom:14px;">Quick Actions</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="loadPage('members')">➕ Add Member</button>
-      <button onclick="loadPage('classes')">📅 Schedule Class</button>
-      <button class="btn-secondary" onclick="loadPage('revenue')">📊 View Revenue</button>
-      <button class="btn-secondary" onclick="loadPage('payments')">💳 View Payments</button>
+      <button onclick="loadPage('members')"> Add Member</button>
+      <button onclick="loadPage('classes')"> Schedule Class</button>
+      <button class="btn-secondary" onclick="loadPage('revenue')"> View Revenue</button>
+      <button class="btn-secondary" onclick="loadPage('payments')"> View Payments</button>
     </div>
   </div>
 </div>
