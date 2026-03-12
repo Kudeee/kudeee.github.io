@@ -15,7 +15,6 @@ window.prevStep = prevStep;
 window.selectClass = selectClass;
 window.selectDate = selectDate;
 window.selectTime = selectTime;
-// Called by the form's submit button to sync hidden fields before POST
 window.prepareBookingSubmit = prepareBookingSubmit;
 
 // ─── Step navigation ──────────────────────────────────────────────────────────
@@ -63,7 +62,6 @@ function selectClass(className) {
   event.target.closest(".class-option").classList.add("selected");
 }
 
-// Now accepts both the display label and ISO date value
 function selectDate(displayLabel, isoValue) {
   bookingData.date      = displayLabel;
   bookingData.dateValue = isoValue;
@@ -86,30 +84,62 @@ function selectTime(time) {
   event.target.closest(".time-slot").classList.add("selected");
 }
 
-// ─── Pre-submit: populate hidden fields so PHP receives all data ──────────────
+// ─── AJAX form submission ─────────────────────────────────────────────────────
 
 function prepareBookingSubmit() {
-  // Validate required booking steps are complete
+  // This is now a no-op kept for backward compat — real logic is in the submit listener
+}
+
+document.getElementById("bookingForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
   if (!bookingData.class) {
     showPopUP("Please go back and select a class.");
-    event.preventDefault();
-    return false;
+    return;
   }
   if (!bookingData.dateValue) {
     showPopUP("Please go back and select a date.");
-    event.preventDefault();
-    return false;
+    return;
   }
   if (!bookingData.time) {
     showPopUP("Please go back and select a time slot.");
-    event.preventDefault();
-    return false;
+    return;
   }
 
-  // Write booking data into the hidden form fields
+  const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+  if (!paymentMethod) {
+    showPopUP("Please select a payment method.");
+    return;
+  }
+
+  // Populate hidden fields
   document.getElementById("hidden_class_name").value   = bookingData.class;
   document.getElementById("hidden_booking_date").value = bookingData.dateValue;
   document.getElementById("hidden_booking_time").value = bookingData.time;
 
-  return true; // allow form to submit
-}
+  showLoading("Confirming your booking...");
+
+  try {
+    const formData = new FormData(this);
+
+    const res    = await fetch("api/bookings/book-class.php", { method: "POST", body: formData });
+    const result = await res.json();
+
+    hideLoading();
+
+    if (result.success) {
+      // Show success step
+      document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
+      document.getElementById("successMessage").classList.add("active");
+    } else {
+      render('#pop-up', 'warning', renderPopUP);
+      window.closePopUp = closePopUp;
+      showPopUP(result.message || "Booking failed. Please try again.");
+    }
+  } catch (err) {
+    hideLoading();
+    render('#pop-up', 'warning', renderPopUP);
+    window.closePopUp = closePopUp;
+    showPopUP("Something went wrong. Please try again.");
+  }
+});

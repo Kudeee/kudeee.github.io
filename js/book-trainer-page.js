@@ -5,8 +5,8 @@ let bookingData = {
     trainer: { name: null, specialty: null, baseRate: 0 },
     session: { duration: null, durationMinutes: null, multiplier: 1 },
     focusArea:  null,
-    date:       null,  // display label e.g. "Jan 20"
-    dateValue:  null,  // ISO value e.g. "2026-03-20"
+    date:       null,
+    dateValue:  null,
     time:       null,
 };
 
@@ -74,7 +74,6 @@ function selectTrainer(name, specialty, baseRate) {
     updateTotalPrice();
 
     document.querySelectorAll(".trainer-option").forEach(o => o.classList.remove("selected"));
-    // Highlight by matching name in the list
     document.querySelectorAll(".trainer-option").forEach(o => {
         if (o.querySelector("h3")?.textContent === name) {
             o.classList.add("selected");
@@ -103,7 +102,6 @@ function selectDate(displayLabel, isoValue) {
     document.querySelectorAll(".calendar-day").forEach(d => d.classList.remove("selected"));
     event.target.closest(".calendar-day").classList.add("selected");
 
-    // Load real availability from API
     loadAvailability(bookingData.dateValue);
 }
 
@@ -133,7 +131,6 @@ function updateTotalPrice() {
 async function loadAvailability(date) {
     if (!bookingData.trainer.name) return;
 
-    // Look up trainer ID by fetching trainers list
     try {
         const res   = await fetch('api/trainers/list.php');
         const data  = await res.json();
@@ -171,7 +168,6 @@ async function preselectTrainerFromURL() {
         const t    = data.trainers?.find(tr => tr.id === trainerId);
         if (!t) return;
 
-        // Wait for selectTrainer.js to render the cards, then auto-select
         setTimeout(() => {
             selectTrainer(t.full_name, t.specialty, t.session_rate);
         }, 500);
@@ -182,32 +178,43 @@ async function preselectTrainerFromURL() {
 
 preselectTrainerFromURL();
 
-// ─── Pre-submit: populate hidden fields ──────────────────────────────────────
+// ─── Kept for backward compat (onclick attr on button) ───────────────────────
 
 function prepareTrainerSubmit() {
+    // no-op — real logic handled by submit event listener below
+}
+
+// ─── AJAX form submission ─────────────────────────────────────────────────────
+
+document.getElementById("trainerBookingForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
     if (!bookingData.trainer.name) {
         showPopUP("Please go back and select a trainer.");
-        event.preventDefault();
-        return false;
+        return;
     }
     if (!bookingData.session.duration) {
         showPopUP("Please go back and select a session duration.");
-        event.preventDefault();
-        return false;
+        return;
     }
     if (!bookingData.dateValue || !bookingData.time) {
         showPopUP("Please go back and select a date and time.");
-        event.preventDefault();
-        return false;
+        return;
     }
 
     const fitnessLevel = document.getElementById("fitness_level").value;
     if (!fitnessLevel) {
-        showPopUP("Please select your current fitness level");
-        event.preventDefault();
-        return false;
+        showPopUP("Please select your current fitness level.");
+        return;
     }
 
+    const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+    if (!paymentMethod) {
+        showPopUP("Please select a payment method.");
+        return;
+    }
+
+    // Populate hidden fields before grabbing FormData
     const total = (bookingData.trainer.baseRate * bookingData.session.multiplier).toFixed(0);
 
     document.getElementById("hidden_trainer_name").value      = bookingData.trainer.name;
@@ -220,5 +227,29 @@ function prepareTrainerSubmit() {
     document.getElementById("hidden_booking_time").value      = bookingData.time;
     document.getElementById("hidden_total_price").value       = total;
 
-    return true;
-}
+    showLoading("Confirming your session...");
+
+    try {
+        const formData = new FormData(this);
+
+        const res    = await fetch("api/bookings/book-trainer.php", { method: "POST", body: formData });
+        const result = await res.json();
+
+        hideLoading();
+
+        if (result.success) {
+            // Show success step
+            document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
+            document.getElementById("successMessage").classList.add("active");
+        } else {
+            render('#pop-up', 'warning', renderPopUP);
+            window.closePopUp = closePopUp;
+            showPopUP(result.message || "Booking failed. Please try again.");
+        }
+    } catch (err) {
+        hideLoading();
+        render('#pop-up', 'warning', renderPopUP);
+        window.closePopUp = closePopUp;
+        showPopUP("Something went wrong. Please try again.");
+    }
+});
