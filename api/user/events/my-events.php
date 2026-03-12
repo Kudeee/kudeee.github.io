@@ -18,7 +18,7 @@ try {
                e.location, e.fee, e.max_attendees, e.current_attendees,
                e.is_members_only, e.description, e.status,
                er.status AS registration_status,
-               er.created_at AS registered_at,
+               er.registered_at,
                CONCAT(t.first_name, ' ', t.last_name) AS organizer_name,
                (e.max_attendees - e.current_attendees) AS spots_remaining
         FROM event_registrations er
