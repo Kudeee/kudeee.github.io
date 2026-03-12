@@ -130,12 +130,11 @@
             </div>
           </div>
 
-          <!-- Step 4: Details — the actual form that POSTs -->
+          <!-- Step 4: Details -->
           <div id="step4" class="step-content">
             <h2 class="section-title">Session Details</h2>
 
-            <form id="trainerBookingForm" method="POST" action="/api/bookings/book-trainer.php">
-              <input type="hidden" name="csrf_token"           value="<?php echo $_SESSION['csrf_token']; ?>" />
+            <form id="trainerBookingForm">
               <!-- Hidden fields populated by JS across all steps -->
               <input type="hidden" name="trainer_name"         id="hidden_trainer_name"      value="" />
               <input type="hidden" name="trainer_specialty"    id="hidden_trainer_specialty" value="" />

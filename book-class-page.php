@@ -141,13 +141,11 @@
             </div>
           </div>
 
-          <!-- Step 4: Confirm — the actual form that POSTs -->
+          <!-- Step 4: Confirm -->
           <div id="step4" class="step-content">
             <h2 class="section-title">Additional Information</h2>
 
-            <!-- This form collects all booking data and submits to PHP -->
-            <form id="bookingForm" method="POST" action="/api/bookings/book-class.php">
-              <input type="hidden" name="csrf_token"        value="<?php echo $_SESSION['csrf_token']; ?>" />
+            <form id="bookingForm">
               <!-- Hidden fields populated by JS as user moves through steps -->
               <input type="hidden" name="class_name"        id="hidden_class_name"   value="" />
               <input type="hidden" name="booking_date"      id="hidden_booking_date" value="" />
@@ -194,7 +192,7 @@
             </form>
           </div>
 
-          <!-- Success Message (shown after successful AJAX or redirect) -->
+          <!-- Success Message -->
           <div id="successMessage" class="step-content">
             <div class="success-message">
               <div class="success-icon"><img src="assests/icons/check.png" alt=""></div>
