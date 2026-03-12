@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/user/trainers/list.php  (also serves as public endpoint)
  * Returns active trainers with optional filters.
@@ -27,7 +28,9 @@ if ($availability !== '') {
 if ($search !== '') {
     $where[]  = "(t.first_name LIKE ? OR t.last_name LIKE ? OR t.specialty LIKE ?)";
     $like     = "%$search%";
-    $params[] = $like; $params[] = $like; $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
 }
 
 $where_sql = 'WHERE ' . implode(' AND ', $where);
