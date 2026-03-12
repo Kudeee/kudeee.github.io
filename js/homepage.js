@@ -3,11 +3,10 @@ import { render } from './renderer.js';
 
 render('#pop-up', "popUPOpt", renderPopUP);
 
-window.handleOk = handleOk;
+window.handleOk   = handleOk;
 window.closePopUp = closePopUp;
 
 // ─── Plan upgrade map ─────────────────────────────────────────────────────────
-// Defines the next plan in the hierarchy and the URL params for payment.php
 const PLAN_UPGRADE = {
   'BASIC PLAN': {
     label: 'Upgrade to Premium',
@@ -19,7 +18,6 @@ const PLAN_UPGRADE = {
     nextPlan: 'VIP PLAN',
     paymentUrl: 'payment.php?type=upgrade',
   },
-  // VIP PLAN intentionally omitted — button will be hidden
 };
 
 // ─── Load member + subscription data ─────────────────────────────────────────
@@ -30,7 +28,6 @@ async function loadMemberData() {
     const data = await res.json();
 
     if (!data.success) {
-      // Not logged in — redirect to login
       window.location.href = 'login-page.php';
       return;
     }
@@ -59,7 +56,7 @@ async function loadMemberData() {
       if (items[2]) items[2].textContent = m.plan.replace(' PLAN', '');
     }
 
-    // Update header user info (wrapped separately so failures don't block the upgrade button)
+    // Update header user info
     try {
       const userNameEl = document.querySelector('.user-profile div div:first-child');
       const userPlanEl = document.querySelector('.user-profile div div:last-child');
@@ -74,7 +71,6 @@ async function loadMemberData() {
       console.warn('Could not update header:', headerErr);
     }
 
-    // ── Dynamic upgrade button ───────────────────────────────────────────────
     updateUpgradeButton(m.plan);
 
   } catch (err) {
@@ -82,29 +78,146 @@ async function loadMemberData() {
   }
 }
 
-/**
- * Updates the upgrade button based on the member's current plan.
- * - BASIC PLAN  → "Upgrade to Premium" → payment.php?type=change&plan=PREMIUM PLAN
- * - PREMIUM PLAN → "Upgrade to VIP"    → payment.php?type=upgrade
- * - VIP PLAN    → button is hidden entirely
- */
 function updateUpgradeButton(currentPlan) {
   const upgradeBtn = document.getElementById('upgradeBtn');
   if (!upgradeBtn) return;
 
   const upgrade = PLAN_UPGRADE[currentPlan];
-
   if (!upgrade) {
-    // Member is already on the highest plan — hide the button
     upgradeBtn.style.display = 'none';
     return;
   }
 
   upgradeBtn.textContent = upgrade.label;
-  upgradeBtn.onclick = () => {
-    location.href = upgrade.paymentUrl;
-  };
+  upgradeBtn.onclick = () => { location.href = upgrade.paymentUrl; };
 }
+
+// ─── Load next booking (dynamic next-action section) ─────────────────────────
+
+// Stores the current booking info for cancel use
+let currentBooking = null;
+
+async function loadNextBooking() {
+  const section       = document.querySelector('.next-action-section');
+  const titleEl       = document.querySelector('.next-action-title');
+  const timeEl        = document.querySelector('.class-info-grid .class-info-item:nth-child(1) .class-info-value');
+  const dateEl        = document.querySelector('.class-info-grid .class-info-item:nth-child(2) .class-info-value');
+  const trainerEl     = document.querySelector('.class-info-grid .class-info-item:nth-child(3) .class-info-value');
+  const durationEl    = document.querySelector('.class-info-grid .class-info-item:nth-child(4) .class-info-value');
+  const cancelBtn     = document.getElementById('CancelBooking');
+
+  try {
+    const res  = await fetch('api/user/bookings/upcoming.php');
+    const data = await res.json();
+
+    if (!data.success) return;
+
+    const booking = data.next_booking;
+
+    if (!booking) {
+      // No upcoming booking — show empty state
+      if (section) {
+        section.innerHTML = `
+          <div class="next-action-content" style="text-align:center;">
+            <div class="next-action-label">Your Next Class</div>
+            <h2 class="next-action-title" style="font-size:1.8rem;opacity:0.7;">No Upcoming Classes</h2>
+            <p style="color:#999;margin:15px 0 25px;">You don't have any classes booked yet.</p>
+            <div class="action-buttons" style="justify-content:center;">
+              <button class="btn btn-secondary" onclick="window.location.href='book-class-page.php'">Book a Class</button>
+            </div>
+          </div>`;
+      }
+      return;
+    }
+
+    // Store for cancel button
+    currentBooking = booking;
+
+    // Populate the section
+    if (titleEl)   titleEl.textContent   = booking.class_name.toUpperCase();
+    if (timeEl)    timeEl.textContent    = booking.time_label;
+    if (dateEl)    dateEl.textContent    = booking.date_label;
+    if (trainerEl) trainerEl.textContent = booking.trainer_name || '—';
+    if (durationEl) durationEl.textContent = booking.duration_label;
+
+    // Show cancel button (it may have been hidden)
+    if (cancelBtn) cancelBtn.style.display = '';
+
+  } catch (err) {
+    console.warn('Could not load next booking:', err);
+  }
+}
+
+// ─── Cancel booking ───────────────────────────────────────────────────────────
+
+document.querySelector("#CancelBooking").addEventListener("click", () => {
+  if (!currentBooking) {
+    showPopUP('No booking to cancel.');
+    return;
+  }
+  showPopUP(`Cancel your ${currentBooking.class_name} booking?`);
+
+  window.handleOk = async function () {
+    closePopUp();
+    showLoading('Cancelling booking...');
+
+    try {
+      const fd = new FormData();
+      fd.append('type',       currentBooking.booking_type);
+      fd.append('booking_id', currentBooking.booking_id);
+
+      const res    = await fetch('api/bookings/cancel.php', { method: 'POST', body: fd });
+      const result = await res.json();
+      hideLoading();
+
+      if (result.success) {
+        currentBooking = null;
+        // Reload the next booking section to reflect the cancellation
+        await loadNextBooking();
+        // Switch pop-up to info style for success message
+        render('#pop-up', 'done', renderPopUP);
+        window.closePopUp = closePopUp;
+        showPopUP('Booking cancelled successfully.');
+        // Re-register closePopUp since render replaced the DOM
+        document.querySelector('.popClose')?.addEventListener('click', closePopUp);
+      } else {
+        render('#pop-up', 'warning', renderPopUP);
+        window.closePopUp = closePopUp;
+        showPopUP(result.message || 'Could not cancel booking.');
+      }
+    } catch (err) {
+      hideLoading();
+      render('#pop-up', 'warning', renderPopUP);
+      window.closePopUp = closePopUp;
+      showPopUP('Something went wrong. Please try again.');
+    }
+  };
+});
+
+// ─── Pause membership ─────────────────────────────────────────────────────────
+
+document.querySelector("#pauseMem").addEventListener("click", () => {
+  showPopUP('Are you sure you want to pause membership?');
+  window.handleOk = async function () {
+    closePopUp();
+    showLoading('Pausing membership...');
+    try {
+      const fd = new FormData();
+      fd.append('action', 'pause');
+      const res    = await fetch('api/user/membership/pause.php', { method: 'POST', body: fd });
+      const result = await res.json();
+      hideLoading();
+      if (result.success) {
+        showPopUP('Membership paused successfully.');
+      } else {
+        showPopUP(result.message || 'Could not pause membership.');
+      }
+    } catch (err) {
+      hideLoading();
+      showPopUP('Something went wrong. Please try again.');
+    }
+  };
+});
 
 // ─── Load upcoming events ─────────────────────────────────────────────────────
 
@@ -114,10 +227,6 @@ async function loadUpcomingEvents() {
     const data = await res.json();
     if (!data.success || !data.events?.length) return;
 
-    const container = document.querySelector('.events-section .events-tabs');
-    if (!container) return;
-
-    // Insert events after the tabs
     const existing = document.querySelectorAll('.event-item');
     existing.forEach(e => e.remove());
 
@@ -151,7 +260,7 @@ async function loadUpcomingEvents() {
   }
 }
 
-window.registerEvent = async function(eventId) {
+window.registerEvent = async function (eventId) {
   const method = prompt('Enter payment method (gcash / maya / gotyme / card):');
   if (!method) return;
 
@@ -177,43 +286,8 @@ window.registerEvent = async function(eventId) {
   }
 };
 
-// ─── Pause membership ─────────────────────────────────────────────────────────
-
-document.querySelector("#pauseMem").addEventListener("click", () => {
-  showPopUP('Are you sure you want to pause membership?');
-  window.handleOk = async function() {
-    closePopUp();
-    showLoading('Pausing membership...');
-    try {
-      const fd = new FormData();
-      fd.append('action', 'pause');
-      const res    = await fetch('api/user/membership/pause.php', { method: 'POST', body: fd });
-      const result = await res.json();
-      hideLoading();
-      if (result.success) {
-        showPopUP('Membership paused successfully.');
-      } else {
-        showPopUP(result.message || 'Could not pause membership.');
-      }
-    } catch (err) {
-      hideLoading();
-      showPopUP('Something went wrong. Please try again.');
-    }
-  };
-});
-
-// ─── Cancel booking ───────────────────────────────────────────────────────────
-
-document.querySelector("#CancelBooking").addEventListener("click", () => {
-  showPopUP('Are you sure you want to cancel?');
-  window.handleOk = async function() {
-    closePopUp();
-    // Placeholder — booking_id would come from real data in a connected homepage
-    showPopUP('Booking cancelled.');
-  };
-});
-
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 loadMemberData();
+loadNextBooking();
 loadUpcomingEvents();
