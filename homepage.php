@@ -175,7 +175,6 @@
   </body>
 
   <script src="js/header.js"></script>
-  <script type="module" src="js/payment-content.js"></script>
   <script src="components/loading.js"></script>
   <script type="module" src="js/homepage.js"></script>
 </html>
