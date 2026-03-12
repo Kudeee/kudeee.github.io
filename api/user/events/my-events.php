@@ -1,8 +1,16 @@
 <?php
 require_once __DIR__ . '/../../config.php';
 
-$member = require_member();
-$pdo    = db();
+// Explicit session check with clear error
+if (!isset($_SESSION['member_id'])) {
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Not authenticated. Please log in.']);
+    exit;
+}
+
+$member_id = (int) $_SESSION['member_id'];
+$pdo = db();
 
 try {
     $stmt = $pdo->prepare("
@@ -22,7 +30,7 @@ try {
           AND e.event_date >= CURDATE()
         ORDER BY e.event_date ASC, e.event_time ASC
     ");
-    $stmt->execute([$member['id']]);
+    $stmt->execute([$member_id]);
     $events = $stmt->fetchAll();
 
     success('OK', ['events' => $events]);
