@@ -37,14 +37,10 @@
             </div>
             <div class="step" id="step2Indicator">
               <div class="step-number">2</div>
-              <div class="step-label">Select Date</div>
+              <div class="step-label">Date &amp; Time</div>
             </div>
             <div class="step" id="step3Indicator">
               <div class="step-number">3</div>
-              <div class="step-label">Pick Time</div>
-            </div>
-            <div class="step" id="step4Indicator">
-              <div class="step-number">4</div>
               <div class="step-label">Confirm</div>
             </div>
           </div>
@@ -79,39 +75,37 @@
               </div>
             </div>
             <div class="action-buttons">
-              <button class="btn btn-primary" onclick="nextStep(2)">Next: Select Date</button>
+              <button class="btn btn-primary" onclick="nextStep(2)">Next: Date &amp; Time</button>
             </div>
           </div>
 
-          <!-- Step 2: Select Date — built dynamically by JS -->
+          <!-- Step 2: Select Date & Time (combined, like book-trainer schedule step) -->
           <div id="step2" class="step-content">
-            <h2 class="section-title">Select Date</h2>
-            <div class="date-selector">
-              <!-- JS populates this with the next 7 days -->
+            <h2 class="section-title">Select Date &amp; Time</h2>
+
+            <!-- Date picker: next 7 days as a horizontal strip -->
+            <div class="date-selector" style="margin-bottom: 28px;">
               <div class="date-grid"></div>
             </div>
-            <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="prevStep(1)">Back</button>
-              <button class="btn btn-primary" onclick="nextStep(3)">Next: Pick Time</button>
-            </div>
-          </div>
 
-          <!-- Step 3: Pick Time — populated dynamically after date is chosen -->
-          <div id="step3" class="step-content">
-            <h2 class="section-title">Pick Time Slot</h2>
+            <!-- Time slots: loaded dynamically once a date is picked -->
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">
+              Available Time Slots
+            </h3>
             <div class="time-slots">
               <p style="grid-column:1/-1;text-align:center;color:#aaa;padding:20px;">
-                Select a date first to see available times.
+                Select a date above to see available times.
               </p>
             </div>
+
             <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="prevStep(2)">Back</button>
-              <button class="btn btn-primary" onclick="nextStep(4)">Next: Confirm</button>
+              <button class="btn btn-secondary" onclick="prevStep(1)">Back</button>
+              <button class="btn btn-primary" onclick="nextStep(3)">Next: Confirm</button>
             </div>
           </div>
 
-          <!-- Step 4: Confirm -->
-          <div id="step4" class="step-content">
+          <!-- Step 3: Confirm -->
+          <div id="step3" class="step-content">
             <h2 class="section-title">Additional Information</h2>
 
             <form id="bookingForm">
@@ -152,7 +146,7 @@
               <div class="form-group payment-method-js"></div>
 
               <div class="action-buttons">
-                <button class="btn btn-secondary" type="button" onclick="prevStep(3)">Back</button>
+                <button class="btn btn-secondary" type="button" onclick="prevStep(2)">Back</button>
                 <button class="btn btn-primary" type="submit" onclick="prepareBookingSubmit()">
                   Confirm Booking
                 </button>

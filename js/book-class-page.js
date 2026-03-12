@@ -2,27 +2,28 @@ import { renderPopUP, showPopUP, closePopUp } from "../components/pop-up.js";
 import { render } from './renderer.js';
 
 let bookingData = {
-  class: null,
-  date: null,       // display label e.g. "Mon, Jan 20"
-  dateValue: null,  // ISO value e.g. "2026-01-20"
-  time: null,
+  class:      null,
+  date:       null,       // display label e.g. "Mon, Jan 20"
+  dateValue:  null,       // ISO value e.g. "2026-01-20"
+  time:       null,
+  scheduleId: null,
 };
 
-// Cache of schedules fetched from API: { "YYYY-MM-DD": [ scheduleRow, ... ] }
+// Cache: { "YYYY-MM-DD::ClassName": [ scheduleRow, ... ] }
 let scheduleCache = {};
 
 render('#pop-up', 'warning', renderPopUP);
-window.closePopUp = closePopUp;
-window.nextStep = nextStep;
-window.prevStep = prevStep;
-window.selectClass = selectClass;
-window.selectDate = selectDate;
-window.selectTime = selectTime;
+window.closePopUp           = closePopUp;
+window.nextStep             = nextStep;
+window.prevStep             = prevStep;
+window.selectClass          = selectClass;
+window.selectDate           = selectDate;
+window.selectTime           = selectTime;
 window.prepareBookingSubmit = prepareBookingSubmit;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const DAY_NAMES  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAMES   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function toISODate(d) {
@@ -36,10 +37,10 @@ function formatDisplayDate(d) {
   return `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
 }
 
-// ─── Build the date grid dynamically (next 7 days from today) ────────────────
+// ─── Build the date grid (next 7 days) — lives inside step 2 ─────────────────
 
 function buildDateGrid() {
-  const grid = document.querySelector('.date-grid');
+  const grid = document.querySelector('#step2 .date-grid');
   if (!grid) return;
 
   grid.innerHTML = '';
@@ -57,10 +58,10 @@ function buildDateGrid() {
     const label   = i === 0 ? 'Today' : formatDisplayDate(d);
 
     const el = document.createElement('div');
-    el.className    = 'date-option';
-    el.dataset.iso  = iso;
+    el.className     = 'date-option';
+    el.dataset.iso   = iso;
     el.dataset.label = label;
-    el.innerHTML = `
+    el.innerHTML     = `
       <div class="date-day">${dayName}</div>
       <div class="date-number">${dayNum}</div>
     `;
@@ -76,21 +77,12 @@ async function fetchSchedulesForDate(isoDate, className) {
   if (scheduleCache[cacheKey]) return scheduleCache[cacheKey];
 
   try {
-    const params = new URLSearchParams({
-      date_from: isoDate,
-      date_to:   isoDate,
-      per_page:  50,
-    });
+    const params = new URLSearchParams({ date_from: isoDate, date_to: isoDate, per_page: 50 });
     if (className) params.set('class_name', className);
 
     const res  = await fetch('api/user/schedule/list.php?' + params);
     const data = await res.json();
-
-    if (data.success) {
-      scheduleCache[cacheKey] = data.classes || [];
-    } else {
-      scheduleCache[cacheKey] = [];
-    }
+    scheduleCache[cacheKey] = data.success ? (data.classes || []) : [];
   } catch (e) {
     scheduleCache[cacheKey] = [];
   }
@@ -98,18 +90,18 @@ async function fetchSchedulesForDate(isoDate, className) {
   return scheduleCache[cacheKey];
 }
 
-// ─── Render time slots for selected date / class ─────────────────────────────
+// ─── Render time slots for selected date / class (inside step 2) ─────────────
 
 async function renderTimeSlots() {
-  const container = document.querySelector('#step3 .time-slots');
+  const container = document.querySelector('#step2 .time-slots');
   if (!container) return;
 
   if (!bookingData.dateValue) {
-    container.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">Please select a date first.</p>';
+    container.innerHTML = '<p style="grid-column:1/-1;color:#aaa;text-align:center;padding:20px;">Select a date above to see available times.</p>';
     return;
   }
 
-  container.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">Loading available times…</p>';
+  container.innerHTML = '<p style="grid-column:1/-1;color:#aaa;text-align:center;padding:20px;">Loading available times…</p>';
 
   const schedules = await fetchSchedulesForDate(bookingData.dateValue, bookingData.class);
 
@@ -118,7 +110,7 @@ async function renderTimeSlots() {
       <div style="grid-column:1/-1;text-align:center;padding:30px;color:#999;">
         <div style="font-size:2rem;margin-bottom:10px;">😔</div>
         <div style="font-weight:600;">No classes scheduled for this date</div>
-        <div style="font-size:0.9rem;margin-top:6px;">Try selecting a different date or class type.</div>
+        <div style="font-size:0.9rem;margin-top:6px;">Try a different date or class type.</div>
       </div>`;
     return;
   }
@@ -138,7 +130,7 @@ async function renderTimeSlots() {
     el.innerHTML = `
       <div class="time-text">${timeStr}</div>
       <div class="time-spots">${isBooked ? '✓ Booked' : isFull ? 'Full' : spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' left'}</div>
-      ${cls.trainer_name ? `<div style="font-size:0.75rem;color:${isFull || isBooked ? 'rgba(255,255,255,0.7)' : '#888'};margin-top:4px;">${cls.trainer_name}</div>` : ''}
+      ${cls.trainer_name ? `<div style="font-size:0.75rem;color:${isFull || isBooked ? '#bbb' : '#888'};margin-top:4px;">${cls.trainer_name}</div>` : ''}
     `;
 
     if (!isFull && !isBooked) {
@@ -155,21 +147,24 @@ async function renderTimeSlots() {
 }
 
 // ─── Step navigation ──────────────────────────────────────────────────────────
+// Steps: 1 = Choose Class | 2 = Date & Time (combined) | 3 = Confirm
 
 function nextStep(step) {
   const currentStep = document.querySelector(".step-content.active").id;
 
   if (currentStep === "step1" && !bookingData.class) {
-    showPopUP("Please select a class before continuing");
+    showPopUP("Please select a class before continuing.");
     return;
   }
-  if (currentStep === "step2" && !bookingData.date) {
-    showPopUP("Please select a date before continuing");
-    return;
-  }
-  if (currentStep === "step3" && !bookingData.time) {
-    showPopUP("Please select a time slot before continuing");
-    return;
+  if (currentStep === "step2") {
+    if (!bookingData.dateValue) {
+      showPopUP("Please select a date before continuing.");
+      return;
+    }
+    if (!bookingData.time) {
+      showPopUP("Please select a time slot before continuing.");
+      return;
+    }
   }
 
   document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
@@ -182,9 +177,15 @@ function nextStep(step) {
     document.getElementById("step" + i + "Indicator").classList.add("completed");
   }
 
-  // When entering step 3, load time slots
-  if (step === 3) {
-    renderTimeSlots();
+  // When entering step 2, ensure date grid is built & selections restored
+  if (step === 2) {
+    buildDateGrid();
+    if (bookingData.dateValue) {
+      document.querySelectorAll('#step2 .date-option').forEach(o => {
+        if (o.dataset.iso === bookingData.dateValue) o.classList.add('selected');
+      });
+      renderTimeSlots();
+    }
   }
 
   document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -208,32 +209,31 @@ function prevStep(step) {
 
 function selectClass(className) {
   bookingData.class      = className;
-  bookingData.time       = null;   // reset downstream
+  bookingData.time       = null;
   bookingData.scheduleId = null;
   document.getElementById("summaryClass").textContent = className;
 
   document.querySelectorAll(".class-option").forEach(o => o.classList.remove("selected"));
-  // support both direct click on child or the card itself
   const target = (event && event.target) ? event.target.closest(".class-option") : null;
   if (target) target.classList.add("selected");
 
-  // Invalidate time slot cache for current date when class changes
-  scheduleCache = {};
+  scheduleCache = {}; // invalidate cache when class changes
 }
 
 function selectDate(displayLabel, isoValue, el) {
-  bookingData.date      = displayLabel;
-  bookingData.dateValue = isoValue;
-  bookingData.time      = null;   // reset time when date changes
+  bookingData.date       = displayLabel;
+  bookingData.dateValue  = isoValue;
+  bookingData.time       = null;
   bookingData.scheduleId = null;
 
   document.getElementById("summaryDate").textContent = displayLabel;
   document.getElementById("summaryTime").textContent = '-';
 
   document.querySelectorAll(".date-option").forEach(o => o.classList.remove("selected"));
-  if (el) {
-    el.classList.add("selected");
-  }
+  if (el) el.classList.add("selected");
+
+  // Load time slots immediately below the date strip
+  renderTimeSlots();
 }
 
 function selectTime(time, el) {
@@ -244,7 +244,6 @@ function selectTime(time, el) {
   if (el) {
     el.classList.add("selected");
   } else {
-    // fallback: find by text content
     document.querySelectorAll(".time-slot").forEach(s => {
       if (s.querySelector('.time-text')?.textContent === time) s.classList.add("selected");
     });
@@ -253,41 +252,25 @@ function selectTime(time, el) {
 
 // ─── AJAX form submission ─────────────────────────────────────────────────────
 
-function prepareBookingSubmit() {
-  // kept for compat
-}
+function prepareBookingSubmit() { /* kept for compat */ }
 
 document.getElementById("bookingForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  if (!bookingData.class) {
-    showPopUP("Please go back and select a class.");
-    return;
-  }
-  if (!bookingData.dateValue) {
-    showPopUP("Please go back and select a date.");
-    return;
-  }
-  if (!bookingData.time) {
-    showPopUP("Please go back and select a time slot.");
-    return;
-  }
+  if (!bookingData.class)     { showPopUP("Please go back and select a class.");     return; }
+  if (!bookingData.dateValue) { showPopUP("Please go back and select a date.");      return; }
+  if (!bookingData.time)      { showPopUP("Please go back and select a time slot."); return; }
 
   const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-  if (!paymentMethod) {
-    showPopUP("Please select a payment method.");
-    return;
-  }
+  if (!paymentMethod) { showPopUP("Please select a payment method."); return; }
 
-  // Populate hidden fields
   document.getElementById("hidden_class_name").value   = bookingData.class;
   document.getElementById("hidden_booking_date").value = bookingData.dateValue;
   document.getElementById("hidden_booking_time").value = bookingData.time;
 
-  // Also inject schedule ID if we resolved one
   let scheduleIdInput = document.getElementById("hidden_class_schedule_id");
   if (!scheduleIdInput) {
-    scheduleIdInput = document.createElement('input');
+    scheduleIdInput      = document.createElement('input');
     scheduleIdInput.type = 'hidden';
     scheduleIdInput.id   = 'hidden_class_schedule_id';
     scheduleIdInput.name = 'class_schedule_id';
