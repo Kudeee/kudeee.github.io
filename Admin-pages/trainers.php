@@ -11,6 +11,24 @@
   <button id="addTrainerBtn">+ Add Trainer</button>
 </div>
 
+<!-- Delete Trainer Modal -->
+<div class="modal-overlay" id="deleteTrainerModal">
+  <div class="modal-box" style="max-width:420px;">
+    <h3 style="color:#c62828;">Delete Trainer</h3>
+    <p style="color:#555;margin-bottom:16px;">Select a trainer to deactivate. They will no longer appear as active staff.</p>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Select Trainer</label>
+      <select id="deleteTrainerSelect">
+        <option value="">Loading trainers…</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button id="confirmDeleteTrainerBtn" class="btn-danger">Deactivate Trainer</button>
+      <button type="button" class="btn-secondary" onclick="closeModal('deleteTrainerModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="grid" id="trainers-grid">
   <div class="loading"><div class="spinner"></div> Loading…</div>
 </div>

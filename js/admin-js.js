@@ -27,7 +27,7 @@ const pageMap = {
   events:        'Admin-pages/events.php',
   revenue:       'Admin-pages/revenue.php',
   roles:         'Admin-pages/roles.php',
-  plans:         'Admin-pages/plans.php',   // ← NEW
+  plans:         'Admin-pages/plans.php',
 };
 
 let currentPage = 'dashboard';
@@ -73,7 +73,7 @@ async function fetchPageData(page) {
       case 'revenue':       await loadRevenueData();       break;
       case 'subscriptions': await loadSubscriptionsData(); break;
       case 'roles':         await loadRolesData();         break;
-      case 'plans':         await loadPlansData();         break;  // ← NEW
+      case 'plans':         await loadPlansData();         break;
     }
   } catch (err) {
     console.warn('fetchPageData error for', page, err);
@@ -371,30 +371,87 @@ window._subPageTotal = 1;
 async function loadSubscriptionsData(page = 1) {
   subPage = page;
   const params = new URLSearchParams({ page, per_page: 15 });
-  const res    = await fetch('api/admin/subscriptions/list.php?' + params);
-  const data   = await res.json();
-  if (!data.success) return;
 
-  const s = data.stats || {};
+  // Fetch subscriptions stats + plan configs in parallel
+  const [subRes, planRes] = await Promise.all([
+    fetch('api/admin/subscriptions/list.php?' + params),
+    fetch('api/admin/plans/list.php'),
+  ]);
+  const subData  = await subRes.json();
+  const planData = await planRes.json();
+
+  if (!subData.success) return;
+
+  const s = subData.stats || {};
   setText('sub-active',   s.active_count    ?? '—');
   setText('sub-revenue',  phpFormat(s.monthly_revenue ?? 0));
   setText('sub-expiring', s.expiring_soon   ?? '—');
   setText('sub-top-plan', s.top_plan        ?? '—');
 
-  const pc = s.plan_counts || {};
-  setText('sub-plan-count-basic',   pc['BASIC PLAN']   ?? 0);
-  setText('sub-plan-count-premium', pc['PREMIUM PLAN'] ?? 0);
-  setText('sub-plan-count-vip',     pc['VIP PLAN']     ?? 0);
+  // ── Dynamic Plan Cards ────────────────────────────────────────────────────
+  const planGrid = document.getElementById('sub-plans-grid');
+  if (planGrid) {
+    const plans   = planData?.plans || [];
+    const pc      = s.plan_counts || {};
 
+    if (!plans.length) {
+      planGrid.innerHTML = '<div class="card"><p style="color:#999;">No plans configured.</p></div>';
+    } else {
+      planGrid.innerHTML = plans.map(p => {
+        const benefits     = Array.isArray(p.benefits) ? p.benefits : [];
+        const subCount     = pc[p.plan] ?? 0;
+        const color        = p.color || '#9e9e9e';
+        const savingsAmt   = Math.round((p.monthly_price * 12) - p.yearly_price);
+        const statusBadge  = p.is_active
+          ? ''
+          : '<span style="background:#ffebee;color:#c62828;padding:2px 10px;border-radius:10px;font-size:0.75rem;font-weight:700;margin-left:8px;">Inactive</span>';
+
+        return `
+          <div class="card" style="border-top:4px solid ${esc(color)};">
+            <div style="display:flex;align-items:center;margin-bottom:4px;">
+              <h3 style="color:${esc(color)};margin:0;">${esc(p.plan)}</h3>
+              ${statusBadge}
+            </div>
+
+            <p style="font-size:1.5rem;font-weight:900;margin-bottom:2px;">
+              ₱${numFormat(p.monthly_price)}
+              <span style="font-size:0.85rem;font-weight:400;color:#888;">/mo</span>
+            </p>
+            <p style="color:#888;margin-top:2px;margin-bottom:2px;font-size:0.88rem;">
+              ₱${numFormat(p.yearly_price)} /year
+            </p>
+            ${savingsAmt > 0
+              ? `<p style="color:#2e7d32;font-size:0.82rem;font-weight:600;margin-bottom:10px;">Save ₱${numFormat(savingsAmt)} with yearly billing</p>`
+              : '<div style="margin-bottom:10px;"></div>'}
+
+            <ul style="margin:0 0 12px 0;padding-left:18px;color:#555;font-size:0.9rem;line-height:1.8;">
+              ${benefits.map(b => `<li>${esc(b)}</li>`).join('')}
+            </ul>
+
+            <div style="font-size:0.82rem;color:#777;padding:8px 10px;background:#f9f9f9;border-radius:8px;margin-bottom:12px;line-height:1.9;">
+              <p>️ Classes/week: <strong>${p.max_classes === -1 ? 'Unlimited' : p.max_classes}</strong></p>
+              <p> PT sessions/month: <strong>${p.pt_sessions}</strong></p>
+              <p>️ Guest passes/month: <strong>${p.guest_passes}</strong></p>
+            </div>
+
+            <p style="font-weight:700;font-size:0.95rem;">
+              Subscribers: <span style="color:${esc(color)};">${subCount}</span>
+            </p>
+          </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Subscriptions Table ───────────────────────────────────────────────────
   const tbody = document.querySelector('#subscriptionsTable tbody');
   if (!tbody) return;
 
-  if (!data.subscriptions?.length) {
+  if (!subData.subscriptions?.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">No subscriptions found.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = data.subscriptions.map(s => `
+  tbody.innerHTML = subData.subscriptions.map(s => `
     <tr>
       <td><strong>${esc(s.member_name)}</strong><br><span style="color:#888;font-size:0.8rem;">${esc(s.member_email)}</span></td>
       <td><span class="tag" style="background:#e3f2fd;color:#1565c0;">${esc(s.plan)}</span></td>
@@ -405,7 +462,7 @@ async function loadSubscriptionsData(page = 1) {
       <td>${badge(s.status)}</td>
     </tr>`).join('');
 
-  const pg = data.pagination;
+  const pg = subData.pagination;
   window._subPageTotal = pg.total_pages;
   setText('subPageInfo', `Page ${pg.page} of ${pg.total_pages}`);
 }
@@ -607,9 +664,6 @@ async function loadPlansData() {
       ? '<span class="badge badge-active">Active</span>'
       : '<span class="badge badge-expired">Inactive</span>';
 
-    // Safely encode plan object for onclick
-    const planJson = JSON.stringify(p).replace(/'/g, "\\'");
-
     return `
       <div class="card" style="border-top:4px solid ${esc(p.color)};">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -775,6 +829,37 @@ function bindModalTriggers() {
     const btn = document.getElementById(btnId);
     if (btn) btn.onclick = () => openModal(modalId);
   });
+
+  // Delete trainer button — populate select then open modal
+  const deleteBtn = document.getElementById('deleteTrainerBtn');
+  if (deleteBtn) {
+    deleteBtn.onclick = async () => {
+      await populateTrainerSelect('deleteTrainerSelect', false);
+      openModal('deleteTrainerModal');
+      const confirmBtn = document.getElementById('confirmDeleteTrainerBtn');
+      if (confirmBtn) {
+        confirmBtn.onclick = async () => {
+          const sel = document.getElementById('deleteTrainerSelect');
+          const id  = sel?.value;
+          if (!id) { toast('Please select a trainer.', 'error'); return; }
+          const name = sel.options[sel.selectedIndex]?.text || 'this trainer';
+          if (!confirm(`Deactivate ${name}? They will be removed from active staff.`)) return;
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = 'Deactivating…';
+          const res = await apiFetch('api/admin/trainers/delete.php', { id: parseInt(id) });
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Deactivate Trainer';
+          if (res?.success) {
+            toast(`${name} has been deactivated.`);
+            closeModal('deleteTrainerModal');
+            loadTrainersData();
+          } else {
+            toast(res?.message || 'Failed to deactivate trainer.', 'error');
+          }
+        };
+      }
+    };
+  }
 }
 
 // ─── FORM HANDLERS ────────────────────────────────────────────────────────────
