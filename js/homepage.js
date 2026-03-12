@@ -98,16 +98,16 @@ function updateUpgradeButton(currentPlan) {
 let currentBooking = null;
 
 async function loadNextBooking() {
-  const section       = document.querySelector('.next-action-section');
-  const titleEl       = document.querySelector('.next-action-title');
-  const timeEl        = document.querySelector('.class-info-grid .class-info-item:nth-child(1) .class-info-value');
-  const dateEl        = document.querySelector('.class-info-grid .class-info-item:nth-child(2) .class-info-value');
-  const trainerEl     = document.querySelector('.class-info-grid .class-info-item:nth-child(3) .class-info-value');
-  const durationEl    = document.querySelector('.class-info-grid .class-info-item:nth-child(4) .class-info-value');
-  const cancelBtn     = document.getElementById('CancelBooking');
+  const section    = document.querySelector('.next-action-section');
+  const titleEl    = document.querySelector('.next-action-title');
+  const timeEl     = document.querySelector('.class-info-grid .class-info-item:nth-child(1) .class-info-value');
+  const dateEl     = document.querySelector('.class-info-grid .class-info-item:nth-child(2) .class-info-value');
+  const trainerEl  = document.querySelector('.class-info-grid .class-info-item:nth-child(3) .class-info-value');
+  const durationEl = document.querySelector('.class-info-grid .class-info-item:nth-child(4) .class-info-value');
+  const cancelBtn  = document.getElementById('CancelBooking');
 
   try {
-    const res  = await fetch('api/user/bookings/upcoming.php');
+    const res  = await fetch('api/user/schedule/upcoming.php');
     const data = await res.json();
 
     if (!data.success) return;
@@ -115,15 +115,15 @@ async function loadNextBooking() {
     const booking = data.next_booking;
 
     if (!booking) {
-      // No upcoming booking — show empty state
+      // No upcoming booking — show "No Class Yet" empty state
       if (section) {
         section.innerHTML = `
-          <div class="next-action-content" style="text-align:center;">
+          <div class="next-action-content" style="text-align:center;padding:20px 0;">
             <div class="next-action-label">Your Next Class</div>
-            <h2 class="next-action-title" style="font-size:1.8rem;opacity:0.7;">No Upcoming Classes</h2>
-            <p style="color:#999;margin:15px 0 25px;">You don't have any classes booked yet.</p>
+            <h2 class="next-action-title" style="font-size:2.2rem;opacity:0.55;letter-spacing:3px;">NO CLASS YET</h2>
+            <p style="color:#888;margin:12px 0 30px;font-size:1rem;">You have no upcoming classes scheduled.</p>
             <div class="action-buttons" style="justify-content:center;">
-              <button class="btn btn-secondary" onclick="window.location.href='book-class-page.php'">Book a Class</button>
+              <button class="btn btn-outline" onclick="window.location.href='book-class-page.php'">Book a Class</button>
             </div>
           </div>`;
       }
@@ -134,10 +134,10 @@ async function loadNextBooking() {
     currentBooking = booking;
 
     // Populate the section
-    if (titleEl)   titleEl.textContent   = booking.class_name.toUpperCase();
-    if (timeEl)    timeEl.textContent    = booking.time_label;
-    if (dateEl)    dateEl.textContent    = booking.date_label;
-    if (trainerEl) trainerEl.textContent = booking.trainer_name || '—';
+    if (titleEl)    titleEl.textContent    = booking.class_name.toUpperCase();
+    if (timeEl)     timeEl.textContent     = booking.time_label;
+    if (dateEl)     dateEl.textContent     = booking.date_label;
+    if (trainerEl)  trainerEl.textContent  = booking.trainer_name || '—';
     if (durationEl) durationEl.textContent = booking.duration_label;
 
     // Show cancel button (it may have been hidden)
@@ -178,7 +178,6 @@ document.querySelector("#CancelBooking").addEventListener("click", () => {
         render('#pop-up', 'done', renderPopUP);
         window.closePopUp = closePopUp;
         showPopUP('Booking cancelled successfully.');
-        // Re-register closePopUp since render replaced the DOM
         document.querySelector('.popClose')?.addEventListener('click', closePopUp);
       } else {
         render('#pop-up', 'warning', renderPopUP);

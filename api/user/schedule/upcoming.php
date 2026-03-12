@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../../api/config.php';
+require_once __DIR__ . '/../../config.php';
 
 $member = require_member();
 $pdo    = db();
@@ -32,7 +32,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$member['id']]);
 $nextClass = $stmt->fetch();
 
-// Fallback: also check trainer bookings
+// Also check trainer bookings
 $stmt2 = $pdo->prepare("
     SELECT
         tb.id                                       AS booking_id,
