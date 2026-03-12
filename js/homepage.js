@@ -59,16 +59,19 @@ async function loadMemberData() {
       if (items[2]) items[2].textContent = m.plan.replace(' PLAN', '');
     }
 
-    // Update header user info
-    const userNameEl  = document.querySelector('.user-profile div div:first-child');
-    const userPlanEl  = document.querySelector('.user-profile div div:last-child');
-    if (userNameEl) userNameEl.textContent = m.first_name + ' ' + m.last_name;
-    if (userPlanEl) userPlanEl.textContent = m.plan;
+    // Update header user info (wrapped separately so failures don't block the upgrade button)
+    try {
+      const userNameEl = document.querySelector('.user-profile div div:first-child');
+      const userPlanEl = document.querySelector('.user-profile div div:last-child');
+      if (userNameEl) userNameEl.textContent = m.first_name + ' ' + m.last_name;
+      if (userPlanEl) userPlanEl.textContent = m.plan;
 
-    // Update avatar initials
-    const avatarEl = document.querySelector('.user-avatar');
-    if (avatarEl) {
-      avatarEl.textContent = (m.first_name[0] + m.last_name[0]).toUpperCase();
+      const avatarEl = document.querySelector('.user-avatar');
+      if (avatarEl) {
+        avatarEl.textContent = (m.first_name[0] + m.last_name[0]).toUpperCase();
+      }
+    } catch (headerErr) {
+      console.warn('Could not update header:', headerErr);
     }
 
     // ── Dynamic upgrade button ───────────────────────────────────────────────
