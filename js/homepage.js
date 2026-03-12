@@ -6,6 +6,22 @@ render('#pop-up', "popUPOpt", renderPopUP);
 window.handleOk = handleOk;
 window.closePopUp = closePopUp;
 
+// ─── Plan upgrade map ─────────────────────────────────────────────────────────
+// Defines the next plan in the hierarchy and the URL params for payment.php
+const PLAN_UPGRADE = {
+  'BASIC PLAN': {
+    label: 'Upgrade to Premium',
+    nextPlan: 'PREMIUM PLAN',
+    paymentUrl: 'payment.php?type=change&plan=PREMIUM%20PLAN&billing=monthly',
+  },
+  'PREMIUM PLAN': {
+    label: 'Upgrade to VIP',
+    nextPlan: 'VIP PLAN',
+    paymentUrl: 'payment.php?type=upgrade',
+  },
+  // VIP PLAN intentionally omitted — button will be hidden
+};
+
 // ─── Load member + subscription data ─────────────────────────────────────────
 
 async function loadMemberData() {
@@ -55,9 +71,36 @@ async function loadMemberData() {
       avatarEl.textContent = (m.first_name[0] + m.last_name[0]).toUpperCase();
     }
 
+    // ── Dynamic upgrade button ───────────────────────────────────────────────
+    updateUpgradeButton(m.plan);
+
   } catch (err) {
     console.warn('Could not load member data:', err);
   }
+}
+
+/**
+ * Updates the upgrade button based on the member's current plan.
+ * - BASIC PLAN  → "Upgrade to Premium" → payment.php?type=change&plan=PREMIUM PLAN
+ * - PREMIUM PLAN → "Upgrade to VIP"    → payment.php?type=upgrade
+ * - VIP PLAN    → button is hidden entirely
+ */
+function updateUpgradeButton(currentPlan) {
+  const upgradeBtn = document.getElementById('upgradeBtn');
+  if (!upgradeBtn) return;
+
+  const upgrade = PLAN_UPGRADE[currentPlan];
+
+  if (!upgrade) {
+    // Member is already on the highest plan — hide the button
+    upgradeBtn.style.display = 'none';
+    return;
+  }
+
+  upgradeBtn.textContent = upgrade.label;
+  upgradeBtn.onclick = () => {
+    location.href = upgrade.paymentUrl;
+  };
 }
 
 // ─── Load upcoming events ─────────────────────────────────────────────────────

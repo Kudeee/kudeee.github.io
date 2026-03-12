@@ -45,7 +45,7 @@
         </div>
         <div class="status-actions">
           <button class="btn" onclick="location.href='payment.php?type=renew'">Renew Now</button>
-          <button class="btn btn-outline" onclick="location.href='payment.php?type=upgrade'">Upgrade to VIP</button>
+          <button class="btn btn-outline" id="upgradeBtn">Upgrade to VIP</button>
           <button class="btn btn-secondary" id="pauseMem">Pause Membership</button>
         </div>
       </div>
