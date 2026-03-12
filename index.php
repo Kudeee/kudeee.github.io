@@ -73,85 +73,8 @@
     <section id="pricing">
       <div class="container">
         <h2>Membership Plans</h2>
-
-        <div class="pricing-toggle">
-          <span class="toggle-label active">Monthly</span>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              id="landingPricingToggle"
-              onchange="toggleLandingPricing(this.checked)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="toggle-label">Yearly</span>
-          <span class="toggle-discount">Save 16%</span>
-        </div>
-
-        <div class="pricing-cards">
-          <div class="pricing-card">
-            <h3>Basic Plan</h3>
-            <div class="price-display">
-              <span class="monthly-price">₱499/month</span>
-              <span class="yearly-price" style="display: none">₱5,028/year</span>
-            </div>
-            <div class="savings-info" style="display: none; color: #2e7d32; font-weight: 600; margin: 10px 0;">
-              Save ₱960
-            </div>
-            <ul class="features">
-              <li>Gym access</li>
-              <li>Basic equipment</li>
-              <li>Free Wifi</li>
-              <li>Locker rental available</li>
-            </ul>
-            <div class="button-container">
-              <a href="sign-up-page.php">Get Started</a>
-            </div>
-          </div>
-
-          <div class="pricing-card">
-            <h3>Premium Plan</h3>
-            <div class="price-display">
-              <span class="monthly-price">₱899/month</span>
-              <span class="yearly-price" style="display: none">₱9,067/year</span>
-            </div>
-            <div class="savings-info" style="display: none; color: #2e7d32; font-weight: 600; margin: 10px 0;">
-              Save ₱1,721
-            </div>
-            <ul class="features">
-              <li>All Basic Features</li>
-              <li>Locker Access</li>
-              <li>Group Classes</li>
-              <li>Nutritional guidance</li>
-              <li>10% merchandise discount</li>
-            </ul>
-            <div class="button-container">
-              <a href="sign-up-page.php">Get Started</a>
-            </div>
-          </div>
-
-          <div class="pricing-card">
-            <h3>VIP Plan</h3>
-            <div class="price-display">
-              <span class="monthly-price">₱1,500/month</span>
-              <span class="yearly-price" style="display: none">₱15,120/year</span>
-            </div>
-            <div class="savings-info" style="display: none; color: #2e7d32; font-weight: 600; margin: 10px 0;">
-              Save ₱2,880
-            </div>
-            <ul class="features">
-              <li>All Premium Features</li>
-              <li>Personal Trainer (2x/week)</li>
-              <li>Priority Booking</li>
-              <li>Free guest passes (2/month)</li>
-              <li>Massage therapy (1x/month)</li>
-              <li>20% merchandise discount</li>
-            </ul>
-            <div class="button-container">
-              <a href="sign-up-page.php">Get Started</a>
-            </div>
-          </div>
-        </div>
+        <!-- Dynamically rendered by landing-page.js via the plans API -->
+        <div id="landing-pricing-container"></div>
       </div>
     </section>
 

@@ -130,7 +130,7 @@ export const trainers = [
   },
   {
     name: "Eileen Dover",
-    image: "assests/trainers/Emma Roids.jpg",
+    image: "assests/trainers/eileenDover.jpg",
     specialty: "Sports Performance Trainer",
     trainerBio:
       "Liam works with athletes to improve speed, agility, and explosive power for peak sports performance.",

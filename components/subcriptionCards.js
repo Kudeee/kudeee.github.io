@@ -1,33 +1,95 @@
-import { subscriptions } from "../data/subscription-data.js";
+/**
+ * subcriptionCards.js
+ * Fetches live plan data from api/admin/plans/list.php so that
+ * any changes made in the Admin → Plans panel are immediately
+ * reflected on the member-facing pages (sign-up, my-membership, payment).
+ */
 
-let isYearly = false;
+let isYearly     = false;
+let plansCache   = [];   // populated once on first fetch
+
+// ─── Data layer ───────────────────────────────────────────────────────────────
+
+async function fetchPlans() {
+  if (plansCache.length) return plansCache;
+  try {
+    const res  = await fetch('api/admin/plans/list.php');
+    const data = await res.json();
+    if (data.success && Array.isArray(data.plans)) {
+      // Normalise to the shape the rest of the module expects
+      plansCache = data.plans.map(p => ({
+        plan:         p.plan,
+        monthlyPrice: parseFloat(p.monthly_price),
+        yearlyPrice:  parseFloat(p.yearly_price),
+        color:        p.color        || '#ff6b35',
+        benefits:     Array.isArray(p.benefits) ? p.benefits : [],
+        maxClasses:   p.max_classes  ?? -1,
+        ptSessions:   p.pt_sessions  ?? 0,
+        guestPasses:  p.guest_passes ?? 0,
+        isActive:     !!p.is_active,
+      }));
+    }
+  } catch (e) {
+    console.warn('subcriptionCards: could not fetch plans, falling back to defaults.', e);
+    // Hardcoded fallback so pages still render if the API is unreachable
+    plansCache = [
+      {
+        plan: 'BASIC PLAN', monthlyPrice: 499, yearlyPrice: 5028,
+        color: '#9e9e9e', isActive: true,
+        benefits: ['Gym access (6AM–10PM)', 'Locker room access', '2 group classes/week'],
+        maxClasses: 2, ptSessions: 0, guestPasses: 0,
+      },
+      {
+        plan: 'PREMIUM PLAN', monthlyPrice: 899, yearlyPrice: 9067,
+        color: '#ff6b35', isActive: true,
+        benefits: ['24/7 gym access', 'Unlimited group classes', '1 PT session/month'],
+        maxClasses: -1, ptSessions: 1, guestPasses: 0,
+      },
+      {
+        plan: 'VIP PLAN', monthlyPrice: 1499, yearlyPrice: 15189,
+        color: '#f9a825', isActive: true,
+        benefits: ['All Premium features', '4 PT sessions/month', 'Priority class booking'],
+        maxClasses: -1, ptSessions: 4, guestPasses: 2,
+      },
+    ];
+  }
+  return plansCache;
+}
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
-export function togglePricing(yearly) {
+export async function togglePricing(yearly) {
   isYearly = yearly;
-  initSubscriptionSelection(".selection-cards");
 
-  const userCurrentPlan    = window.userCurrentPlan    || "PREMIUM PLAN";
-  const userCurrentBilling = window.userCurrentBilling || "monthly";
-  initSubscriptionCards(".card-container", userCurrentPlan, userCurrentBilling);
+  const userCurrentPlan    = window.userCurrentPlan    || 'PREMIUM PLAN';
+  const userCurrentBilling = window.userCurrentBilling || 'monthly';
+
+  await initSubscriptionSelection('.selection-cards');
+  await initSubscriptionCards('.card-container', userCurrentPlan, userCurrentBilling);
 
   updateSignUpReceipt();
 }
 
-function getPriceDisplay(sub) {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getPriceDisplay(plan) {
   if (isYearly) {
-    return `<span class="price">₱${sub.yearlyPrice}</span><span class="month">/year</span>`;
+    return `<span class="price">₱${plan.yearlyPrice.toLocaleString('en-PH')}</span><span class="month">/year</span>`;
   }
-  return `<span class="price">₱${sub.monthlyPrice}</span><span class="month">/month</span>`;
+  return `<span class="price">₱${plan.monthlyPrice.toLocaleString('en-PH')}</span><span class="month">/month</span>`;
 }
 
-function getSavingsBadge(sub) {
-  if (isYearly) {
-    const savings = sub.monthlyPrice * 12 - sub.yearlyPrice;
-    return `<div class="savings-badge">Save ₱${savings}</div>`;
-  }
-  return "";
+function getSavingsBadge(plan) {
+  if (!isYearly) return '';
+  const savings = Math.round(plan.monthlyPrice * 12 - plan.yearlyPrice);
+  if (savings <= 0) return '';
+  return `<div class="savings-badge">Save ₱${savings.toLocaleString('en-PH')}</div>`;
+}
+
+function getCurrentPlanPrice(planName, billing = 'monthly') {
+  const plan = plansCache.find(p => p.plan === planName);
+  if (!plan) return 0;
+  return billing === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
 }
 
 // ─── Pricing toggle HTML ──────────────────────────────────────────────────────
@@ -35,85 +97,86 @@ function getSavingsBadge(sub) {
 export function renderPricingToggle() {
   return `
     <div class="pricing-toggle">
-      <span class="toggle-label ${!isYearly ? "active" : ""}">Monthly</span>
+      <span class="toggle-label ${!isYearly ? 'active' : ''}">Monthly</span>
       <label class="toggle-switch">
-        <input type="checkbox" id="pricingToggle" ${isYearly ? "checked" : ""}
+        <input type="checkbox" id="pricingToggle" ${isYearly ? 'checked' : ''}
                onchange="window.togglePricing(this.checked)" />
         <span class="toggle-slider"></span>
       </label>
-      <span class="toggle-label ${isYearly ? "active" : ""}">Yearly</span>
+      <span class="toggle-label ${isYearly ? 'active' : ''}">Yearly</span>
       <span class="toggle-discount">Save 16%</span>
     </div>
   `;
 }
 
-// ─── Static cards (My Membership page) ───────────────────────────────────────
+// ─── Static cards (read-only, no buttons) ────────────────────────────────────
 
-export function renderStaticCards() {
-  return subscriptions
-    .map(
-      (sub) => `
-      <div class="sub-card">
+export async function renderStaticCards() {
+  const plans = await fetchPlans();
+  return plans
+    .filter(p => p.isActive)
+    .map(p => `
+      <div class="sub-card" style="border-top:4px solid ${p.color};">
         <div class="sub-header">
-          <h3>${sub.plan}</h3>
-          <span class="badge">${sub.members || ""} ${sub.members ? "Members" : ""}</span>
-          ${getSavingsBadge(sub)}
+          <h3 style="color:${p.color};">${p.plan}</h3>
+          ${getSavingsBadge(p)}
         </div>
-        <div class="sub-price">${getPriceDisplay(sub)}</div>
+        <div class="sub-price">${getPriceDisplay(p)}</div>
         <ul class="sub-benefits">
-          ${sub.benefits.map((b) => `<li>✓ ${b}</li>`).join("")}
+          ${p.benefits.map(b => `<li>✓ ${b}</li>`).join('')}
         </ul>
-      </div>`
-    )
-    .join("");
+      </div>`)
+    .join('');
 }
 
 // ─── Subscription management cards (My Membership page) ──────────────────────
 
-export function renderSubscriptionCards(currentPlan = null, currentBilling = "monthly") {
+export async function renderSubscriptionCards(currentPlan = null, currentBilling = 'monthly') {
+  const plans = await fetchPlans();
+
   let html = `
     <div class="pricing-wrapper">
       ${renderPricingToggle()}
       <div class="sub-container">
   `;
 
-  subscriptions.forEach((subscription) => {
-    const isCurrentPlan    = currentPlan === subscription.plan;
-    const isCurrentBilling = (isYearly && currentBilling === "yearly") ||
-                             (!isYearly && currentBilling === "monthly");
+  plans.filter(p => p.isActive).forEach(plan => {
+    const isCurrentPlan    = currentPlan === plan.plan;
+    const isCurrentBilling = (isYearly && currentBilling === 'yearly') ||
+                             (!isYearly && currentBilling === 'monthly');
 
     let buttonClass, buttonText, buttonLink;
 
     if (isCurrentPlan && isCurrentBilling) {
-      buttonClass = "current-plan";
-      buttonText  = "Current Plan";
-      buttonLink  = "";
+      buttonClass = 'current-plan';
+      buttonText  = 'Current Plan';
+      buttonLink  = '';
     } else if (isCurrentPlan && !isCurrentBilling) {
-      buttonClass = "change-plan";
-      buttonText  = isYearly ? "Upgrade to Yearly" : "Switch to Monthly";
-      const price      = isYearly ? subscription.yearlyPrice : subscription.monthlyPrice;
-      const planParam  = encodeURIComponent(subscription.plan);
-      const billingParam = isYearly ? "yearly" : "monthly";
+      buttonClass = 'change-plan';
+      buttonText  = isYearly ? 'Upgrade to Yearly' : 'Switch to Monthly';
+      const price      = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+      const planParam  = encodeURIComponent(plan.plan);
+      const billingParam = isYearly ? 'yearly' : 'monthly';
       buttonLink = `href="payment.php?type=billing-change&plan=${planParam}&price=${price}&billing=${billingParam}"`;
     } else {
-      const currentPrice = isYearly ? subscription.yearlyPrice : subscription.monthlyPrice;
+      const currentPrice = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
       const isUpgrade    = currentPrice > getCurrentPlanPrice(currentPlan, currentBilling);
-      buttonClass        = "change-plan";
-      buttonText         = isUpgrade ? "Upgrade Plan" : "Downgrade Plan";
-      const planParam    = encodeURIComponent(subscription.plan);
-      const billingParam = isYearly ? "yearly" : "monthly";
+      buttonClass        = 'change-plan';
+      buttonText         = isUpgrade ? 'Upgrade Plan' : 'Downgrade Plan';
+      const planParam    = encodeURIComponent(plan.plan);
+      const billingParam = isYearly ? 'yearly' : 'monthly';
       buttonLink = `href="payment.php?type=change&plan=${planParam}&price=${currentPrice}&billing=${billingParam}"`;
     }
 
     html += `
-      <div class="sub-card">
+      <div class="sub-card" style="border-top:4px solid ${plan.color};">
         <div class="sub-header">
-          <h3>${subscription.plan}</h3>
-          ${getSavingsBadge(subscription)}
+          <h3 style="color:${plan.color};">${plan.plan}</h3>
+          ${getSavingsBadge(plan)}
         </div>
-        <div class="sub-price">${getPriceDisplay(subscription)}</div>
+        <div class="sub-price">${getPriceDisplay(plan)}</div>
         <ul class="sub-benefits">
-          ${subscription.benefits.map((b) => `<li>${b}</li>`).join("")}
+          ${plan.benefits.map(b => `<li>${b}</li>`).join('')}
         </ul>
         <div class="buttons">
           <a ${buttonLink} class="${buttonClass}">${buttonText}</a>
@@ -122,92 +185,86 @@ export function renderSubscriptionCards(currentPlan = null, currentBilling = "mo
     `;
   });
 
-  html += "</div></div>";
+  html += '</div></div>';
   return html;
 }
 
 // ─── Selection cards (Sign-up page) ──────────────────────────────────────────
-// Uses name="membership_plan" so the selected value POSTs to PHP correctly.
 
-export function renderSelectionCards() {
+export async function renderSelectionCards() {
+  const plans = await fetchPlans();
+
   let html = `
     <div class="pricing-wrapper">
       ${renderPricingToggle()}
       <div class="sub-container">
   `;
 
-  subscriptions.forEach((sub) => {
-    const id           = sub.plan.toLowerCase().replace(/\s+/g, "-");
-    const currentPrice = isYearly ? sub.yearlyPrice : sub.monthlyPrice;
-    const billing      = isYearly ? "yearly" : "monthly";
+  plans.filter(p => p.isActive).forEach(plan => {
+    const id           = plan.plan.toLowerCase().replace(/\s+/g, '-');
+    const currentPrice = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+    const billing      = isYearly ? 'yearly' : 'monthly';
 
     html += `
       <label class="sub-card-select">
-        <!-- name="membership_plan" ensures PHP $_POST['membership_plan'] is set -->
         <input
           type="radio"
           name="membership_plan"
           id="${id}"
-          value="${sub.plan}"
+          value="${plan.plan}"
           data-price="${currentPrice}"
           data-billing="${billing}"
         />
-
         <div class="sub-header">
-          <h3>${sub.plan}</h3>
-          ${getSavingsBadge(sub)}
+          <h3 style="color:${plan.color};">${plan.plan}</h3>
+          ${getSavingsBadge(plan)}
         </div>
-
-        <div class="sub-price">${getPriceDisplay(sub)}</div>
-
+        <div class="sub-price">${getPriceDisplay(plan)}</div>
         <ul class="sub-benefits">
-          ${sub.benefits.map((b) => `<li>✓ ${b}</li>`).join("")}
+          ${plan.benefits.map(b => `<li>✓ ${b}</li>`).join('')}
         </ul>
       </label>
     `;
   });
 
-  html += "</div></div>";
+  html += '</div></div>';
   return html;
 }
 
 // ─── Init helpers ─────────────────────────────────────────────────────────────
 
-export function initSubscriptionCards(containerSelector, currentPlan = null, currentBilling = "monthly") {
+export async function initSubscriptionCards(containerSelector, currentPlan = null, currentBilling = 'monthly') {
   const container = document.querySelector(containerSelector);
-  if (container) container.innerHTML = renderSubscriptionCards(currentPlan, currentBilling);
+  if (!container) return;
+  container.innerHTML = await renderSubscriptionCards(currentPlan, currentBilling);
 }
 
-export function initSubscriptionSelection(containerSelector) {
+export async function initSubscriptionSelection(containerSelector) {
   const container = document.querySelector(containerSelector);
-  if (container) container.innerHTML = renderSelectionCards();
+  if (!container) return;
+  container.innerHTML = await renderSelectionCards();
 }
 
-function getCurrentPlanPrice(planName, billing = "monthly") {
-  const plan = subscriptions.find((sub) => sub.plan === planName);
-  if (!plan) return 0;
-  return billing === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
-}
+// ─── Receipt sync (sign-up page) ─────────────────────────────────────────────
 
 function updateSignUpReceipt() {
-  const receiptRow = document.querySelector(".reciept-row");
-  const totalPrice = document.querySelector(".total-price");
-
+  const receiptRow = document.querySelector('.reciept-row');
+  const totalPrice = document.querySelector('.total-price');
   if (!receiptRow || !totalPrice) return;
 
   const selectedInput = document.querySelector('input[name="membership_plan"]:checked');
   if (!selectedInput) return;
 
   const planName = selectedInput.value;
-  const plan     = subscriptions.find((sub) => sub.plan === planName);
+  const plan     = plansCache.find(p => p.plan === planName);
   if (!plan) return;
 
-  const price   = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
-  const period  = isYearly ? "yearly" : "monthly";
+  const price  = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+  const period = isYearly ? 'yearly' : 'monthly';
 
-  receiptRow.querySelector(".price").textContent = `₱${price}`;
-  receiptRow.querySelector("small").textContent  = `Billed ${period}`;
-  totalPrice.textContent                         = `₱${price}`;
+  receiptRow.querySelector('.price').textContent = `₱${price.toLocaleString('en-PH')}`;
+  receiptRow.querySelector('small').textContent  = `Billed ${period}`;
+  totalPrice.textContent                         = `₱${price.toLocaleString('en-PH')}`;
 }
 
 // ─── Global exposure ──────────────────────────────────────────────────────────
@@ -222,9 +279,13 @@ window.getSelectedPlanPrice = function () {
 
 // ─── Initialise on load ───────────────────────────────────────────────────────
 
-initSubscriptionSelection(".selection-cards");
+(async () => {
+  await fetchPlans();   // warm the cache
 
-window.userCurrentPlan    = "PREMIUM PLAN";
-window.userCurrentBilling = "monthly";
+  await initSubscriptionSelection('.selection-cards');
 
-initSubscriptionCards(".card-container", window.userCurrentPlan, window.userCurrentBilling);
+  window.userCurrentPlan    = window.userCurrentPlan    || 'PREMIUM PLAN';
+  window.userCurrentBilling = window.userCurrentBilling || 'monthly';
+
+  await initSubscriptionCards('.card-container', window.userCurrentPlan, window.userCurrentBilling);
+})();
