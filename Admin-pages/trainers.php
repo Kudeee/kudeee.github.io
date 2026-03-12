@@ -9,6 +9,7 @@
 
 <div class="option-bar">
   <button id="addTrainerBtn">+ Add Trainer</button>
+  <button id="deleteTrainerBtn" style="background:#ffebee;color:#c62828;border:2px solid #ffcdd2;box-shadow:none;">- Delete Trainer</button>
 </div>
 
 <!-- Delete Trainer Modal -->
