@@ -314,6 +314,116 @@ async function loadTrainersData() {
         </div>
       </div>`;
   }).join('');
+
+  // Wire up Manage Trainer button here, after page data is fully loaded
+  wireManageTrainerButton();
+}
+
+// ─── MANAGE TRAINER BUTTON WIRING ────────────────────────────────────────────
+function wireManageTrainerButton() {
+  const manageBtn = document.getElementById('manageTrainerBtn');
+  if (!manageBtn) return;
+
+  // Remove any previous listener by replacing with a clone
+  const freshBtn = manageBtn.cloneNode(true);
+  manageBtn.parentNode.replaceChild(freshBtn, manageBtn);
+
+  freshBtn.addEventListener('click', async function() {
+    // Load all trainers (active + inactive) into the select
+    await populateAllTrainersSelect('manageTrainerSelect');
+
+    // Reset to default action (deactivate)
+    const defaultRadio = document.querySelector('input[name="trainerAction"][value="deactivate"]');
+    if (defaultRadio) defaultRadio.checked = true;
+    updateManageActionUI('deactivate');
+
+    // Wire radio buttons
+    document.querySelectorAll('input[name="trainerAction"]').forEach(radio => {
+      radio.onchange = () => updateManageActionUI(radio.value);
+    });
+
+    // Wire confirm button
+    const confirmBtn = document.getElementById('confirmManageTrainerBtn');
+    if (confirmBtn) {
+      const freshConfirm = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(freshConfirm, confirmBtn);
+
+      freshConfirm.addEventListener('click', async function() {
+        const sel    = document.getElementById('manageTrainerSelect');
+        const id     = sel?.value;
+        const action = document.querySelector('input[name="trainerAction"]:checked')?.value;
+
+        if (!id)     { toast('Please select a trainer.', 'error'); return; }
+        if (!action) { toast('Please choose an action.', 'error'); return; }
+
+        const name = sel.options[sel.selectedIndex]?.text || 'this trainer';
+
+        const confirmMessages = {
+          activate:   `Reactivate ${name}? They will appear as active staff again.`,
+          deactivate: `Deactivate ${name}? They will be hidden from active staff but can be reactivated later.`,
+          delete:     `⚠ PERMANENTLY DELETE ${name}?\n\nThis cannot be undone. All class and event associations will be removed.\n\nAre you absolutely sure?`,
+        };
+
+        if (!confirm(confirmMessages[action])) return;
+
+        freshConfirm.disabled    = true;
+        freshConfirm.textContent = 'Processing…';
+
+        const res = await apiFetch('api/admin/trainers/delete.php', {
+          id:     parseInt(id),
+          action: action,
+        });
+
+        freshConfirm.disabled = false;
+        updateManageActionUI(action); // restore button text/style
+
+        if (res?.success) {
+          const successMessages = {
+            activate:   `${name.split(' —')[0]} has been set to active.`,
+            deactivate: `${name.split(' —')[0]} has been deactivated.`,
+            delete:     `${name.split(' —')[0]} has been permanently deleted.`,
+          };
+          toast(successMessages[action] || res.message);
+          closeModal('manageTrainerModal');
+          loadTrainersData();
+        } else {
+          toast(res?.message || 'Action failed. Please try again.', 'error');
+        }
+      });
+    }
+
+    openModal('manageTrainerModal');
+  });
+}
+
+/**
+ * Updates the manage trainer modal UI based on the selected action.
+ */
+function updateManageActionUI(action) {
+  ['activate', 'deactivate', 'delete'].forEach(a => {
+    const label = document.getElementById(`action-label-${a}`);
+    if (label) label.style.borderColor = 'var(--border)';
+  });
+
+  const activeLabel = document.getElementById(`action-label-${action}`);
+  const borderColors = { activate: '#2e7d32', deactivate: '#e65100', delete: '#c62828' };
+  if (activeLabel) activeLabel.style.borderColor = borderColors[action] || 'var(--border)';
+
+  const warningBox = document.getElementById('deleteWarningBox');
+  if (warningBox) warningBox.style.display = action === 'delete' ? 'block' : 'none';
+
+  const confirmBtn = document.getElementById('confirmManageTrainerBtn');
+  if (confirmBtn) {
+    const btnStyles = {
+      activate:   { text: '✓ Set Active',        bg: 'linear-gradient(135deg,#2e7d32,#43a047)' },
+      deactivate: { text: '⏸ Deactivate',         bg: 'linear-gradient(135deg,#e65100,#fb8c00)' },
+      delete:     { text: '✕ Permanently Delete', bg: 'linear-gradient(135deg,#c62828,#e53935)' },
+    };
+    const style = btnStyles[action] || btnStyles.deactivate;
+    confirmBtn.textContent      = style.text;
+    confirmBtn.style.background = style.bg;
+    confirmBtn.style.boxShadow  = 'none';
+  }
 }
 
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────────
@@ -772,10 +882,6 @@ async function populateTrainerSelect(selectId, addEmpty = false) {
   } catch (e) { console.warn('Could not load trainers:', e); }
 }
 
-/**
- * Populate the manage-trainer select with ALL trainers (active + inactive),
- * showing their current status so the admin knows who can be reactivated.
- */
 async function populateAllTrainersSelect(selectId) {
   const el = document.getElementById(selectId);
   if (!el) return;
@@ -833,116 +939,8 @@ function bindModalTriggers() {
     const btn = document.getElementById(btnId);
     if (btn) btn.onclick = () => openModal(modalId);
   });
-
-  // ── Manage Trainer button ─────────────────────────────────────────────────
-  const manageBtn = document.getElementById('manageTrainerBtn');
-  if (manageBtn) {
-    manageBtn.onclick = async () => {
-      // Load all trainers (active + inactive) into the select
-      await populateAllTrainersSelect('manageTrainerSelect');
-
-      // Reset to default action (deactivate)
-      const defaultRadio = document.querySelector('input[name="trainerAction"][value="deactivate"]');
-      if (defaultRadio) defaultRadio.checked = true;
-      updateManageActionUI('deactivate');
-
-      openModal('manageTrainerModal');
-
-      // Wire radio buttons to update UI
-      document.querySelectorAll('input[name="trainerAction"]').forEach(radio => {
-        radio.onchange = () => updateManageActionUI(radio.value);
-      });
-
-      // Wire confirm button
-      const confirmBtn = document.getElementById('confirmManageTrainerBtn');
-      if (confirmBtn) {
-        // Remove any old listener by replacing the node
-        const freshBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(freshBtn, confirmBtn);
-
-        freshBtn.onclick = async () => {
-          const sel    = document.getElementById('manageTrainerSelect');
-          const id     = sel?.value;
-          const action = document.querySelector('input[name="trainerAction"]:checked')?.value;
-
-          if (!id)     { toast('Please select a trainer.', 'error'); return; }
-          if (!action) { toast('Please choose an action.', 'error'); return; }
-
-          const name = sel.options[sel.selectedIndex]?.text || 'this trainer';
-
-          // Confirmation messages per action
-          const confirmMessages = {
-            activate:   `Reactivate ${name}? They will appear as active staff again.`,
-            deactivate: `Deactivate ${name}? They will be hidden from active staff but can be reactivated later.`,
-            delete:     `⚠ PERMANENTLY DELETE ${name}?\n\nThis cannot be undone. All class and event associations will be removed.\n\nAre you absolutely sure?`,
-          };
-
-          if (!confirm(confirmMessages[action])) return;
-
-          freshBtn.disabled    = true;
-          freshBtn.textContent = 'Processing…';
-
-          const res = await apiFetch('api/admin/trainers/delete.php', {
-            id:     parseInt(id),
-            action: action,
-          });
-
-          freshBtn.disabled    = false;
-          freshBtn.textContent = 'Apply';
-
-          if (res?.success) {
-            const successMessages = {
-              activate:   `${name.split(' —')[0]} has been set to active.`,
-              deactivate: `${name.split(' —')[0]} has been deactivated.`,
-              delete:     `${name.split(' —')[0]} has been permanently deleted.`,
-            };
-            toast(successMessages[action] || res.message);
-            closeModal('manageTrainerModal');
-            loadTrainersData();
-          } else {
-            toast(res?.message || 'Action failed. Please try again.', 'error');
-          }
-        };
-      }
-    };
-  }
-}
-
-/**
- * Updates the manage trainer modal UI based on the selected action:
- * - Highlights the active radio label
- * - Shows/hides the delete warning box
- * - Updates the confirm button label and colour
- */
-function updateManageActionUI(action) {
-  // Reset all label borders
-  ['activate', 'deactivate', 'delete'].forEach(a => {
-    const label = document.getElementById(`action-label-${a}`);
-    if (label) label.style.borderColor = 'var(--border)';
-  });
-
-  // Highlight selected
-  const activeLabel = document.getElementById(`action-label-${action}`);
-  const borderColors = { activate: '#2e7d32', deactivate: '#e65100', delete: '#c62828' };
-  if (activeLabel) activeLabel.style.borderColor = borderColors[action] || 'var(--border)';
-
-  // Warning box
-  const warningBox = document.getElementById('deleteWarningBox');
-  if (warningBox) warningBox.style.display = action === 'delete' ? 'block' : 'none';
-
-  // Confirm button
-  const confirmBtn = document.getElementById('confirmManageTrainerBtn');
-  if (confirmBtn) {
-    const btnStyles = {
-      activate:   { text: '✓ Set Active',           bg: 'linear-gradient(135deg,#2e7d32,#43a047)' },
-      deactivate: { text: '⏸ Deactivate',            bg: 'linear-gradient(135deg,#e65100,#fb8c00)' },
-      delete:     { text: '✕ Permanently Delete',    bg: 'linear-gradient(135deg,#c62828,#e53935)' },
-    };
-    const style = btnStyles[action] || btnStyles.deactivate;
-    confirmBtn.textContent       = style.text;
-    confirmBtn.style.background  = style.bg;
-    confirmBtn.style.boxShadow   = 'none';
-  }
+  // Note: manageTrainerBtn is wired in wireManageTrainerButton(),
+  // called at the end of loadTrainersData() to ensure DOM is ready.
 }
 
 // ─── FORM HANDLERS ────────────────────────────────────────────────────────────
@@ -1155,3 +1153,11 @@ function badge(status) {
   const cls = map[(status||'').toLowerCase()] || 'badge';
   return `<span class="badge ${cls}">${ucFirst(status || '—')}</span>`;
 }
+
+window.syncColorHex = function(val) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+    const cp = document.getElementById('ep_color');
+    if (cp) cp.value = val;
+    updatePlanPreview();
+  }
+};
