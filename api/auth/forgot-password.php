@@ -48,17 +48,17 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
 $pdo->prepare("UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0")->execute([$email]);
 
 // Generate secure token
-$token     = bin2hex(random_bytes(32));
-$expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+$token = bin2hex(random_bytes(32));
 
-$pdo->prepare("INSERT INTO password_resets (email, token, user_type, expires_at) VALUES (?, ?, ?, ?)")
-    ->execute([$email, $token, $userType, $expiresAt]);
+$pdo->prepare("INSERT INTO password_resets (email, token, user_type, expires_at) VALUES (?, ?, ?, NOW() + INTERVAL 1 HOUR)")
+    ->execute([$email, $token, $userType]);
 
 // Build reset URL
 $protocol  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host      = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$scriptDir = dirname(dirname(dirname($_SERVER['SCRIPT_NAME']))); 
-$resetUrl  = "$protocol://$host$scriptDir/reset-password.php?token=$token";
+// Build base URL from this file's location: api/auth/ is 2 levels deep inside the project root
+$projectRoot = rtrim(dirname(dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
+$resetUrl  = "$protocol://$host$projectRoot/reset-password.php?token=$token";
 
 // Send email via PHP mail()
 $firstName = $member['first_name'] ?? 'User';

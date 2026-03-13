@@ -26,10 +26,10 @@ try {
     $stmtDebug->execute([$token]);
     $debugRow = $stmtDebug->fetch();
 
-    // Now check with full conditions
+    // Check with full conditions — use created_at + 1 hour to avoid PHP/MySQL timezone mismatch
     $stmt = $pdo->prepare("
         SELECT email, expires_at, user_type FROM password_resets
-        WHERE token = ? AND used = 0 AND expires_at > NOW()
+        WHERE token = ? AND used = 0 AND created_at > NOW() - INTERVAL 1 HOUR
         LIMIT 1
     ");
     $stmt->execute([$token]);
@@ -40,8 +40,17 @@ try {
 }
 
 if (!$reset) {
-    // Return debug info so we can see why it failed
-    error('This reset link is invalid or has expired.', 400);
+    $debugInfo = $debugRow ? [
+        'token_found'     => true,
+        'token_used'      => (bool)$debugRow['used'],
+        'expires_at'      => $debugRow['expires_at'],
+        'server_now'      => $debugRow['server_now'],
+        'already_expired' => ($debugRow['expires_at'] < $debugRow['server_now']),
+    ] : [
+        'token_found'  => false,
+        'token_length' => strlen($token),
+    ];
+    json_response(['success' => false, 'message' => 'This reset link is invalid or has expired.', 'debug' => $debugInfo], 400);
 }
 
 $maskedEmail = preg_replace('/(?<=.{2}).(?=.*@)/', '*', $reset['email']);
