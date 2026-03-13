@@ -53,6 +53,11 @@ async function loadPage(pageName) {
     bindModalTriggers();
     bindFormHandlers();
     await fetchPageData(pageName);
+
+    // Wire the Manage Trainer button AFTER fetchPageData so the grid
+    // (which contains #manageTrainerBtn) is guaranteed to be in the DOM.
+    if (pageName === 'trainers') wireManageTrainerButton();
+
   } catch (err) {
     container.innerHTML = '<div class="card"><p style="color:red;">Failed to load page. Please try again.</p></div>';
     console.error(err);
@@ -102,14 +107,14 @@ async function loadDashboardData() {
     if (data.recent_activity?.length) {
       actEl.innerHTML = data.recent_activity.map(a => {
         const labels = {
-          member_suspended: 'Member suspended',
+          member_suspended:   'Member suspended',
           member_unsuspended: 'Member unsuspended',
-          trainer_added: 'Trainer added',
-          event_created: 'Event created',
-          class_cancelled: 'Class cancelled',
-          member_created: 'New member registered',
-          refund_issued: 'Refund issued',
-          plan_updated: 'Subscription plan updated',
+          trainer_added:      'Trainer added',
+          event_created:      'Event created',
+          class_cancelled:    'Class cancelled',
+          member_created:     'New member registered',
+          refund_issued:      'Refund issued',
+          plan_updated:       'Subscription plan updated',
         };
         const label = labels[a.action] || a.action.replace(/_/g, ' ');
         const time  = fmtDateTime(a.created_at);
@@ -255,7 +260,7 @@ async function loadClassesData() {
 
 window.cancelClass = async function(classId) {
   if (!confirm('Cancel this class?')) return;
-  const res  = await apiFetch('api/admin/classes/cancel.php', { id: classId });
+  const res = await apiFetch('api/admin/classes/cancel.php', { id: classId });
   if (res?.success) { toast('Class cancelled.'); loadClassesData(); }
   else toast(res?.message || 'Failed.', 'error');
 };
@@ -317,12 +322,13 @@ async function loadTrainersData() {
 }
 
 // ─── MANAGE TRAINER BUTTON WIRING ────────────────────────────────────────────
+// Called AFTER fetchPageData('trainers') so #manageTrainerBtn is in the DOM.
 function wireManageTrainerButton() {
   const manageBtn = document.getElementById('manageTrainerBtn');
   if (!manageBtn) return;
 
   manageBtn.onclick = async function() {
-    // FIX: wrap fetch in try/catch so any error doesn't silently block the modal from opening
+    // Populate the trainer dropdown — errors are non-fatal
     try {
       await populateAllTrainersSelect('manageTrainerSelect');
     } catch (err) {
@@ -334,12 +340,12 @@ function wireManageTrainerButton() {
     if (defaultRadio) defaultRadio.checked = true;
     updateManageActionUI('deactivate');
 
-    // Wire radio buttons via onclick (safe to reassign repeatedly)
+    // Wire radio buttons
     document.querySelectorAll('input[name="trainerAction"]').forEach(radio => {
       radio.onclick = () => updateManageActionUI(radio.value);
     });
 
-    // Wire confirm button via onclick
+    // Wire confirm button
     const confirmBtn = document.getElementById('confirmManageTrainerBtn');
     if (confirmBtn) {
       confirmBtn.onclick = async function() {
@@ -380,13 +386,14 @@ function wireManageTrainerButton() {
           toast(successMessages[action] || res.message);
           closeModal('manageTrainerModal');
           loadTrainersData();
+          // Re-wire button after grid re-renders
+          wireManageTrainerButton();
         } else {
           toast(res?.message || 'Action failed. Please try again.', 'error');
         }
       };
     }
 
-    // FIX: always open the modal — this now runs unconditionally
     openModal('manageTrainerModal');
   };
 }
@@ -925,6 +932,9 @@ document.addEventListener('click', e => {
 });
 
 function bindModalTriggers() {
+  // Only wire the simple open-modal buttons here.
+  // wireManageTrainerButton() is called separately after fetchPageData
+  // so that #manageTrainerBtn is guaranteed to exist in the DOM.
   const map = {
     addMemberBtn:  'addMemberModal',
     addTrainerBtn: 'addTrainerModal',
@@ -934,8 +944,6 @@ function bindModalTriggers() {
     const btn = document.getElementById(btnId);
     if (btn) btn.onclick = () => openModal(modalId);
   });
-  // Wire Manage Trainer button immediately after HTML is injected into DOM
-  wireManageTrainerButton();
 }
 
 // ─── FORM HANDLERS ────────────────────────────────────────────────────────────
@@ -1027,7 +1035,7 @@ function bindForm(formId, endpoint, successMsg, modalId, onSuccess) {
 
     const body = Object.fromEntries(new FormData(form));
     const res  = await apiFetch(endpoint, body);
-    if (btn)   { btn.disabled = false; btn.textContent = successMsg.includes('!') ? successMsg.split('!')[0] + '!' : 'Submit'; }
+    if (btn) { btn.disabled = false; btn.textContent = successMsg.includes('!') ? successMsg.split('!')[0] + '!' : 'Submit'; }
 
     if (res?.success) {
       toast(successMsg);
