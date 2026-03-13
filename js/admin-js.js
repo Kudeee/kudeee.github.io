@@ -321,10 +321,13 @@ function wireManageTrainerButton() {
   const manageBtn = document.getElementById('manageTrainerBtn');
   if (!manageBtn) return;
 
-  // Use onclick to guarantee only one handler ever exists
   manageBtn.onclick = async function() {
-    // Load all trainers (active + inactive) into the select
-    await populateAllTrainersSelect('manageTrainerSelect');
+    // FIX: wrap fetch in try/catch so any error doesn't silently block the modal from opening
+    try {
+      await populateAllTrainersSelect('manageTrainerSelect');
+    } catch (err) {
+      console.warn('Could not load trainers for manage modal:', err);
+    }
 
     // Reset to default action (deactivate)
     const defaultRadio = document.querySelector('input[name="trainerAction"][value="deactivate"]');
@@ -383,6 +386,7 @@ function wireManageTrainerButton() {
       };
     }
 
+    // FIX: always open the modal — this now runs unconditionally
     openModal('manageTrainerModal');
   };
 }
