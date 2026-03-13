@@ -81,50 +81,135 @@ function updateUpgradeButton(currentPlan) {
   upgradeBtn.onclick = () => { location.href = upgrade.paymentUrl; };
 }
 
-// ─── Next booking ─────────────────────────────────────────────────────────────
+// ─── Booking Carousel ─────────────────────────────────────────────────────────
+let allBookings    = [];   // all upcoming bookings from API
+let carouselIndex  = 0;   // currently displayed booking index
+
+/**
+ * Fetch ALL upcoming bookings and store them; render the first one.
+ */
+async function loadAllUpcomingBookings() {
+  try {
+    const res  = await fetch('api/user/schedule/all-upcoming.php');
+    const data = await res.json();
+
+    if (!data.success) return;
+
+    allBookings   = data.bookings || [];
+    carouselIndex = 0;
+
+    if (!allBookings.length) {
+      renderEmptyNextClass();
+    } else {
+      renderCarouselSlide(carouselIndex);
+    }
+
+  } catch (err) {
+    console.warn('Could not load upcoming bookings:', err);
+  }
+}
+
+/**
+ * Render the booking at `index` into the next-action-section.
+ */
+function renderCarouselSlide(index) {
+  const booking = allBookings[index];
+  if (!booking) return;
+
+  const titleEl    = document.getElementById('nextClassName');
+  const timeEl     = document.getElementById('nextClassTime');
+  const dateEl     = document.getElementById('nextClassDate');
+  const trainerEl  = document.getElementById('nextClassTrainer');
+  const durationEl = document.getElementById('nextClassDuration');
+
+  if (titleEl)    titleEl.textContent    = booking.class_name.toUpperCase();
+  if (timeEl)     timeEl.textContent     = booking.time_label;
+  if (dateEl)     dateEl.textContent     = booking.date_label;
+  if (trainerEl)  trainerEl.textContent  = booking.trainer_name || '—';
+  if (durationEl) durationEl.textContent = booking.duration_label;
+
+  // Store current booking for cancel action
+  currentBooking = booking;
+
+  // Update counter badge
+  updateCarouselCounter();
+
+  // Update prev/next button states
+  updateCarouselButtons();
+
+  // Animate slide in
+  animateSlide();
+}
+
+function animateSlide() {
+  const content = document.querySelector('.next-action-content');
+  if (!content) return;
+  content.classList.remove('carousel-slide-in');
+  // Force reflow then re-add class
+  void content.offsetWidth;
+  content.classList.add('carousel-slide-in');
+}
+
+function updateCarouselCounter() {
+  const counterEl = document.getElementById('carouselCounter');
+  if (!counterEl) return;
+  if (allBookings.length <= 1) {
+    counterEl.style.display = 'none';
+    return;
+  }
+  counterEl.style.display = '';
+  counterEl.textContent = `${carouselIndex + 1} / ${allBookings.length}`;
+}
+
+function updateCarouselButtons() {
+  const prevBtn = document.getElementById('carouselPrev');
+  const nextBtn = document.getElementById('carouselNext');
+
+  if (!prevBtn || !nextBtn) return;
+
+  // Hide nav entirely if only 1 booking
+  const navEl = document.getElementById('carouselNav');
+  if (navEl) navEl.style.display = allBookings.length > 1 ? 'flex' : 'none';
+
+  prevBtn.disabled = carouselIndex <= 0;
+  nextBtn.disabled = carouselIndex >= allBookings.length - 1;
+}
+
+window.carouselPrev = function () {
+  if (carouselIndex > 0) {
+    carouselIndex--;
+    renderCarouselSlide(carouselIndex);
+  }
+};
+
+window.carouselNext = function () {
+  if (carouselIndex < allBookings.length - 1) {
+    carouselIndex++;
+    renderCarouselSlide(carouselIndex);
+  }
+};
+
+function renderEmptyNextClass() {
+  const section = document.querySelector('.next-action-section');
+  if (section) {
+    section.innerHTML = `
+      <div class="next-action-content" style="text-align:center;padding:20px 0;">
+        <div class="next-action-label">Your Next Class</div>
+        <h2 class="next-action-title" style="font-size:2.2rem;opacity:0.55;letter-spacing:3px;">NO CLASS YET</h2>
+        <p style="color:#888;margin:12px 0 30px;font-size:1rem;">You have no upcoming classes scheduled.</p>
+        <div class="action-buttons" style="justify-content:center;">
+          <button class="btn btn-outline" onclick="window.location.href='book-class-page.php'">Book a Class</button>
+        </div>
+      </div>`;
+  }
+}
+
+// ─── Next booking (legacy — now delegates to carousel) ────────────────────────
 let currentBooking = null;
 
 async function loadNextBooking() {
-  try {
-    const res  = await fetch('api/user/schedule/upcoming.php');
-    const data = await res.json();
-    if (!data.success) return;
-
-    const booking = data.next_booking;
-
-    if (!booking) {
-      const section = document.querySelector('.next-action-section');
-      if (section) {
-        section.innerHTML = `
-          <div class="next-action-content" style="text-align:center;padding:20px 0;">
-            <div class="next-action-label">Your Next Class</div>
-            <h2 class="next-action-title" style="font-size:2.2rem;opacity:0.55;letter-spacing:3px;">NO CLASS YET</h2>
-            <p style="color:#888;margin:12px 0 30px;font-size:1rem;">You have no upcoming classes scheduled.</p>
-            <div class="action-buttons" style="justify-content:center;">
-              <button class="btn btn-outline" onclick="window.location.href='book-class-page.php'">Book a Class</button>
-            </div>
-          </div>`;
-      }
-      return;
-    }
-
-    currentBooking = booking;
-
-    const titleEl    = document.getElementById('nextClassName');
-    const timeEl     = document.getElementById('nextClassTime');
-    const dateEl     = document.getElementById('nextClassDate');
-    const trainerEl  = document.getElementById('nextClassTrainer');
-    const durationEl = document.getElementById('nextClassDuration');
-
-    if (titleEl)    titleEl.textContent    = booking.class_name.toUpperCase();
-    if (timeEl)     timeEl.textContent     = booking.time_label;
-    if (dateEl)     dateEl.textContent     = booking.date_label;
-    if (trainerEl)  trainerEl.textContent  = booking.trainer_name || '—';
-    if (durationEl) durationEl.textContent = booking.duration_label;
-
-  } catch (err) {
-    console.warn('Could not load next booking:', err);
-  }
+  // Delegated to loadAllUpcomingBookings
+  await loadAllUpcomingBookings();
 }
 
 // ─── Cancel booking ───────────────────────────────────────────────────────────
@@ -143,8 +228,14 @@ document.getElementById('CancelBooking').addEventListener('click', () => {
       const result = await res.json();
       hideLoading();
       if (result.success) {
-        currentBooking = null;
-        await loadNextBooking();
+        // Remove cancelled booking from local array and re-render
+        allBookings.splice(carouselIndex, 1);
+        if (allBookings.length === 0) {
+          renderEmptyNextClass();
+        } else {
+          carouselIndex = Math.min(carouselIndex, allBookings.length - 1);
+          renderCarouselSlide(carouselIndex);
+        }
         render('#pop-up', 'done', renderPopUP);
         window.closePopUp = closePopUp;
         showPopUP('Booking cancelled successfully.');

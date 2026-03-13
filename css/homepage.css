@@ -418,6 +418,76 @@
   color: #666;
 }
 
+/* ── Booking Carousel ──────────────────────────────────────────────────────── */
+
+/* Slide-in animation when switching bookings */
+@keyframes carouselSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.next-action-content.carousel-slide-in {
+  animation: carouselSlideIn 0.28s ease forwards;
+}
+
+/* Position the carousel nav strip at the bottom of .next-action-section */
+.next-action-section {
+  position: relative; /* ensure children can be positioned relative to it */
+}
+
+.carousel-nav-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.carousel-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, opacity 0.18s, transform 0.18s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.carousel-arrow:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.08);
+}
+
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-counter {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  min-width: 44px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
 @media (max-width: 1024px) {
   .status-section {
     grid-template-columns: 1fr;

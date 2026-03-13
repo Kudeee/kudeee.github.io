@@ -436,7 +436,7 @@
       </div>
     </div>
 
-    <!-- NEXT CLASS -->
+    <!-- NEXT CLASS (carousel) -->
     <div class="next-action-section">
       <div class="next-action-content">
         <div class="next-action-label">Your Next Class</div>
@@ -463,6 +463,17 @@
           <button class="btn btn-outline" id="CancelBooking">Cancel Booking</button>
           <button class="btn btn-secondary" onclick="window.location.href='book-class-page.php'">Book Another</button>
         </div>
+      </div>
+
+      <!-- Carousel navigation -->
+      <div class="carousel-nav-strip" id="carouselNav" style="display:none;">
+        <button class="carousel-arrow" id="carouselPrev" onclick="carouselPrev()" aria-label="Previous booking" disabled>
+          &#8592;
+        </button>
+        <span class="carousel-counter" id="carouselCounter"></span>
+        <button class="carousel-arrow" id="carouselNext" onclick="carouselNext()" aria-label="Next booking">
+          &#8594;
+        </button>
       </div>
     </div>
 
