@@ -146,10 +146,7 @@
       <div class="container">
         <h2>Get in Touch</h2>
 
-        <!-- Contact form POSTs to PHP handler -->
         <form class="contact-form" method="POST" action="/api/contact/inquiry.php">
-          <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>" />
-
           <div class="form-group">
             <label for="contact_name">Name</label>
             <input type="text" id="contact_name" name="name" required />

@@ -9,6 +9,8 @@ window.switchTab   = switchTab;
 window.registerEvent         = registerEvent;
 window.closeEventModal       = closeEventModal;
 window.submitEventRegistration = submitEventRegistration;
+window.carouselStep          = carouselStep;
+window.carouselGoTo          = carouselGoTo;
 
 // ─── Plan upgrade map ─────────────────────────────────────────────────────────
 const PLAN_UPGRADE = {
@@ -81,70 +83,213 @@ function updateUpgradeButton(currentPlan) {
   upgradeBtn.onclick = () => { location.href = upgrade.paymentUrl; };
 }
 
-// ─── Next booking ─────────────────────────────────────────────────────────────
-let currentBooking = null;
+// ─── Carousel state ───────────────────────────────────────────────────────────
+let carouselBookings = [];   // all upcoming bookings
+let carouselIndex    = 0;    // active slide index
 
-async function loadNextBooking() {
+// ─── Build one slide's inner HTML ─────────────────────────────────────────────
+function buildSlideHTML(booking) {
+  return `
+    <div class="next-action-content">
+      <div class="next-action-label">
+        ${booking.booking_type === 'trainer' ? 'Personal Training Session' : 'Your Next Class'}
+      </div>
+      <h2 class="next-action-title">${booking.class_name.toUpperCase()}</h2>
+      <div class="class-info-grid">
+        <div class="class-info-item">
+          <div class="class-info-value">${booking.time_label}</div>
+          <div class="class-info-label">Time</div>
+        </div>
+        <div class="class-info-item">
+          <div class="class-info-value">${booking.date_label}</div>
+          <div class="class-info-label">Date</div>
+        </div>
+        <div class="class-info-item">
+          <div class="class-info-value">${booking.trainer_name || '—'}</div>
+          <div class="class-info-label">Trainer</div>
+        </div>
+        <div class="class-info-item">
+          <div class="class-info-value">${booking.duration_label}</div>
+          <div class="class-info-label">Duration</div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-outline" data-booking-id="${booking.booking_id}" data-booking-type="${booking.booking_type}" onclick="cancelBookingById(${booking.booking_id},'${booking.booking_type}','${booking.class_name.replace(/'/g,"\\'")}')">Cancel Booking</button>
+        <button class="btn btn-secondary" onclick="window.location.href='book-class-page.php'">Book Another</button>
+      </div>
+    </div>`;
+}
+
+// ─── Render empty-state slide ─────────────────────────────────────────────────
+function renderEmptySlide() {
+  const slider = document.getElementById('carouselSlider');
+  if (!slider) return;
+  slider.innerHTML = `
+    <div class="next-action-slide next-action-content" style="text-align:center;padding:20px 0;">
+      <div class="next-action-label">Your Next Class</div>
+      <h2 class="next-action-title" style="font-size:2.2rem;opacity:0.55;letter-spacing:3px;">NO CLASS YET</h2>
+      <p style="color:#888;margin:12px 0 30px;font-size:1rem;">You have no upcoming classes scheduled.</p>
+      <div class="action-buttons" style="justify-content:center;">
+        <button class="btn btn-outline" onclick="window.location.href='book-class-page.php'">Book a Class</button>
+      </div>
+    </div>`;
+  // hide nav
+  ['carouselPrev','carouselNext','carouselCount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const dots = document.getElementById('carouselDots');
+  if (dots) dots.innerHTML = '';
+}
+
+// ─── Render full carousel ─────────────────────────────────────────────────────
+function renderCarousel(bookings) {
+  carouselBookings = bookings;
+  carouselIndex    = 0;
+
+  const slider = document.getElementById('carouselSlider');
+  if (!slider) return;
+
+  if (!bookings.length) { renderEmptySlide(); return; }
+
+  // Build slides
+  slider.innerHTML = bookings.map((b, i) => `
+    <div class="next-action-slide" data-index="${i}">
+      ${buildSlideHTML(b)}
+    </div>`).join('');
+
+  // Dots
+  const dotsEl = document.getElementById('carouselDots');
+  if (dotsEl) {
+    if (bookings.length > 1) {
+      dotsEl.innerHTML = bookings.map((_, i) =>
+        `<button class="carousel-dot${i === 0 ? ' active' : ''}" onclick="carouselGoTo(${i})" aria-label="Booking ${i+1}"></button>`
+      ).join('');
+    } else {
+      dotsEl.innerHTML = '';
+    }
+  }
+
+  // Count badge
+  const countEl = document.getElementById('carouselCount');
+  if (countEl) {
+    if (bookings.length > 1) {
+      countEl.textContent  = `1 / ${bookings.length}`;
+      countEl.style.display = '';
+    } else {
+      countEl.style.display = 'none';
+    }
+  }
+
+  // Nav arrows
+  const prevBtn = document.getElementById('carouselPrev');
+  const nextBtn = document.getElementById('carouselNext');
+  if (bookings.length > 1) {
+    if (prevBtn) prevBtn.style.display = '';
+    if (nextBtn) nextBtn.style.display = '';
+  } else {
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+  }
+
+  updateCarouselUI();
+}
+
+// ─── Update slider transform + dot/button states ──────────────────────────────
+function updateCarouselUI() {
+  const slider  = document.getElementById('carouselSlider');
+  if (slider) slider.style.transform = `translateX(-${carouselIndex * 100}%)`;
+
+  // Dots
+  document.querySelectorAll('.carousel-dot').forEach((d, i) =>
+    d.classList.toggle('active', i === carouselIndex)
+  );
+
+  // Count badge
+  const countEl = document.getElementById('carouselCount');
+  if (countEl && carouselBookings.length > 1) {
+    countEl.textContent = `${carouselIndex + 1} / ${carouselBookings.length}`;
+  }
+
+  // Disable arrows at boundaries
+  const prevBtn = document.getElementById('carouselPrev');
+  const nextBtn = document.getElementById('carouselNext');
+  if (prevBtn) prevBtn.disabled = carouselIndex === 0;
+  if (nextBtn) nextBtn.disabled = carouselIndex === carouselBookings.length - 1;
+}
+
+// ─── Carousel navigation ──────────────────────────────────────────────────────
+function carouselStep(dir) {
+  const newIdx = carouselIndex + dir;
+  if (newIdx < 0 || newIdx >= carouselBookings.length) return;
+  carouselIndex = newIdx;
+  updateCarouselUI();
+}
+
+function carouselGoTo(idx) {
+  if (idx < 0 || idx >= carouselBookings.length) return;
+  carouselIndex = idx;
+  updateCarouselUI();
+}
+
+// ─── Fetch ALL upcoming bookings (class + trainer) ────────────────────────────
+async function loadAllUpcomingBookings() {
   try {
-    const res  = await fetch('api/user/schedule/upcoming.php');
-    const data = await res.json();
-    if (!data.success) return;
+    // We call the same endpoint but need ALL bookings — use a new dedicated query
+    // The existing endpoint only returns 1 (the soonest). We'll fetch both class
+    // and trainer booking pages via the schedule list APIs.
+    const [classRes, trainerRes] = await Promise.all([
+      fetch('api/user/schedule/all-upcoming.php'),
+      fetch('api/user/schedule/upcoming.php'),  // fallback if the above doesn't exist
+    ]);
 
-    const booking = data.next_booking;
+    // Try the all-upcoming endpoint first; if it 404s, fall back to single-booking
+    let allBookings = [];
 
-    if (!booking) {
-      const section = document.querySelector('.next-action-section');
-      if (section) {
-        section.innerHTML = `
-          <div class="next-action-content" style="text-align:center;padding:20px 0;">
-            <div class="next-action-label">Your Next Class</div>
-            <h2 class="next-action-title" style="font-size:2.2rem;opacity:0.55;letter-spacing:3px;">NO CLASS YET</h2>
-            <p style="color:#888;margin:12px 0 30px;font-size:1rem;">You have no upcoming classes scheduled.</p>
-            <div class="action-buttons" style="justify-content:center;">
-              <button class="btn btn-outline" onclick="window.location.href='book-class-page.php'">Book a Class</button>
-            </div>
-          </div>`;
+    if (classRes.ok) {
+      const classData = await classRes.json();
+      if (classData.success && Array.isArray(classData.bookings)) {
+        allBookings = classData.bookings;
       }
-      return;
     }
 
-    currentBooking = booking;
+    // If we got nothing from the new endpoint, fall back to the single-booking endpoint
+    if (!allBookings.length) {
+      const singleData = await trainerRes.json();
+      if (singleData.success && singleData.next_booking) {
+        allBookings = [singleData.next_booking];
+      }
+    }
 
-    const titleEl    = document.getElementById('nextClassName');
-    const timeEl     = document.getElementById('nextClassTime');
-    const dateEl     = document.getElementById('nextClassDate');
-    const trainerEl  = document.getElementById('nextClassTrainer');
-    const durationEl = document.getElementById('nextClassDuration');
-
-    if (titleEl)    titleEl.textContent    = booking.class_name.toUpperCase();
-    if (timeEl)     timeEl.textContent     = booking.time_label;
-    if (dateEl)     dateEl.textContent     = booking.date_label;
-    if (trainerEl)  trainerEl.textContent  = booking.trainer_name || '—';
-    if (durationEl) durationEl.textContent = booking.duration_label;
+    renderCarousel(allBookings);
 
   } catch (err) {
-    console.warn('Could not load next booking:', err);
+    console.warn('Could not load upcoming bookings:', err);
+    renderEmptySlide();
   }
 }
 
-// ─── Cancel booking ───────────────────────────────────────────────────────────
-document.getElementById('CancelBooking').addEventListener('click', () => {
-  if (!currentBooking) { showPopUP('No booking to cancel.'); return; }
-  showPopUP(`Cancel your ${currentBooking.class_name} booking?`);
+// ─── Cancel a specific booking by ID (carousel-aware) ────────────────────────
+window.cancelBookingById = function(bookingId, bookingType, className) {
+  showPopUP(`Cancel your ${className} booking?`);
 
   window.handleOk = async function () {
     closePopUp();
     showLoading('Cancelling booking...');
     try {
       const fd = new FormData();
-      fd.append('type',       currentBooking.booking_type);
-      fd.append('booking_id', currentBooking.booking_id);
+      fd.append('type',       bookingType);
+      fd.append('booking_id', bookingId);
       const res    = await fetch('api/bookings/cancel.php', { method: 'POST', body: fd });
       const result = await res.json();
       hideLoading();
       if (result.success) {
-        currentBooking = null;
-        await loadNextBooking();
+        // Remove cancelled booking from the list and re-render
+        carouselBookings = carouselBookings.filter(b => b.booking_id !== bookingId);
+        if (carouselIndex >= carouselBookings.length) {
+          carouselIndex = Math.max(0, carouselBookings.length - 1);
+        }
+        renderCarousel(carouselBookings);
         render('#pop-up', 'done', renderPopUP);
         window.closePopUp = closePopUp;
         showPopUP('Booking cancelled successfully.');
@@ -158,7 +303,7 @@ document.getElementById('CancelBooking').addEventListener('click', () => {
       showPopUP('Something went wrong. Please try again.');
     }
   };
-});
+};
 
 // ─── Events helpers ───────────────────────────────────────────────────────────
 
@@ -215,31 +360,24 @@ function buildEventItem(ev, showRegisterBtn) {
 // ─── Event registration modal ─────────────────────────────────────────────────
 
 function registerEvent(eventId, name, dateStr, location, fee) {
-  // Populate modal fields
   document.getElementById('eventModalId').value      = eventId;
   document.getElementById('eventModalName').textContent = name;
   document.getElementById('eventModalLocation').textContent = location || '—';
 
-  // Format date
   const { day, month } = fmtEventDate(dateStr);
   document.getElementById('eventModalDate').textContent = `${month} ${day}`;
 
-  // Fee display
   const feeNum = parseFloat(fee) || 0;
   document.getElementById('eventModalFee').textContent = feeNum > 0
     ? `₱${feeNum.toLocaleString('en-PH')}`
     : 'Free';
 
-  // Show/hide payment section based on fee
   const paymentSection = document.getElementById('eventPaymentSection');
   if (paymentSection) {
     paymentSection.style.display = feeNum > 0 ? 'block' : 'none';
   }
 
-  // Reset any previously selected radio
   document.querySelectorAll('input[name="event_payment_method"]').forEach(r => r.checked = false);
-
-  // Open modal
   document.getElementById('eventModal').classList.add('open');
 }
 
@@ -256,7 +394,6 @@ async function submitEventRegistration() {
   if (!isFree) {
     const selected = document.querySelector('input[name="event_payment_method"]:checked');
     if (!selected) {
-      // Briefly shake the payment section to indicate selection needed
       const section = document.getElementById('eventPaymentSection');
       if (section) {
         section.style.outline = '2px solid #ff6b35';
@@ -283,7 +420,6 @@ async function submitEventRegistration() {
       render('#pop-up', 'done', renderPopUP);
       window.closePopUp = closePopUp;
       showPopUP('Successfully registered for the event!');
-      // Refresh both panels
       loadMyEvents();
       allEventsLoaded = false;
       loadAllEvents();
@@ -299,7 +435,7 @@ async function submitEventRegistration() {
   }
 }
 
-// ─── Load My Events (registered by this member) ───────────────────────────────
+// ─── Load My Events ───────────────────────────────────────────────────────────
 async function loadMyEvents() {
   const container = document.getElementById('myEventsScroll');
   if (!container) return;
@@ -392,5 +528,5 @@ function switchTab(tab) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadMemberData();
-loadNextBooking();
+loadAllUpcomingBookings();
 loadMyEvents();

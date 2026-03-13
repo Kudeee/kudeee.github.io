@@ -128,11 +128,22 @@ async function handleInqSubmit(event) {
   showLoading("Sending...");
 
   try {
-    await simulateLoading(2000);
+    const formData = new FormData(event.target);
 
+    const response = await fetch("api/contact/inquiry.php", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
     hideLoading();
-    event.target.reset();
-    showPopUP("Message has been sent.");
+
+    if (result.success) {
+      event.target.reset();
+      showPopUP("Message has been sent.");
+    } else {
+      showPopUP(result.message || "Please try again.");
+    }
   } catch (error) {
     hideLoading();
     showPopUP("Please try again.");
