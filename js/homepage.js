@@ -6,7 +6,9 @@ render('#pop-up', "popUPOpt", renderPopUP);
 window.handleOk    = handleOk;
 window.closePopUp  = closePopUp;
 window.switchTab   = switchTab;
-window.registerEvent = registerEvent;
+window.registerEvent         = registerEvent;
+window.closeEventModal       = closeEventModal;
+window.submitEventRegistration = submitEventRegistration;
 
 // ─── Plan upgrade map ─────────────────────────────────────────────────────────
 const PLAN_UPGRADE = {
@@ -210,7 +212,7 @@ function buildEventItem(ev, showRegisterBtn) {
   const actionBtn = showRegisterBtn
     ? (ev.already_registered || ev.registration_status === 'registered'
         ? `<button class="btn" disabled style="opacity:0.55;cursor:default;">Registered</button>`
-        : `<button class="btn btn-outline" onclick="registerEvent(${ev.id})">Register</button>`)
+        : `<button class="btn btn-outline" onclick="registerEvent(${ev.id}, '${(ev.name||'').replace(/'/g,"\\'")}', '${ev.event_date}', '${(ev.location||'').replace(/'/g,"\\'")}', ${parseFloat(ev.fee)||0})">Register</button>`)
     : '';
 
   return `
@@ -229,6 +231,93 @@ function buildEventItem(ev, showRegisterBtn) {
       </div>
       ${actionBtn}
     </div>`;
+}
+
+// ─── Event registration modal ─────────────────────────────────────────────────
+
+function registerEvent(eventId, name, dateStr, location, fee) {
+  // Populate modal fields
+  document.getElementById('eventModalId').value      = eventId;
+  document.getElementById('eventModalName').textContent = name;
+  document.getElementById('eventModalLocation').textContent = location || '—';
+
+  // Format date
+  const { day, month } = fmtEventDate(dateStr);
+  document.getElementById('eventModalDate').textContent = `${month} ${day}`;
+
+  // Fee display
+  const feeNum = parseFloat(fee) || 0;
+  document.getElementById('eventModalFee').textContent = feeNum > 0
+    ? `₱${feeNum.toLocaleString('en-PH')}`
+    : 'Free';
+
+  // Show/hide payment section based on fee
+  const paymentSection = document.getElementById('eventPaymentSection');
+  if (paymentSection) {
+    paymentSection.style.display = feeNum > 0 ? 'block' : 'none';
+  }
+
+  // Reset any previously selected radio
+  document.querySelectorAll('input[name="event_payment_method"]').forEach(r => r.checked = false);
+
+  // Open modal
+  document.getElementById('eventModal').classList.add('open');
+}
+
+function closeEventModal() {
+  document.getElementById('eventModal').classList.remove('open');
+}
+
+async function submitEventRegistration() {
+  const eventId = document.getElementById('eventModalId').value;
+  const feeText = document.getElementById('eventModalFee').textContent;
+  const isFree  = feeText === 'Free';
+
+  let method = '';
+  if (!isFree) {
+    const selected = document.querySelector('input[name="event_payment_method"]:checked');
+    if (!selected) {
+      // Briefly shake the payment section to indicate selection needed
+      const section = document.getElementById('eventPaymentSection');
+      if (section) {
+        section.style.outline = '2px solid #ff6b35';
+        setTimeout(() => section.style.outline = '', 1500);
+      }
+      return;
+    }
+    method = selected.value;
+  }
+
+  closeEventModal();
+  showLoading('Registering…');
+
+  try {
+    const fd = new FormData();
+    fd.append('event_id', eventId);
+    if (method) fd.append('payment_method', method);
+
+    const res    = await fetch('api/user/events/register.php', { method: 'POST', body: fd });
+    const result = await res.json();
+    hideLoading();
+
+    if (result.success) {
+      render('#pop-up', 'done', renderPopUP);
+      window.closePopUp = closePopUp;
+      showPopUP('Successfully registered for the event!');
+      // Refresh both panels
+      loadMyEvents();
+      allEventsLoaded = false;
+      loadAllEvents();
+      allEventsLoaded = true;
+    } else {
+      render('#pop-up', 'warning', renderPopUP);
+      window.closePopUp = closePopUp;
+      showPopUP(result.message || 'Registration failed.');
+    }
+  } catch (err) {
+    hideLoading();
+    showPopUP('Something went wrong. Please try again.');
+  }
 }
 
 // ─── Load My Events (registered by this member) ───────────────────────────────
@@ -265,7 +354,7 @@ async function loadMyEvents() {
   }
 }
 
-// ─── Load All Events (from DB, admin-controlled) ──────────────────────────────
+// ─── Load All Events ──────────────────────────────────────────────────────────
 async function loadAllEvents() {
   const container = document.getElementById('allEventsScroll');
   if (!container) return;
@@ -318,47 +407,11 @@ function switchTab(tab) {
     allPanel.style.display = '';
     myTab.classList.remove('active');
     allTab.classList.add('active');
-    // Lazy-load all events only on first open
     if (!allEventsLoaded) { loadAllEvents(); allEventsLoaded = true; }
-  }
-}
-
-// ─── Register for event ───────────────────────────────────────────────────────
-async function registerEvent(eventId) {
-  const method = prompt('Enter payment method (gcash / maya / gotyme / card):');
-  if (!method) return;
-
-  showLoading('Registering…');
-  try {
-    const fd = new FormData();
-    fd.append('event_id',       eventId);
-    fd.append('payment_method', method);
-
-    const res    = await fetch('api/user/events/register.php', { method: 'POST', body: fd });
-    const result = await res.json();
-    hideLoading();
-
-    if (result.success) {
-      render('#pop-up', 'done', renderPopUP);
-      window.closePopUp = closePopUp;
-      showPopUP('Successfully registered for the event!');
-      // Refresh both panels so buttons update
-      loadMyEvents();
-      allEventsLoaded = false;
-      loadAllEvents();
-      allEventsLoaded = true;
-    } else {
-      render('#pop-up', 'warning', renderPopUP);
-      window.closePopUp = closePopUp;
-      showPopUP(result.message || 'Registration failed.');
-    }
-  } catch (err) {
-    hideLoading();
-    showPopUP('Something went wrong. Please try again.');
   }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadMemberData();
 loadNextBooking();
-loadMyEvents();   // pre-load My Events tab on page load
+loadMyEvents();
