@@ -20,7 +20,7 @@ $dup = $pdo->prepare("SELECT id FROM members WHERE email = ?");
 $dup->execute([$email]);
 if ($dup->fetch()) error('Email already exists.');
 
-$password_hash = password_hash('changeme123', PASSWORD_DEFAULT);
+$password_hash = password_hash('Member@1234', PASSWORD_DEFAULT);
 
 $stmt = $pdo->prepare("
     INSERT INTO members (first_name, last_name, email, phone, plan, billing_cycle, join_date, password_hash, status, created_at)
