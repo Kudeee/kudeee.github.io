@@ -293,13 +293,14 @@ async function loadTrainersData() {
       ? '<span style="color:var(--green);font-weight:700;">Available</span>'
       : '<span style="color:var(--orange);font-weight:700;">Limited</span>';
     const initials = (t.first_name?.[0]||'?') + (t.last_name?.[0]||'');
+    const isInactive = t.status === 'inactive';
     return `
-      <div class="card">
+      <div class="card" style="${isInactive ? 'opacity:0.65;border-style:dashed;' : ''}">
         <div class="trainer-card-header">
-          <div class="trainer-avatar" style="background:var(--primary);">${initials.toUpperCase()}</div>
+          <div class="trainer-avatar" style="background:${isInactive ? '#9e9e9e' : 'var(--primary)'};">${initials.toUpperCase()}</div>
           <div>
             <h3 style="margin:0;font-size:1rem;">${name}</h3>
-            <p style="color:var(--primary);font-weight:600;font-size:0.88rem;">${esc(t.specialty || '—')}</p>
+            <p style="color:${isInactive ? '#9e9e9e' : 'var(--primary)'};font-weight:600;font-size:0.88rem;">${esc(t.specialty || '—')}</p>
           </div>
         </div>
         <div style="font-size:0.88rem;color:#555;margin-bottom:10px;line-height:2;">
@@ -372,7 +373,6 @@ async function loadSubscriptionsData(page = 1) {
   subPage = page;
   const params = new URLSearchParams({ page, per_page: 15 });
 
-  // Fetch subscriptions stats + plan configs in parallel
   const [subRes, planRes] = await Promise.all([
     fetch('api/admin/subscriptions/list.php?' + params),
     fetch('api/admin/plans/list.php'),
@@ -388,7 +388,6 @@ async function loadSubscriptionsData(page = 1) {
   setText('sub-expiring', s.expiring_soon   ?? '—');
   setText('sub-top-plan', s.top_plan        ?? '—');
 
-  // ── Dynamic Plan Cards ────────────────────────────────────────────────────
   const planGrid = document.getElementById('sub-plans-grid');
   if (planGrid) {
     const plans   = planData?.plans || [];
@@ -412,7 +411,6 @@ async function loadSubscriptionsData(page = 1) {
               <h3 style="color:${esc(color)};margin:0;">${esc(p.plan)}</h3>
               ${statusBadge}
             </div>
-
             <p style="font-size:1.5rem;font-weight:900;margin-bottom:2px;">
               ₱${numFormat(p.monthly_price)}
               <span style="font-size:0.85rem;font-weight:400;color:#888;">/mo</span>
@@ -423,17 +421,14 @@ async function loadSubscriptionsData(page = 1) {
             ${savingsAmt > 0
               ? `<p style="color:#2e7d32;font-size:0.82rem;font-weight:600;margin-bottom:10px;">Save ₱${numFormat(savingsAmt)} with yearly billing</p>`
               : '<div style="margin-bottom:10px;"></div>'}
-
             <ul style="margin:0 0 12px 0;padding-left:18px;color:#555;font-size:0.9rem;line-height:1.8;">
               ${benefits.map(b => `<li>${esc(b)}</li>`).join('')}
             </ul>
-
             <div style="font-size:0.82rem;color:#777;padding:8px 10px;background:#f9f9f9;border-radius:8px;margin-bottom:12px;line-height:1.9;">
               <p>️ Classes/week: <strong>${p.max_classes === -1 ? 'Unlimited' : p.max_classes}</strong></p>
               <p> PT sessions/month: <strong>${p.pt_sessions}</strong></p>
               <p>️ Guest passes/month: <strong>${p.guest_passes}</strong></p>
             </div>
-
             <p style="font-weight:700;font-size:0.95rem;">
               Subscribers: <span style="color:${esc(color)};">${subCount}</span>
             </p>
@@ -442,7 +437,6 @@ async function loadSubscriptionsData(page = 1) {
     }
   }
 
-  // ── Subscriptions Table ───────────────────────────────────────────────────
   const tbody = document.querySelector('#subscriptionsTable tbody');
   if (!tbody) return;
 
@@ -636,7 +630,6 @@ window.openEditUser = function(id, role, status) {
 
 // ─── PLANS (Subscription Plan Editor) ────────────────────────────────────────
 async function loadPlansData() {
-  // Pull subscriber counts
   const subRes  = await fetch('api/admin/subscriptions/list.php?per_page=1');
   const subData = await subRes.json();
   const pc      = subData.stats?.plan_counts || {};
@@ -645,7 +638,6 @@ async function loadPlansData() {
   setText('plans-premium-count', pc['PREMIUM PLAN'] ?? '—');
   setText('plans-vip-count',     pc['VIP PLAN']     ?? '—');
 
-  // Load plan configs
   const res  = await fetch('api/admin/plans/list.php');
   const data = await res.json();
   if (!data.success) return;
@@ -670,7 +662,6 @@ async function loadPlansData() {
           <h3 style="color:${esc(p.color)};margin:0;">${esc(p.plan)}</h3>
           ${statusBadge}
         </div>
-
         <p style="font-size:1.6rem;font-weight:900;margin-bottom:2px;">
           ₱${numFormat(p.monthly_price)} <span style="font-size:0.85rem;font-weight:400;color:#888;">/mo</span>
         </p>
@@ -678,17 +669,14 @@ async function loadPlansData() {
           ₱${numFormat(p.yearly_price)}/yr
           <span style="color:#2e7d32;font-weight:600;"> · Save ₱${numFormat(savingsAmt)}</span>
         </p>
-
         <ul style="padding-left:18px;color:#555;font-size:0.88rem;line-height:1.9;margin-bottom:16px;">
           ${benefits.map(b => `<li>${esc(b)}</li>`).join('')}
         </ul>
-
         <div style="font-size:0.82rem;color:#777;margin-bottom:14px;line-height:1.9;padding:10px;background:#f9f9f9;border-radius:8px;">
           <p>️ Classes/wk: <strong>${p.max_classes === -1 ? 'Unlimited' : p.max_classes}</strong></p>
           <p> PT sessions/mo: <strong>${p.pt_sessions}</strong></p>
           <p>️ Guest passes/mo: <strong>${p.guest_passes}</strong></p>
         </div>
-
         <button onclick='openEditPlan(${JSON.stringify(JSON.stringify(p))})'>
            Edit Plan
         </button>
@@ -696,7 +684,6 @@ async function loadPlansData() {
   }).join('');
 }
 
-// Open the plan edit modal
 window.openEditPlan = function(planJsonStr) {
   const p = JSON.parse(planJsonStr);
 
@@ -717,7 +704,6 @@ window.openEditPlan = function(planJsonStr) {
   updatePlanPreview();
   openModal('editPlanModal');
 
-  // Wire live preview
   ['ep_monthly', 'ep_yearly', 'ep_active', 'ep_benefits'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.oninput = updatePlanPreview;
@@ -736,7 +722,6 @@ window.openEditPlan = function(planJsonStr) {
   };
 };
 
-// Live preview
 window.updatePlanPreview = function() {
   const name    = document.getElementById('ep_plan_label')?.value  || '';
   const monthly = document.getElementById('ep_monthly')?.value     || '0';
@@ -787,6 +772,25 @@ async function populateTrainerSelect(selectId, addEmpty = false) {
   } catch (e) { console.warn('Could not load trainers:', e); }
 }
 
+/**
+ * Populate the manage-trainer select with ALL trainers (active + inactive),
+ * showing their current status so the admin knows who can be reactivated.
+ */
+async function populateAllTrainersSelect(selectId) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  try {
+    const res  = await fetch('api/admin/trainers/list.php?per_page=100');
+    const data = await res.json();
+    if (!data.success) return;
+    el.innerHTML = '<option value="">— Select a trainer —</option>' +
+      (data.trainers || []).map(t => {
+        const statusLabel = t.status === 'inactive' ? ' [Inactive]' : '';
+        return `<option value="${t.id}" data-status="${esc(t.status)}">${esc(t.first_name + ' ' + t.last_name)} — ${esc(t.specialty)}${statusLabel}</option>`;
+      }).join('');
+  } catch (e) { console.warn('Could not load trainers:', e); }
+}
+
 // ─── PAGINATION ───────────────────────────────────────────────────────────────
 window.changePage = function(dir) {
   if (currentPage === 'members') {
@@ -830,35 +834,114 @@ function bindModalTriggers() {
     if (btn) btn.onclick = () => openModal(modalId);
   });
 
-  // Delete trainer button — populate select then open modal
-  const deleteBtn = document.getElementById('deleteTrainerBtn');
-  if (deleteBtn) {
-    deleteBtn.onclick = async () => {
-      await populateTrainerSelect('deleteTrainerSelect', false);
-      openModal('deleteTrainerModal');
-      const confirmBtn = document.getElementById('confirmDeleteTrainerBtn');
+  // ── Manage Trainer button ─────────────────────────────────────────────────
+  const manageBtn = document.getElementById('manageTrainerBtn');
+  if (manageBtn) {
+    manageBtn.onclick = async () => {
+      // Load all trainers (active + inactive) into the select
+      await populateAllTrainersSelect('manageTrainerSelect');
+
+      // Reset to default action (deactivate)
+      const defaultRadio = document.querySelector('input[name="trainerAction"][value="deactivate"]');
+      if (defaultRadio) defaultRadio.checked = true;
+      updateManageActionUI('deactivate');
+
+      openModal('manageTrainerModal');
+
+      // Wire radio buttons to update UI
+      document.querySelectorAll('input[name="trainerAction"]').forEach(radio => {
+        radio.onchange = () => updateManageActionUI(radio.value);
+      });
+
+      // Wire confirm button
+      const confirmBtn = document.getElementById('confirmManageTrainerBtn');
       if (confirmBtn) {
-        confirmBtn.onclick = async () => {
-          const sel = document.getElementById('deleteTrainerSelect');
-          const id  = sel?.value;
-          if (!id) { toast('Please select a trainer.', 'error'); return; }
+        // Remove any old listener by replacing the node
+        const freshBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(freshBtn, confirmBtn);
+
+        freshBtn.onclick = async () => {
+          const sel    = document.getElementById('manageTrainerSelect');
+          const id     = sel?.value;
+          const action = document.querySelector('input[name="trainerAction"]:checked')?.value;
+
+          if (!id)     { toast('Please select a trainer.', 'error'); return; }
+          if (!action) { toast('Please choose an action.', 'error'); return; }
+
           const name = sel.options[sel.selectedIndex]?.text || 'this trainer';
-          if (!confirm(`Deactivate ${name}? They will be removed from active staff.`)) return;
-          confirmBtn.disabled = true;
-          confirmBtn.textContent = 'Deactivating…';
-          const res = await apiFetch('api/admin/trainers/delete.php', { id: parseInt(id) });
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = 'Deactivate Trainer';
+
+          // Confirmation messages per action
+          const confirmMessages = {
+            activate:   `Reactivate ${name}? They will appear as active staff again.`,
+            deactivate: `Deactivate ${name}? They will be hidden from active staff but can be reactivated later.`,
+            delete:     `⚠ PERMANENTLY DELETE ${name}?\n\nThis cannot be undone. All class and event associations will be removed.\n\nAre you absolutely sure?`,
+          };
+
+          if (!confirm(confirmMessages[action])) return;
+
+          freshBtn.disabled    = true;
+          freshBtn.textContent = 'Processing…';
+
+          const res = await apiFetch('api/admin/trainers/delete.php', {
+            id:     parseInt(id),
+            action: action,
+          });
+
+          freshBtn.disabled    = false;
+          freshBtn.textContent = 'Apply';
+
           if (res?.success) {
-            toast(`${name} has been deactivated.`);
-            closeModal('deleteTrainerModal');
+            const successMessages = {
+              activate:   `${name.split(' —')[0]} has been set to active.`,
+              deactivate: `${name.split(' —')[0]} has been deactivated.`,
+              delete:     `${name.split(' —')[0]} has been permanently deleted.`,
+            };
+            toast(successMessages[action] || res.message);
+            closeModal('manageTrainerModal');
             loadTrainersData();
           } else {
-            toast(res?.message || 'Failed to deactivate trainer.', 'error');
+            toast(res?.message || 'Action failed. Please try again.', 'error');
           }
         };
       }
     };
+  }
+}
+
+/**
+ * Updates the manage trainer modal UI based on the selected action:
+ * - Highlights the active radio label
+ * - Shows/hides the delete warning box
+ * - Updates the confirm button label and colour
+ */
+function updateManageActionUI(action) {
+  // Reset all label borders
+  ['activate', 'deactivate', 'delete'].forEach(a => {
+    const label = document.getElementById(`action-label-${a}`);
+    if (label) label.style.borderColor = 'var(--border)';
+  });
+
+  // Highlight selected
+  const activeLabel = document.getElementById(`action-label-${action}`);
+  const borderColors = { activate: '#2e7d32', deactivate: '#e65100', delete: '#c62828' };
+  if (activeLabel) activeLabel.style.borderColor = borderColors[action] || 'var(--border)';
+
+  // Warning box
+  const warningBox = document.getElementById('deleteWarningBox');
+  if (warningBox) warningBox.style.display = action === 'delete' ? 'block' : 'none';
+
+  // Confirm button
+  const confirmBtn = document.getElementById('confirmManageTrainerBtn');
+  if (confirmBtn) {
+    const btnStyles = {
+      activate:   { text: '✓ Set Active',           bg: 'linear-gradient(135deg,#2e7d32,#43a047)' },
+      deactivate: { text: '⏸ Deactivate',            bg: 'linear-gradient(135deg,#e65100,#fb8c00)' },
+      delete:     { text: '✕ Permanently Delete',    bg: 'linear-gradient(135deg,#c62828,#e53935)' },
+    };
+    const style = btnStyles[action] || btnStyles.deactivate;
+    confirmBtn.textContent       = style.text;
+    confirmBtn.style.background  = style.bg;
+    confirmBtn.style.boxShadow   = 'none';
   }
 }
 
@@ -872,10 +955,8 @@ function bindFormHandlers() {
   bindForm('addUserForm',      'api/admin/roles/create-user.php', 'User created!',   'addUserModal',    () => loadRolesData());
   bindForm('editUserForm',     'api/admin/roles/update-user.php', 'User updated!',   'editUserModal',   () => loadRolesData());
 
-  // Plans edit form (custom handler — uses JSON payload)
   bindPlanEditForm();
 
-  // Member filter
   const mf = document.getElementById('memberFilterForm');
   if (mf) {
     mf.onsubmit = e => {
@@ -889,7 +970,6 @@ function bindFormHandlers() {
     };
   }
 
-  // Payment filter
   const pf = document.getElementById('paymentFilterForm');
   if (pf) {
     pf.onsubmit = e => {
