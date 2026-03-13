@@ -160,27 +160,6 @@ document.getElementById('CancelBooking').addEventListener('click', () => {
   };
 });
 
-// ─── Pause membership ─────────────────────────────────────────────────────────
-document.getElementById('pauseMem').addEventListener('click', () => {
-  showPopUP('Are you sure you want to pause membership?');
-  window.handleOk = async function () {
-    closePopUp();
-    showLoading('Pausing membership...');
-    try {
-      const fd = new FormData();
-      fd.append('action', 'pause');
-      const res    = await fetch('api/user/membership/pause.php', { method: 'POST', body: fd });
-      const result = await res.json();
-      hideLoading();
-      if (result.success) showPopUP('Membership paused successfully.');
-      else showPopUP(result.message || 'Could not pause membership.');
-    } catch (err) {
-      hideLoading();
-      showPopUP('Something went wrong. Please try again.');
-    }
-  };
-});
-
 // ─── Events helpers ───────────────────────────────────────────────────────────
 
 const MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
