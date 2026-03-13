@@ -314,9 +314,6 @@ async function loadTrainersData() {
         </div>
       </div>`;
   }).join('');
-
-  // Wire up Manage Trainer button here, after page data is fully loaded
-  wireManageTrainerButton();
 }
 
 // ─── MANAGE TRAINER BUTTON WIRING ────────────────────────────────────────────
@@ -324,11 +321,8 @@ function wireManageTrainerButton() {
   const manageBtn = document.getElementById('manageTrainerBtn');
   if (!manageBtn) return;
 
-  // Remove any previous listener by replacing with a clone
-  const freshBtn = manageBtn.cloneNode(true);
-  manageBtn.parentNode.replaceChild(freshBtn, manageBtn);
-
-  freshBtn.addEventListener('click', async function() {
+  // Use onclick to guarantee only one handler ever exists
+  manageBtn.onclick = async function() {
     // Load all trainers (active + inactive) into the select
     await populateAllTrainersSelect('manageTrainerSelect');
 
@@ -337,18 +331,15 @@ function wireManageTrainerButton() {
     if (defaultRadio) defaultRadio.checked = true;
     updateManageActionUI('deactivate');
 
-    // Wire radio buttons
+    // Wire radio buttons via onclick (safe to reassign repeatedly)
     document.querySelectorAll('input[name="trainerAction"]').forEach(radio => {
-      radio.onchange = () => updateManageActionUI(radio.value);
+      radio.onclick = () => updateManageActionUI(radio.value);
     });
 
-    // Wire confirm button
+    // Wire confirm button via onclick
     const confirmBtn = document.getElementById('confirmManageTrainerBtn');
     if (confirmBtn) {
-      const freshConfirm = confirmBtn.cloneNode(true);
-      confirmBtn.parentNode.replaceChild(freshConfirm, confirmBtn);
-
-      freshConfirm.addEventListener('click', async function() {
+      confirmBtn.onclick = async function() {
         const sel    = document.getElementById('manageTrainerSelect');
         const id     = sel?.value;
         const action = document.querySelector('input[name="trainerAction"]:checked')?.value;
@@ -366,15 +357,15 @@ function wireManageTrainerButton() {
 
         if (!confirm(confirmMessages[action])) return;
 
-        freshConfirm.disabled    = true;
-        freshConfirm.textContent = 'Processing…';
+        confirmBtn.disabled    = true;
+        confirmBtn.textContent = 'Processing…';
 
         const res = await apiFetch('api/admin/trainers/delete.php', {
           id:     parseInt(id),
           action: action,
         });
 
-        freshConfirm.disabled = false;
+        confirmBtn.disabled = false;
         updateManageActionUI(action); // restore button text/style
 
         if (res?.success) {
@@ -389,11 +380,11 @@ function wireManageTrainerButton() {
         } else {
           toast(res?.message || 'Action failed. Please try again.', 'error');
         }
-      });
+      };
     }
 
     openModal('manageTrainerModal');
-  });
+  };
 }
 
 /**
@@ -939,8 +930,8 @@ function bindModalTriggers() {
     const btn = document.getElementById(btnId);
     if (btn) btn.onclick = () => openModal(modalId);
   });
-  // Note: manageTrainerBtn is wired in wireManageTrainerButton(),
-  // called at the end of loadTrainersData() to ensure DOM is ready.
+  // Wire Manage Trainer button immediately after HTML is injected into DOM
+  wireManageTrainerButton();
 }
 
 // ─── FORM HANDLERS ────────────────────────────────────────────────────────────
