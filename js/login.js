@@ -31,8 +31,8 @@ export async function handleLogin(event) {
     hideLoading();
 
     if (result.success) {
-      // Trainers (staff role + is_trainer flag) → trainer dashboard
-      if (result.is_trainer) {
+      // Trainers → trainer dashboard (check role OR is_trainer flag)
+      if (result.is_trainer || result.role === 'trainer') {
         window.location.href = "trainer-dashboard.php";
         return;
       }

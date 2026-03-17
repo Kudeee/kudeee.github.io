@@ -1,12 +1,38 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/trainer-config.php';
 
-// Ensure a trainer is logged in
-// TODO: Replace with actual trainer session check when backend is ready
-// For now, redirect to login if no trainer session exists
+// Allow access if trainer_id is set OR if admin is logged in and has a trainer session
 if (!isset($_SESSION['trainer_id'])) {
-    header('Location: login-page.php');
-    exit;
+    // Check if they just logged in as admin but also have trainer role
+    if (isset($_SESSION['admin_id'])) {
+        // Try to find their trainer record by name
+        $pdo = db();
+        $admin_name = $_SESSION['admin_name'] ?? '';
+        $parts = explode(' ', $admin_name, 2);
+        if (count($parts) === 2) {
+            $stmt = $pdo->prepare(
+                "SELECT id, specialty, image_url FROM trainers
+                 WHERE LOWER(TRIM(first_name)) = LOWER(TRIM(?))
+                 AND LOWER(TRIM(last_name)) = LOWER(TRIM(?))
+                 AND status = 'active'
+                 LIMIT 1"
+            );
+            $stmt->execute([trim($parts[0]), trim($parts[1])]);
+            $trainer = $stmt->fetch();
+            if ($trainer) {
+                $_SESSION['trainer_id']        = (int)$trainer['id'];
+                $_SESSION['trainer_name']      = $admin_name;
+                $_SESSION['trainer_specialty'] = $trainer['specialty'];
+                $_SESSION['trainer_image']     = $trainer['image_url'];
+            }
+        }
+    }
+    // If still no trainer_id, redirect to login
+    if (!isset($_SESSION['trainer_id'])) {
+        header('Location: login-page.php');
+        exit;
+    }
 }
 
 $trainer_id        = $_SESSION['trainer_id']       ?? 0;
@@ -100,7 +126,6 @@ $trainer_role      = 'trainer';
   <div id="trainerToast"></div>
 
   <script>
-    // Expose trainer data to JS
     window.TRAINER_ID        = <?= json_encode($trainer_id) ?>;
     window.TRAINER_NAME      = <?= json_encode($trainer_name) ?>;
     window.TRAINER_SPECIALTY = <?= json_encode($trainer_specialty) ?>;

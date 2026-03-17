@@ -22,7 +22,8 @@ if ($admin && password_verify($password, $admin['password_hash'])) {
     $_SESSION['admin_role'] = $admin['role'];
     $_SESSION['admin_name'] = $admin['first_name'] . ' ' . $admin['last_name'];
 
-    // Check if this admin user is also a trainer (case-insensitive, trimmed match)
+    // Check if this admin user is also a trainer
+    // Use TRIM + LOWER for robust matching
     $trainerStmt = $pdo->prepare(
         "SELECT id, specialty, image_url FROM trainers
          WHERE LOWER(TRIM(first_name)) = LOWER(TRIM(?))
@@ -30,12 +31,12 @@ if ($admin && password_verify($password, $admin['password_hash'])) {
          AND status = 'active'
          LIMIT 1"
     );
-    $trainerStmt->execute([$admin['first_name'], $admin['last_name']]);
+    $trainerStmt->execute([trim($admin['first_name']), trim($admin['last_name'])]);
     $trainer = $trainerStmt->fetch();
 
     if ($trainer) {
-        $_SESSION['trainer_id']        = $trainer['id'];
-        $_SESSION['trainer_name']      = $admin['first_name'] . ' ' . $admin['last_name'];
+        $_SESSION['trainer_id']        = (int)$trainer['id'];
+        $_SESSION['trainer_name']      = trim($admin['first_name']) . ' ' . trim($admin['last_name']);
         $_SESSION['trainer_specialty'] = $trainer['specialty'];
         $_SESSION['trainer_image']     = $trainer['image_url'];
 
@@ -43,8 +44,10 @@ if ($admin && password_verify($password, $admin['password_hash'])) {
             'role'       => 'trainer',
             'is_trainer' => true,
         ]);
+        // success() calls exit, so nothing below runs
     }
 
+    // Not a trainer — regular admin/staff
     success('Login successful.', [
         'role'       => $admin['role'],
         'is_trainer' => false,
