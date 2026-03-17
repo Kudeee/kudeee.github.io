@@ -14,6 +14,11 @@ let bookingData = {
 let calendarYear  = 0;
 let calendarMonth = 0;  // 0-based
 
+// Availability cache with TTL
+let availCache     = {};
+let availCacheTime = {};
+const CACHE_TTL_MS = 60_000; // 60 seconds
+
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp           = closePopUp;
 window.nextStep             = nextStep;
@@ -28,8 +33,8 @@ window.nextMonth            = nextMonth;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const MONTH_NAMES  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAY_ABBREVS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_ABBREVS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function toISODate(y, m, d) {
   return `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -37,6 +42,36 @@ function toISODate(y, m, d) {
 
 function formatDisplayDate(y, m, d) {
   return `${MONTH_NAMES[m].slice(0,3)} ${d}, ${y}`;
+}
+
+/**
+ * Converts a 12-hour slot label like "2:00 PM" → "14:00"
+ * Returns null if the string can't be parsed.
+ */
+function to24Hour(timeStr) {
+  const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+  let hours  = parseInt(match[1], 10);
+  const mins = match[2];
+  const ampm = match[3].toUpperCase();
+  if (ampm === 'AM') {
+    if (hours === 12) hours = 0;       // 12:00 AM → 00:xx
+  } else {
+    if (hours !== 12) hours += 12;     // 2:00 PM → 14:xx  (12:00 PM stays 12)
+  }
+  return `${String(hours).padStart(2, '0')}:${mins}`;
+}
+
+/**
+ * Returns true if the slot time on isoDate is in the past.
+ * Uses proper ISO 8601 string so all browsers parse it correctly.
+ */
+function isSlotPast(isoDate, timeStr) {
+  const time24 = to24Hour(timeStr);
+  if (!time24) return false;
+  // "2026-03-17T14:00:00" — valid ISO, parses in all browsers
+  const slotDT = new Date(`${isoDate}T${time24}:00`);
+  return !isNaN(slotDT.getTime()) && slotDT <= new Date();
 }
 
 // ─── Calendar builder ─────────────────────────────────────────────────────────
@@ -58,7 +93,6 @@ function buildCalendar() {
 
   grid.innerHTML = '';
 
-  // Day-of-week headers
   DAY_ABBREVS.forEach(d => {
     const hdr = document.createElement('div');
     hdr.className   = 'calendar-day-header';
@@ -67,17 +101,15 @@ function buildCalendar() {
     grid.appendChild(hdr);
   });
 
-  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const firstDay    = new Date(calendarYear, calendarMonth, 1).getDay();
   const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 
-  // Empty cells before first day
   for (let i = 0; i < firstDay; i++) {
     const blank = document.createElement('div');
     blank.className = 'calendar-day disabled';
     grid.appendChild(blank);
   }
 
-  // Day cells
   for (let d = 1; d <= daysInMonth; d++) {
     const cellDate = new Date(calendarYear, calendarMonth, d);
     cellDate.setHours(0, 0, 0, 0);
@@ -87,9 +119,9 @@ function buildCalendar() {
     const isSelected = iso === bookingData.dateValue;
 
     const el = document.createElement('div');
-    el.className    = 'calendar-day' + (isPast ? ' disabled' : '') + (isSelected ? ' selected' : '');
-    el.textContent  = d;
-    el.dataset.iso  = iso;
+    el.className   = 'calendar-day' + (isPast ? ' disabled' : '') + (isSelected ? ' selected' : '');
+    el.textContent = d;
+    el.dataset.iso = iso;
 
     if (!isPast) {
       el.addEventListener('click', () => {
@@ -150,12 +182,18 @@ function nextStep(step) {
     document.getElementById("step" + i + "Indicator").classList.add("completed");
   }
 
-  // When entering step 3, build the calendar + clear stale slots
   if (step === 3) {
     buildCalendar();
     hookCalendarNav();
-    renderTimeSlots([]);   // clear until a date is picked
-    if (bookingData.dateValue) loadAvailability(bookingData.dateValue);
+    // Always re-render slots fresh when entering step 3
+    if (bookingData.dateValue) {
+      // Bust cache so availability is re-fetched
+      delete availCache[bookingData.dateValue];
+      delete availCacheTime[bookingData.dateValue];
+      loadAvailability(bookingData.dateValue);
+    } else {
+      renderTimeSlots([]);
+    }
   }
 
   document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -175,13 +213,12 @@ function prevStep(step) {
   document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// Attach prev/next month button handlers (they are static in HTML)
 function hookCalendarNav() {
   const nav = document.querySelector('.calendar-nav');
   if (!nav) return;
   const [btnPrev, btnNext] = nav.querySelectorAll('button');
-  if (btnPrev) { btnPrev.onclick = prevMonth; }
-  if (btnNext) { btnNext.onclick = nextMonth; }
+  if (btnPrev) btnPrev.onclick = prevMonth;
+  if (btnNext) btnNext.onclick = nextMonth;
 }
 
 // ─── Time slots renderer ──────────────────────────────────────────────────────
@@ -198,18 +235,24 @@ function renderTimeSlots(bookedSlots) {
   }
 
   container.innerHTML = ALL_SLOTS.map(slot => {
-    const isBooked   = bookedSlots.includes(slot);
-    const isSelected = slot === bookingData.time;
-    const cls = ['time-slot', isBooked ? 'unavailable' : '', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
+    const isBooked      = bookedSlots.includes(slot);
+    const isSelected    = slot === bookingData.time;
+    // isPast is evaluated fresh every render using current time
+    const isPast        = isSlotPast(bookingData.dateValue, slot);
+    const isUnavailable = isBooked || isPast;
 
-    if (isBooked) {
-      return `<div class="${cls}" title="Already booked">${slot}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">Unavailable</div></div>`;
+    const cls      = ['time-slot', isUnavailable ? 'unavailable' : '', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
+    const subLabel = isUnavailable ? 'Unavailable' : 'Available';
+    const title    = isPast ? 'This time has already passed' : isBooked ? 'Already booked' : '';
+
+    if (isUnavailable) {
+      return `<div class="${cls}" title="${title}">${slot}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">${subLabel}</div></div>`;
     }
-    return `<div class="${cls}" onclick="selectTime('${slot}')">${slot}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">Available</div></div>`;
+    return `<div class="${cls}" onclick="selectTime('${slot}')">${slot}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">${subLabel}</div></div>`;
   }).join('');
 }
 
-// ─── Load real availability from API ─────────────────────────────────────────
+// ─── Load availability from API ───────────────────────────────────────────────
 
 async function loadAvailability(date) {
   if (!bookingData.trainer.id && !bookingData.trainer.name) return;
@@ -222,7 +265,6 @@ async function loadAvailability(date) {
   try {
     let trainerId = bookingData.trainer.id;
 
-    // Resolve ID from name if not already set
     if (!trainerId) {
       const res  = await fetch('api/trainers/list.php');
       const data = await res.json();
@@ -233,8 +275,12 @@ async function loadAvailability(date) {
       }
     }
 
-    if (!trainerId) {
-      renderTimeSlots([]);
+    if (!trainerId) { renderTimeSlots([]); return; }
+
+    // Check TTL cache
+    const cacheKey = `${trainerId}::${date}`;
+    if (availCache[cacheKey] && Date.now() - (availCacheTime[cacheKey] || 0) < CACHE_TTL_MS) {
+      renderTimeSlots(availCache[cacheKey]);
       return;
     }
 
@@ -243,10 +289,9 @@ async function loadAvailability(date) {
 
     if (!availData.success) { renderTimeSlots([]); return; }
 
-    // booked = slots that are NOT available
-    const bookedSlots = availData.slots
-      .filter(s => !s.available)
-      .map(s => s.time);
+    const bookedSlots = availData.slots.filter(s => !s.available).map(s => s.time);
+    availCache[cacheKey]     = bookedSlots;
+    availCacheTime[cacheKey] = Date.now();
 
     renderTimeSlots(bookedSlots);
 
@@ -268,9 +313,7 @@ function selectTrainer(name, specialty, baseRate, id) {
 
   document.querySelectorAll(".trainer-option").forEach(o => o.classList.remove("selected"));
   document.querySelectorAll(".trainer-option").forEach(o => {
-    if (o.querySelector("h3")?.textContent.trim() === name) {
-      o.classList.add("selected");
-    }
+    if (o.querySelector("h3")?.textContent.trim() === name) o.classList.add("selected");
   });
 }
 
@@ -291,30 +334,34 @@ function selectSession(duration, minutes, multiplier) {
 function selectDate(displayLabel, isoValue, el) {
   bookingData.date      = displayLabel;
   bookingData.dateValue = isoValue;
-  bookingData.time      = null;  // reset time when date changes
+  bookingData.time      = null;
 
   document.getElementById("summaryDate").textContent = displayLabel;
   document.getElementById("summaryTime").textContent = '-';
 
-  // Update calendar selection highlight
   document.querySelectorAll(".calendar-day").forEach(d => d.classList.remove("selected"));
   if (el) {
     el.classList.add("selected");
   } else {
-    // Find cell by data-iso
     document.querySelectorAll(".calendar-day[data-iso]").forEach(d => {
       if (d.dataset.iso === isoValue) d.classList.add("selected");
     });
   }
 
-  // Load availability for trainer on this date
+  // Bust cache for this date so fresh data is fetched
+  const trainerId = bookingData.trainer.id;
+  if (trainerId) {
+    delete availCache[`${trainerId}::${isoValue}`];
+    delete availCacheTime[`${trainerId}::${isoValue}`];
+  }
+
   loadAvailability(isoValue);
 }
 
 function selectTime(time) {
   const slot = event?.target?.closest(".time-slot");
   if (slot?.classList.contains("unavailable")) {
-    showPopUP("This time slot is already booked. Please select another time.");
+    showPopUP("This time slot is unavailable. Please select another time.");
     return;
   }
 
@@ -350,18 +397,13 @@ async function preselectTrainerFromURL() {
     const data = await res.json();
     const t    = data.trainers?.find(tr => tr.id === trainerId);
     if (!t) return;
-
-    setTimeout(() => {
-      selectTrainer(t.full_name, t.specialty, t.session_rate, t.id);
-    }, 600);
+    setTimeout(() => selectTrainer(t.full_name, t.specialty, t.session_rate, t.id), 600);
   } catch (err) {
     console.warn('Could not pre-select trainer:', err);
   }
 }
 
 preselectTrainerFromURL();
-
-// ─── Kept for backward compat ─────────────────────────────────────────────────
 
 function prepareTrainerSubmit() { /* no-op */ }
 
@@ -370,30 +412,15 @@ function prepareTrainerSubmit() { /* no-op */ }
 document.getElementById("trainerBookingForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  if (!bookingData.trainer.name) {
-    showPopUP("Please go back and select a trainer.");
-    return;
-  }
-  if (!bookingData.session.duration) {
-    showPopUP("Please go back and select a session duration.");
-    return;
-  }
-  if (!bookingData.dateValue || !bookingData.time) {
-    showPopUP("Please go back and select a date and time.");
-    return;
-  }
+  if (!bookingData.trainer.name)              { showPopUP("Please go back and select a trainer."); return; }
+  if (!bookingData.session.duration)          { showPopUP("Please go back and select a session duration."); return; }
+  if (!bookingData.dateValue || !bookingData.time) { showPopUP("Please go back and select a date and time."); return; }
 
   const fitnessLevel = document.getElementById("fitness_level").value;
-  if (!fitnessLevel) {
-    showPopUP("Please select your current fitness level.");
-    return;
-  }
+  if (!fitnessLevel) { showPopUP("Please select your current fitness level."); return; }
 
   const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-  if (!paymentMethod) {
-    showPopUP("Please select a payment method.");
-    return;
-  }
+  if (!paymentMethod) { showPopUP("Please select a payment method."); return; }
 
   const total = Math.round(bookingData.trainer.baseRate * bookingData.session.multiplier);
 
@@ -407,10 +434,9 @@ document.getElementById("trainerBookingForm").addEventListener("submit", async f
   document.getElementById("hidden_booking_time").value      = bookingData.time;
   document.getElementById("hidden_total_price").value       = total;
 
-  // Inject trainer_id hidden field if not present
   let trainerIdInput = document.getElementById("hidden_trainer_id");
   if (!trainerIdInput) {
-    trainerIdInput = document.createElement('input');
+    trainerIdInput      = document.createElement('input');
     trainerIdInput.type = 'hidden';
     trainerIdInput.id   = 'hidden_trainer_id';
     trainerIdInput.name = 'trainer_id';

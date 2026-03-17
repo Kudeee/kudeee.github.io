@@ -10,7 +10,9 @@ let bookingData = {
 };
 
 // Cache: { "YYYY-MM-DD::ClassName": [ scheduleRow, ... ] }
+// Keyed with a timestamp so it auto-invalidates after 60 seconds
 let scheduleCache = {};
+let scheduleCacheTime = {};
 
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp           = closePopUp;
@@ -37,7 +39,51 @@ function formatDisplayDate(d) {
   return `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
 }
 
-// ─── Build the date grid (next 7 days) — lives inside step 2 ─────────────────
+/**
+ * Converts a 12-hour time string like "2:00 PM" → "14:00"
+ * so we can build a valid ISO datetime string for comparison.
+ */
+function to24Hour(timeStr) {
+  const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+  let hours  = parseInt(match[1], 10);
+  const mins = match[2];
+  const ampm = match[3].toUpperCase();
+  if (ampm === 'AM') {
+    if (hours === 12) hours = 0;
+  } else {
+    if (hours !== 12) hours += 12;
+  }
+  return `${String(hours).padStart(2, '0')}:${mins}`;
+}
+
+/**
+ * Returns true if the given class schedule slot has already passed.
+ * Tries scheduled_at first (MySQL "YYYY-MM-DD HH:MM:SS"), then falls back
+ * to combining isoDate + a time string extracted from scheduled_at or booking_time.
+ */
+function isSlotPast(cls, isoDate) {
+  const now = new Date();
+
+  // ── Primary: scheduled_at from DB ───────────────────────────────────────────
+  if (cls.scheduled_at) {
+    // MySQL returns "YYYY-MM-DD HH:MM:SS" — replace space with T for ISO parsing
+    const dt = new Date(cls.scheduled_at.replace(' ', 'T'));
+    if (!isNaN(dt.getTime())) {
+      return dt <= now;
+    }
+  }
+
+  // ── Fallback A: booking_time as "HH:MM:SS" ──────────────────────────────────
+  if (cls.booking_time) {
+    const dt = new Date(`${isoDate}T${cls.booking_time}`);
+    if (!isNaN(dt.getTime())) return dt <= now;
+  }
+
+  return false;
+}
+
+// ─── Build the date grid (next 7 days) ───────────────────────────────────────
 
 function buildDateGrid() {
   const grid = document.querySelector('#step2 .date-grid');
@@ -70,10 +116,20 @@ function buildDateGrid() {
   }
 }
 
-// ─── Fetch class schedules for a given date & class name ─────────────────────
+// ─── Fetch class schedules ────────────────────────────────────────────────────
 
 async function fetchSchedulesForDate(isoDate, className) {
   const cacheKey = `${isoDate}::${className || 'all'}`;
+  const CACHE_TTL_MS = 60_000; // 60 seconds
+
+  // Invalidate stale cache
+  if (
+    scheduleCache[cacheKey] &&
+    Date.now() - (scheduleCacheTime[cacheKey] || 0) > CACHE_TTL_MS
+  ) {
+    delete scheduleCache[cacheKey];
+  }
+
   if (scheduleCache[cacheKey]) return scheduleCache[cacheKey];
 
   try {
@@ -82,15 +138,17 @@ async function fetchSchedulesForDate(isoDate, className) {
 
     const res  = await fetch('api/user/schedule/list.php?' + params);
     const data = await res.json();
-    scheduleCache[cacheKey] = data.success ? (data.classes || []) : [];
+    scheduleCache[cacheKey]     = data.success ? (data.classes || []) : [];
+    scheduleCacheTime[cacheKey] = Date.now();
   } catch (e) {
-    scheduleCache[cacheKey] = [];
+    scheduleCache[cacheKey]     = [];
+    scheduleCacheTime[cacheKey] = Date.now();
   }
 
   return scheduleCache[cacheKey];
 }
 
-// ─── Render time slots for selected date / class (inside step 2) ─────────────
+// ─── Render time slots ────────────────────────────────────────────────────────
 
 async function renderTimeSlots() {
   const container = document.querySelector('#step2 .time-slots');
@@ -105,7 +163,10 @@ async function renderTimeSlots() {
 
   const schedules = await fetchSchedulesForDate(bookingData.dateValue, bookingData.class);
 
-  if (!schedules.length) {
+  // Filter out any slot that has already passed — evaluated fresh each render
+  const futureSchedules = schedules.filter(cls => !isSlotPast(cls, bookingData.dateValue));
+
+  if (!futureSchedules.length) {
     container.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:30px;color:#999;">
         <div style="font-size:2rem;margin-bottom:10px;">😔</div>
@@ -117,12 +178,15 @@ async function renderTimeSlots() {
 
   container.innerHTML = '';
 
-  schedules.forEach(cls => {
-    const scheduledAt = new Date(cls.scheduled_at);
-    const timeStr     = scheduledAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true });
-    const spotsLeft   = cls.max_participants - cls.current_participants;
-    const isFull      = spotsLeft <= 0;
-    const isBooked    = cls.already_booked == 1;
+  futureSchedules.forEach(cls => {
+    const scheduledAt = new Date((cls.scheduled_at || '').replace(' ', 'T'));
+    const timeStr     = !isNaN(scheduledAt.getTime())
+      ? scheduledAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true })
+      : cls.booking_time || '';
+
+    const spotsLeft = cls.max_participants - cls.current_participants;
+    const isFull    = spotsLeft <= 0;
+    const isBooked  = cls.already_booked == 1;
 
     const el = document.createElement('div');
     el.className = 'time-slot' + (isFull || isBooked ? ' full' : '');
@@ -147,7 +211,6 @@ async function renderTimeSlots() {
 }
 
 // ─── Step navigation ──────────────────────────────────────────────────────────
-// Steps: 1 = Choose Class | 2 = Date & Time (combined) | 3 = Confirm
 
 function nextStep(step) {
   const currentStep = document.querySelector(".step-content.active").id;
@@ -177,7 +240,6 @@ function nextStep(step) {
     document.getElementById("step" + i + "Indicator").classList.add("completed");
   }
 
-  // When entering step 2, ensure date grid is built & selections restored
   if (step === 2) {
     buildDateGrid();
     if (bookingData.dateValue) {
@@ -217,7 +279,9 @@ function selectClass(className) {
   const target = (event && event.target) ? event.target.closest(".class-option") : null;
   if (target) target.classList.add("selected");
 
-  scheduleCache = {}; // invalidate cache when class changes
+  // Bust entire cache when class changes
+  scheduleCache     = {};
+  scheduleCacheTime = {};
 }
 
 function selectDate(displayLabel, isoValue, el) {
@@ -232,7 +296,11 @@ function selectDate(displayLabel, isoValue, el) {
   document.querySelectorAll(".date-option").forEach(o => o.classList.remove("selected"));
   if (el) el.classList.add("selected");
 
-  // Load time slots immediately below the date strip
+  // Bust cache for this date so fresh data is fetched
+  const cacheKey = `${isoValue}::${bookingData.class || 'all'}`;
+  delete scheduleCache[cacheKey];
+  delete scheduleCacheTime[cacheKey];
+
   renderTimeSlots();
 }
 
