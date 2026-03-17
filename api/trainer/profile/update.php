@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../../config.php';
-require_once __DIR__ . '/../../../../trainer-config.php';
+require_once __DIR__ . '/../../../config.php';
+require_once __DIR__ . '/../../../trainer-config.php';
 require_method('POST');
 $trainer_session = require_trainer();
 $tid             = $trainer_session['id'];

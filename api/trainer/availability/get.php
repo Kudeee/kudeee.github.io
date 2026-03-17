@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../../config.php';
-require_once __DIR__ . '/../../../../trainer-config.php';
+require_once __DIR__ . '/../../../config.php';
+require_once __DIR__ . '/../../../trainer-config.php';
 require_method('GET');
 $trainer = require_trainer();
 $tid     = $trainer['id'];

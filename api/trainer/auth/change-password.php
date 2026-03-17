@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../../config.php';
-require_once __DIR__ . '/../../../../trainer-config.php';
+require_once __DIR__ . '/../../../config.php';
+require_once __DIR__ . '/../../../trainer-config.php';
 require_method('POST');
 require_trainer();
 

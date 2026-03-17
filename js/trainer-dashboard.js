@@ -69,7 +69,7 @@ async function renderDashboard(container) {
   container.innerHTML = `
     <div class="page-header">
       <h1>Dashboard</h1>
-      <div class="header-right"><div class="date-badge">📅 ${today}</div></div>
+      <div class="header-right"><div class="date-badge"> ${today}</div></div>
     </div>
 
     <div class="grid">
@@ -106,10 +106,10 @@ async function renderDashboard(container) {
       <div class="card">
         <h3 style="margin-bottom:16px;">Quick Actions</h3>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <button onclick="loadPage('availability')">🕐 Set My Availability</button>
-          <button onclick="loadPage('bookings')">📋 View All Bookings</button>
-          <button class="btn-secondary" onclick="loadPage('earnings')">💰 View Earnings</button>
-          <button class="btn-secondary" onclick="loadPage('profile')">👤 Edit Profile</button>
+          <button onclick="loadPage('availability')">Set My Availability</button>
+          <button onclick="loadPage('bookings')">View All Bookings</button>
+          <button class="btn-secondary" onclick="loadPage('earnings')">View Earnings</button>
+          <button class="btn-secondary" onclick="loadPage('profile')">Edit Profile</button>
         </div>
         <div style="margin-top:24px;padding-top:18px;border-top:2px solid var(--border);">
           <h3 style="margin-bottom:12px;">Performance</h3>
@@ -122,7 +122,7 @@ async function renderDashboard(container) {
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-weight:600;font-size:0.88rem;">
             <span>Avg Rating</span>
-            <span style="color:var(--primary)">⭐ ${Number(s.avg_rating).toFixed(1)} / 5.0</span>
+            <span style="color:var(--primary)">${Number(s.avg_rating).toFixed(1)} / 5.0</span>
           </div>
           <div style="background:var(--border);height:8px;border-radius:4px;overflow:hidden;">
             <div style="width:${(s.avg_rating/5)*100}%;height:100%;background:linear-gradient(135deg,#f9a825,#ffca28);border-radius:4px;"></div>
@@ -284,7 +284,7 @@ async function renderAvailability(container) {
     </div>
 
     <div class="option-bar">
-      <button onclick="saveAvailability()" id="saveAvailBtn">💾 Save Availability</button>
+      <button onclick="saveAvailability()" id="saveAvailBtn">Save Availability</button>
       <button class="btn-secondary" onclick="reloadAvailability()">↺ Reload</button>
     </div>
 
@@ -411,7 +411,7 @@ window.saveAvailability = async function() {
     body:   JSON.stringify({ slots }),
   });
 
-  if (btn) { btn.disabled = false; btn.textContent = '💾 Save Availability'; }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save Availability'; }
 
   if (!res?.success) { toast(res?.message || 'Save failed.', 'error'); return; }
   toast(`Availability saved — ${res.saved} slots updated.`);
@@ -609,7 +609,7 @@ async function renderProfile(container) {
         <div class="profile-header-name">${esc(p.first_name)} ${esc(p.last_name)}</div>
         <div class="profile-header-spec">${esc(p.specialty)}</div>
         <div class="profile-header-stats">
-          <div><div class="ph-stat-value">⭐ ${Number(p.rating).toFixed(1)}</div><div class="ph-stat-label">Rating</div></div>
+          <div><div class="ph-stat-value">${Number(p.rating).toFixed(1)}</div><div class="ph-stat-label">Rating</div></div>
           <div><div class="ph-stat-value">${p.exp_years}+</div><div class="ph-stat-label">Years</div></div>
           <div><div class="ph-stat-value">${p.total_clients ?? p.client_count}</div><div class="ph-stat-label">Clients</div></div>
           <div><div class="ph-stat-value">₱${numFormat(p.session_rate)}</div><div class="ph-stat-label">/session</div></div>
@@ -654,7 +654,7 @@ async function renderProfile(container) {
           </div>
         </div>
         <div style="display:flex;gap:12px;margin-top:20px;">
-          <button type="submit" id="saveProfileBtn">💾 Save Changes</button>
+          <button type="submit" id="saveProfileBtn">Save Changes</button>
           <button type="button" class="btn-secondary" onclick="this.closest('form').reset()">↺ Reset</button>
         </div>
       </form>
@@ -677,7 +677,7 @@ async function renderProfile(container) {
             <input type="password" name="confirm_password" placeholder="Re-enter new password" autocomplete="new-password" />
           </div>
         </div>
-        <div style="margin-top:16px;"><button type="submit">🔐 Update Password</button></div>
+        <div style="margin-top:16px;"><button type="submit">Update Password</button></div>
       </form>
     </div>
   `;
@@ -695,7 +695,7 @@ async function renderProfile(container) {
       body:   JSON.stringify(body),
     });
 
-    btn.disabled = false; btn.textContent = '💾 Save Changes';
+    btn.disabled = false; btn.textContent = 'Save Changes';
     if (!res?.success) { toast(res?.message || 'Save failed.', 'error'); return; }
     toast('Profile updated successfully!');
     // Refresh sidebar specialty
@@ -774,9 +774,9 @@ function renderBookingRequestCards(bookings) {
         <div class="booking-request-details">
           <div class="booking-member-name">${esc(b.member_name)}</div>
           <div class="booking-request-meta">
-            📅 ${fmtDate(b.booking_date)} · ⏰ ${esc(b.booking_time)} · ⏱️ ${esc(b.session_duration)}
-            ${b.member_plan ? `<br>📋 ${esc(b.member_plan)}` : ''}
-            ${b.payment_method ? ` · 💳 ${ucFirst(b.payment_method)}` : ''}
+            ${fmtDate(b.booking_date)} · ${esc(b.booking_time)} · ${esc(b.session_duration)}
+            ${b.member_plan ? `<br>${esc(b.member_plan)}` : ''}
+            ${b.payment_method ? ` · ${ucFirst(b.payment_method)}` : ''}
           </div>
           <div class="booking-request-tags">${tags.join('')} ${badge(b.status)}</div>
         </div>

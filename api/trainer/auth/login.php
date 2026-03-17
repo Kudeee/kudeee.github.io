@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../../config.php';
-require_once __DIR__ . '/../../../../trainer-config.php';
+require_once __DIR__ . '/../../../config.php';
+require_once __DIR__ . '/../../../trainer-config.php';
 require_method('POST');
 
 $body     = json_decode(file_get_contents('php://input'), true) ?? [];
