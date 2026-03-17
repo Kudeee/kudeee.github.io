@@ -433,7 +433,7 @@ async function confirmTrainerCancel() {
         if (scroll && !scroll.querySelector('.trainer-booking-item')) {
           scroll.innerHTML = `
             <div class="trainers-empty">
-              <div class="trainers-empty-icon">🏋️</div>
+              <div class="trainers-empty-icon"></div>
               <p>No upcoming trainer sessions.</p>
               <p style="margin-top:6px;">
                 <a href="book-trainer-page.php" style="color:#ff6b35;font-weight:600;text-decoration:none;">
