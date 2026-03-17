@@ -4,6 +4,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// ─── Timezone — set to Philippine Standard Time (UTC+8) ──────────────────────
+date_default_timezone_set('Asia/Manila');
+
 // ─── Database Configuration ───────────────────────────────────────────────────
 if (!defined('DB_HOST'))    define('DB_HOST',    'localhost');
 if (!defined('DB_NAME'))    define('DB_NAME',    'society_fitness');
