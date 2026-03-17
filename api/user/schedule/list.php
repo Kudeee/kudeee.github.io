@@ -10,8 +10,8 @@ $date_from  = sanitize_string($_GET['date_from']  ?? date('Y-m-d'));
 $date_to    = sanitize_string($_GET['date_to']    ?? date('Y-m-d', strtotime('+7 days')));
 $trainer_id = sanitize_int($_GET['trainer_id']    ?? 0);
 
-$where  = ["cs.status = 'active'", "cs.scheduled_at >= ?", "cs.scheduled_at <= ?"];
-$params = [$date_from . ' 00:00:00', $date_to . ' 23:59:59'];
+$where  = ["cs.status = 'active'", "cs.scheduled_at > NOW()", "cs.scheduled_at <= ?"];
+$params = [$date_to . ' 23:59:59'];
 
 if ($class_name) {
     $where[]  = "cs.class_name LIKE ?";
@@ -20,6 +20,12 @@ if ($class_name) {
 if ($trainer_id) {
     $where[]  = "cs.trainer_id = ?";
     $params[] = $trainer_id;
+}
+
+$todayISO = date('Y-m-d');
+if ($date_from > $todayISO) {
+    $where[]  = "cs.scheduled_at >= ?";
+    $params[] = $date_from . ' 00:00:00';
 }
 
 $whereSQL = implode(' AND ', $where);

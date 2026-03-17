@@ -3,16 +3,11 @@ import { render } from './renderer.js';
 
 let bookingData = {
   class:      null,
-  date:       null,       // display label e.g. "Mon, Jan 20"
-  dateValue:  null,       // ISO value e.g. "2026-01-20"
+  date:       null,
+  dateValue:  null,
   time:       null,
   scheduleId: null,
 };
-
-// Cache: { "YYYY-MM-DD::ClassName": [ scheduleRow, ... ] }
-// Keyed with a timestamp so it auto-invalidates after 60 seconds
-let scheduleCache = {};
-let scheduleCacheTime = {};
 
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp           = closePopUp;
@@ -23,129 +18,55 @@ window.selectDate           = selectDate;
 window.selectTime           = selectTime;
 window.prepareBookingSubmit = prepareBookingSubmit;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const DAY_NAMES   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function toISODate(d) {
-  const y  = d.getFullYear();
-  const mo = String(d.getMonth() + 1).padStart(2, '0');
-  const da = String(d.getDate()).padStart(2, '0');
-  return `${y}-${mo}-${da}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function formatDisplayDate(d) {
   return `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
 }
 
-/**
- * Converts a 12-hour time string like "2:00 PM" → "14:00"
- * so we can build a valid ISO datetime string for comparison.
- */
-function to24Hour(timeStr) {
-  const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return null;
-  let hours  = parseInt(match[1], 10);
-  const mins = match[2];
-  const ampm = match[3].toUpperCase();
-  if (ampm === 'AM') {
-    if (hours === 12) hours = 0;
-  } else {
-    if (hours !== 12) hours += 12;
-  }
-  return `${String(hours).padStart(2, '0')}:${mins}`;
-}
-
-/**
- * Returns true if the given class schedule slot has already passed.
- * Tries scheduled_at first (MySQL "YYYY-MM-DD HH:MM:SS"), then falls back
- * to combining isoDate + a time string extracted from scheduled_at or booking_time.
- */
-function isSlotPast(cls, isoDate) {
-  const now = new Date();
-
-  // ── Primary: scheduled_at from DB ───────────────────────────────────────────
-  if (cls.scheduled_at) {
-    // MySQL returns "YYYY-MM-DD HH:MM:SS" — replace space with T for ISO parsing
-    const dt = new Date(cls.scheduled_at.replace(' ', 'T'));
-    if (!isNaN(dt.getTime())) {
-      return dt <= now;
-    }
-  }
-
-  // ── Fallback A: booking_time as "HH:MM:SS" ──────────────────────────────────
-  if (cls.booking_time) {
-    const dt = new Date(`${isoDate}T${cls.booking_time}`);
-    if (!isNaN(dt.getTime())) return dt <= now;
-  }
-
-  return false;
-}
-
-// ─── Build the date grid (next 7 days) ───────────────────────────────────────
+// ─── Build date grid (next 7 days) ───────────────────────────────────────────
 
 function buildDateGrid() {
   const grid = document.querySelector('#step2 .date-grid');
   if (!grid) return;
-
   grid.innerHTML = '';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < 7; i++) {
-    const d    = new Date(today);
+    const d   = new Date(today);
     d.setDate(today.getDate() + i);
-
-    const iso     = toISODate(d);
-    const dayName = DAY_NAMES[d.getDay()];
-    const dayNum  = d.getDate();
-    const label   = i === 0 ? 'Today' : formatDisplayDate(d);
+    const iso   = toISODate(d);
+    const label = i === 0 ? 'Today' : formatDisplayDate(d);
 
     const el = document.createElement('div');
     el.className     = 'date-option';
     el.dataset.iso   = iso;
     el.dataset.label = label;
-    el.innerHTML     = `
-      <div class="date-day">${dayName}</div>
-      <div class="date-number">${dayNum}</div>
-    `;
+    el.innerHTML     = `<div class="date-day">${DAY_NAMES[d.getDay()]}</div><div class="date-number">${d.getDate()}</div>`;
     el.addEventListener('click', () => selectDate(label, iso, el));
     grid.appendChild(el);
   }
 }
 
-// ─── Fetch class schedules ────────────────────────────────────────────────────
+// ─── Fetch schedules — always fresh, no cache ────────────────────────────────
 
 async function fetchSchedulesForDate(isoDate, className) {
-  const cacheKey = `${isoDate}::${className || 'all'}`;
-  const CACHE_TTL_MS = 60_000; // 60 seconds
-
-  // Invalidate stale cache
-  if (
-    scheduleCache[cacheKey] &&
-    Date.now() - (scheduleCacheTime[cacheKey] || 0) > CACHE_TTL_MS
-  ) {
-    delete scheduleCache[cacheKey];
-  }
-
-  if (scheduleCache[cacheKey]) return scheduleCache[cacheKey];
-
   try {
     const params = new URLSearchParams({ date_from: isoDate, date_to: isoDate, per_page: 50 });
     if (className) params.set('class_name', className);
-
     const res  = await fetch('api/user/schedule/list.php?' + params);
     const data = await res.json();
-    scheduleCache[cacheKey]     = data.success ? (data.classes || []) : [];
-    scheduleCacheTime[cacheKey] = Date.now();
+    return data.success ? (data.classes || []) : [];
   } catch (e) {
-    scheduleCache[cacheKey]     = [];
-    scheduleCacheTime[cacheKey] = Date.now();
+    return [];
   }
-
-  return scheduleCache[cacheKey];
 }
 
 // ─── Render time slots ────────────────────────────────────────────────────────
@@ -163,10 +84,7 @@ async function renderTimeSlots() {
 
   const schedules = await fetchSchedulesForDate(bookingData.dateValue, bookingData.class);
 
-  // Filter out any slot that has already passed — evaluated fresh each render
-  const futureSchedules = schedules.filter(cls => !isSlotPast(cls, bookingData.dateValue));
-
-  if (!futureSchedules.length) {
+  if (!schedules.length) {
     container.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:30px;color:#999;">
         <div style="font-size:2rem;margin-bottom:10px;">😔</div>
@@ -178,7 +96,7 @@ async function renderTimeSlots() {
 
   container.innerHTML = '';
 
-  futureSchedules.forEach(cls => {
+  schedules.forEach(cls => {
     const scheduledAt = new Date((cls.scheduled_at || '').replace(' ', 'T'));
     const timeStr     = !isNaN(scheduledAt.getTime())
       ? scheduledAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -190,18 +108,14 @@ async function renderTimeSlots() {
 
     const el = document.createElement('div');
     el.className = 'time-slot' + (isFull || isBooked ? ' full' : '');
-
     el.innerHTML = `
       <div class="time-text">${timeStr}</div>
       <div class="time-spots">${isBooked ? '✓ Booked' : isFull ? 'Full' : spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' left'}</div>
-      ${cls.trainer_name ? `<div style="font-size:0.75rem;color:${isFull || isBooked ? '#bbb' : '#888'};margin-top:4px;">${cls.trainer_name}</div>` : ''}
+      ${cls.trainer_name ? `<div style="font-size:0.75rem;color:${isFull||isBooked?'#bbb':'#888'};margin-top:4px;">${cls.trainer_name}</div>` : ''}
     `;
 
     if (!isFull && !isBooked) {
-      el.addEventListener('click', () => {
-        bookingData.scheduleId = cls.id;
-        selectTime(timeStr, el);
-      });
+      el.addEventListener('click', () => { bookingData.scheduleId = cls.id; selectTime(timeStr, el); });
     } else if (isBooked) {
       el.title = 'You have already booked this class.';
     }
@@ -215,30 +129,17 @@ async function renderTimeSlots() {
 function nextStep(step) {
   const currentStep = document.querySelector(".step-content.active").id;
 
-  if (currentStep === "step1" && !bookingData.class) {
-    showPopUP("Please select a class before continuing.");
-    return;
-  }
+  if (currentStep === "step1" && !bookingData.class) { showPopUP("Please select a class before continuing."); return; }
   if (currentStep === "step2") {
-    if (!bookingData.dateValue) {
-      showPopUP("Please select a date before continuing.");
-      return;
-    }
-    if (!bookingData.time) {
-      showPopUP("Please select a time slot before continuing.");
-      return;
-    }
+    if (!bookingData.dateValue) { showPopUP("Please select a date before continuing."); return; }
+    if (!bookingData.time)      { showPopUP("Please select a time slot before continuing."); return; }
   }
 
   document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
-
   document.getElementById("step" + step).classList.add("active");
   document.getElementById("step" + step + "Indicator").classList.add("active");
-
-  for (let i = 1; i < step; i++) {
-    document.getElementById("step" + i + "Indicator").classList.add("completed");
-  }
+  for (let i = 1; i < step; i++) document.getElementById("step" + i + "Indicator").classList.add("completed");
 
   if (step === 2) {
     buildDateGrid();
@@ -256,14 +157,9 @@ function nextStep(step) {
 function prevStep(step) {
   document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active", "completed"));
-
   document.getElementById("step" + step).classList.add("active");
   document.getElementById("step" + step + "Indicator").classList.add("active");
-
-  for (let i = 1; i < step; i++) {
-    document.getElementById("step" + i + "Indicator").classList.add("completed");
-  }
-
+  for (let i = 1; i < step; i++) document.getElementById("step" + i + "Indicator").classList.add("completed");
   document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -274,14 +170,9 @@ function selectClass(className) {
   bookingData.time       = null;
   bookingData.scheduleId = null;
   document.getElementById("summaryClass").textContent = className;
-
   document.querySelectorAll(".class-option").forEach(o => o.classList.remove("selected"));
   const target = (event && event.target) ? event.target.closest(".class-option") : null;
   if (target) target.classList.add("selected");
-
-  // Bust entire cache when class changes
-  scheduleCache     = {};
-  scheduleCacheTime = {};
 }
 
 function selectDate(displayLabel, isoValue, el) {
@@ -289,25 +180,16 @@ function selectDate(displayLabel, isoValue, el) {
   bookingData.dateValue  = isoValue;
   bookingData.time       = null;
   bookingData.scheduleId = null;
-
   document.getElementById("summaryDate").textContent = displayLabel;
   document.getElementById("summaryTime").textContent = '-';
-
   document.querySelectorAll(".date-option").forEach(o => o.classList.remove("selected"));
   if (el) el.classList.add("selected");
-
-  // Bust cache for this date so fresh data is fetched
-  const cacheKey = `${isoValue}::${bookingData.class || 'all'}`;
-  delete scheduleCache[cacheKey];
-  delete scheduleCacheTime[cacheKey];
-
   renderTimeSlots();
 }
 
 function selectTime(time, el) {
   bookingData.time = time;
   document.getElementById("summaryTime").textContent = time;
-
   document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
   if (el) {
     el.classList.add("selected");
@@ -318,15 +200,15 @@ function selectTime(time, el) {
   }
 }
 
-// ─── AJAX form submission ─────────────────────────────────────────────────────
+// ─── Form submission ──────────────────────────────────────────────────────────
 
-function prepareBookingSubmit() { /* kept for compat */ }
+function prepareBookingSubmit() {}
 
 document.getElementById("bookingForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  if (!bookingData.class)     { showPopUP("Please go back and select a class.");     return; }
-  if (!bookingData.dateValue) { showPopUP("Please go back and select a date.");      return; }
+  if (!bookingData.class)     { showPopUP("Please go back and select a class."); return; }
+  if (!bookingData.dateValue) { showPopUP("Please go back and select a date."); return; }
   if (!bookingData.time)      { showPopUP("Please go back and select a time slot."); return; }
 
   const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
@@ -338,7 +220,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 
   let scheduleIdInput = document.getElementById("hidden_class_schedule_id");
   if (!scheduleIdInput) {
-    scheduleIdInput      = document.createElement('input');
+    scheduleIdInput = document.createElement('input');
     scheduleIdInput.type = 'hidden';
     scheduleIdInput.id   = 'hidden_class_schedule_id';
     scheduleIdInput.name = 'class_schedule_id';
@@ -347,14 +229,10 @@ document.getElementById("bookingForm").addEventListener("submit", async function
   scheduleIdInput.value = bookingData.scheduleId || '';
 
   showLoading("Confirming your booking...");
-
   try {
-    const formData = new FormData(this);
-    const res      = await fetch("api/bookings/book-class.php", { method: "POST", body: formData });
-    const result   = await res.json();
-
+    const res    = await fetch("api/bookings/book-class.php", { method: "POST", body: new FormData(this) });
+    const result = await res.json();
     hideLoading();
-
     if (result.success) {
       document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
       document.getElementById("successMessage").classList.add("active");
@@ -370,7 +248,5 @@ document.getElementById("bookingForm").addEventListener("submit", async function
     showPopUP("Something went wrong. Please try again.");
   }
 });
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
 
 buildDateGrid();

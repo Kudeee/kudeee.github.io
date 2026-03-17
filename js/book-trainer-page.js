@@ -5,19 +5,13 @@ let bookingData = {
   trainer:   { id: null, name: null, specialty: null, baseRate: 0 },
   session:   { duration: null, durationMinutes: null, multiplier: 1 },
   focusArea: null,
-  date:      null,    // display label
-  dateValue: null,    // ISO YYYY-MM-DD
+  date:      null,
+  dateValue: null,
   time:      null,
 };
 
-// Calendar state
 let calendarYear  = 0;
-let calendarMonth = 0;  // 0-based
-
-// Availability cache with TTL
-let availCache     = {};
-let availCacheTime = {};
-const CACHE_TTL_MS = 60_000; // 60 seconds
+let calendarMonth = 0;
 
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp           = closePopUp;
@@ -31,71 +25,34 @@ window.prepareTrainerSubmit = prepareTrainerSubmit;
 window.prevMonth            = prevMonth;
 window.nextMonth            = nextMonth;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_ABBREVS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function toISODate(y, m, d) {
-  return `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
-
 function formatDisplayDate(y, m, d) {
   return `${MONTH_NAMES[m].slice(0,3)} ${d}, ${y}`;
 }
 
-/**
- * Converts a 12-hour slot label like "2:00 PM" → "14:00"
- * Returns null if the string can't be parsed.
- */
-function to24Hour(timeStr) {
-  const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return null;
-  let hours  = parseInt(match[1], 10);
-  const mins = match[2];
-  const ampm = match[3].toUpperCase();
-  if (ampm === 'AM') {
-    if (hours === 12) hours = 0;       // 12:00 AM → 00:xx
-  } else {
-    if (hours !== 12) hours += 12;     // 2:00 PM → 14:xx  (12:00 PM stays 12)
-  }
-  return `${String(hours).padStart(2, '0')}:${mins}`;
-}
-
-/**
- * Returns true if the slot time on isoDate is in the past.
- * Uses proper ISO 8601 string so all browsers parse it correctly.
- */
-function isSlotPast(isoDate, timeStr) {
-  const time24 = to24Hour(timeStr);
-  if (!time24) return false;
-  // "2026-03-17T14:00:00" — valid ISO, parses in all browsers
-  const slotDT = new Date(`${isoDate}T${time24}:00`);
-  return !isNaN(slotDT.getTime()) && slotDT <= new Date();
-}
-
-// ─── Calendar builder ─────────────────────────────────────────────────────────
+// ─── Calendar ─────────────────────────────────────────────────────────────────
 
 function buildCalendar() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (!calendarYear) {
-    calendarYear  = today.getFullYear();
-    calendarMonth = today.getMonth();
-  }
+  if (!calendarYear) { calendarYear = today.getFullYear(); calendarMonth = today.getMonth(); }
 
   const monthLabel = document.querySelector('.calendar-month');
   if (monthLabel) monthLabel.textContent = `${MONTH_NAMES[calendarMonth]} ${calendarYear}`;
 
   const grid = document.querySelector('.calendar-grid');
   if (!grid) return;
-
   grid.innerHTML = '';
 
   DAY_ABBREVS.forEach(d => {
     const hdr = document.createElement('div');
-    hdr.className   = 'calendar-day-header';
+    hdr.className = 'calendar-day-header';
     hdr.textContent = d;
     hdr.style.cssText = 'font-size:0.75rem;font-weight:700;color:#aaa;text-align:center;padding:4px 0;';
     grid.appendChild(hdr);
@@ -112,8 +69,7 @@ function buildCalendar() {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const cellDate = new Date(calendarYear, calendarMonth, d);
-    cellDate.setHours(0, 0, 0, 0);
-
+    cellDate.setHours(0,0,0,0);
     const isPast     = cellDate < today;
     const iso        = toISODate(calendarYear, calendarMonth, d);
     const isSelected = iso === bookingData.dateValue;
@@ -124,12 +80,8 @@ function buildCalendar() {
     el.dataset.iso = iso;
 
     if (!isPast) {
-      el.addEventListener('click', () => {
-        const displayLabel = formatDisplayDate(calendarYear, calendarMonth, d);
-        selectDate(displayLabel, iso, el);
-      });
+      el.addEventListener('click', () => selectDate(formatDisplayDate(calendarYear, calendarMonth, d), iso, el));
     }
-
     grid.appendChild(el);
   }
 }
@@ -139,7 +91,6 @@ function prevMonth() {
   if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
   buildCalendar();
 }
-
 function nextMonth() {
   calendarMonth++;
   if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
@@ -151,49 +102,28 @@ function nextMonth() {
 function nextStep(step) {
   const currentStep = document.querySelector(".step-content.active").id;
 
-  if (currentStep === "step1" && !bookingData.trainer.name) {
-    showPopUP("Please select a trainer before continuing");
-    return;
-  }
+  if (currentStep === "step1" && !bookingData.trainer.name) { showPopUP("Please select a trainer before continuing"); return; }
   if (currentStep === "step2") {
-    if (!bookingData.session.duration) {
-      showPopUP("Please select a session duration before continuing");
-      return;
-    }
+    if (!bookingData.session.duration) { showPopUP("Please select a session duration before continuing"); return; }
     const focusArea = document.getElementById("focusArea").value;
-    if (!focusArea) {
-      showPopUP("Please select a focus area before continuing");
-      return;
-    }
+    if (!focusArea) { showPopUP("Please select a focus area before continuing"); return; }
     bookingData.focusArea = focusArea;
   }
   if (currentStep === "step3" && (!bookingData.dateValue || !bookingData.time)) {
-    showPopUP("Please select both a date and time before continuing");
-    return;
+    showPopUP("Please select both a date and time before continuing"); return;
   }
 
   document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
-
   document.getElementById("step" + step).classList.add("active");
   document.getElementById("step" + step + "Indicator").classList.add("active");
-
-  for (let i = 1; i < step; i++) {
-    document.getElementById("step" + i + "Indicator").classList.add("completed");
-  }
+  for (let i = 1; i < step; i++) document.getElementById("step" + i + "Indicator").classList.add("completed");
 
   if (step === 3) {
     buildCalendar();
     hookCalendarNav();
-    // Always re-render slots fresh when entering step 3
-    if (bookingData.dateValue) {
-      // Bust cache so availability is re-fetched
-      delete availCache[bookingData.dateValue];
-      delete availCacheTime[bookingData.dateValue];
-      loadAvailability(bookingData.dateValue);
-    } else {
-      renderTimeSlots([]);
-    }
+    if (bookingData.dateValue) loadAvailability(bookingData.dateValue);
+    else renderTimeSlots([]);
   }
 
   document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -202,14 +132,9 @@ function nextStep(step) {
 function prevStep(step) {
   document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active", "completed"));
-
   document.getElementById("step" + step).classList.add("active");
   document.getElementById("step" + step + "Indicator").classList.add("active");
-
-  for (let i = 1; i < step; i++) {
-    document.getElementById("step" + i + "Indicator").classList.add("completed");
-  }
-
+  for (let i = 1; i < step; i++) document.getElementById("step" + i + "Indicator").classList.add("completed");
   document.querySelector(".booking-steps").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -221,11 +146,9 @@ function hookCalendarNav() {
   if (btnNext) btnNext.onclick = nextMonth;
 }
 
-// ─── Time slots renderer ──────────────────────────────────────────────────────
+// ─── Time slots — API now marks past slots as unavailable ─────────────────────
 
-const ALL_SLOTS = ['6:00 AM','8:00 AM','10:00 AM','12:00 PM','2:00 PM','4:00 PM','6:00 PM','8:00 PM'];
-
-function renderTimeSlots(bookedSlots) {
+function renderTimeSlots(slots) {
   const container = document.querySelector('#step3 .time-slots');
   if (!container) return;
 
@@ -234,25 +157,26 @@ function renderTimeSlots(bookedSlots) {
     return;
   }
 
-  container.innerHTML = ALL_SLOTS.map(slot => {
-    const isBooked      = bookedSlots.includes(slot);
-    const isSelected    = slot === bookingData.time;
-    // isPast is evaluated fresh every render using current time
-    const isPast        = isSlotPast(bookingData.dateValue, slot);
-    const isUnavailable = isBooked || isPast;
+  if (!slots.length) {
+    container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#aaa;padding:20px;">No slots data available.</p>';
+    return;
+  }
 
-    const cls      = ['time-slot', isUnavailable ? 'unavailable' : '', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
+  container.innerHTML = slots.map(slot => {
+    const isUnavailable = !slot.available;
+    const isSelected    = slot.time === bookingData.time;
+    const cls = ['time-slot', isUnavailable ? 'unavailable' : '', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
     const subLabel = isUnavailable ? 'Unavailable' : 'Available';
-    const title    = isPast ? 'This time has already passed' : isBooked ? 'Already booked' : '';
+    const title    = slot.past ? 'This time has already passed' : slot.booked ? 'Already booked' : '';
 
     if (isUnavailable) {
-      return `<div class="${cls}" title="${title}">${slot}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">${subLabel}</div></div>`;
+      return `<div class="${cls}" title="${title}">${slot.time}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">${subLabel}</div></div>`;
     }
-    return `<div class="${cls}" onclick="selectTime('${slot}')">${slot}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">${subLabel}</div></div>`;
+    return `<div class="${cls}" onclick="selectTime('${slot.time}')">${slot.time}<div style="font-size:0.7rem;margin-top:3px;opacity:0.6;">${subLabel}</div></div>`;
   }).join('');
 }
 
-// ─── Load availability from API ───────────────────────────────────────────────
+// ─── Load availability — always fresh fetch, no cache ─────────────────────────
 
 async function loadAvailability(date) {
   if (!bookingData.trainer.id && !bookingData.trainer.name) return;
@@ -269,31 +193,18 @@ async function loadAvailability(date) {
       const res  = await fetch('api/trainers/list.php');
       const data = await res.json();
       const found = data.trainers?.find(t => t.full_name === bookingData.trainer.name);
-      if (found) {
-        trainerId = found.id;
-        bookingData.trainer.id = found.id;
-      }
+      if (found) { trainerId = found.id; bookingData.trainer.id = found.id; }
     }
 
     if (!trainerId) { renderTimeSlots([]); return; }
 
-    // Check TTL cache
-    const cacheKey = `${trainerId}::${date}`;
-    if (availCache[cacheKey] && Date.now() - (availCacheTime[cacheKey] || 0) < CACHE_TTL_MS) {
-      renderTimeSlots(availCache[cacheKey]);
-      return;
-    }
+    // cache-bust param so browser never serves a stale response
+    const res      = await fetch(`api/user/trainers/availability.php?trainer_id=${trainerId}&date=${date}&_=${Date.now()}`);
+    const data     = await res.json();
 
-    const availRes  = await fetch(`api/user/trainers/availability.php?trainer_id=${trainerId}&date=${date}`);
-    const availData = await availRes.json();
+    if (!data.success) { renderTimeSlots([]); return; }
 
-    if (!availData.success) { renderTimeSlots([]); return; }
-
-    const bookedSlots = availData.slots.filter(s => !s.available).map(s => s.time);
-    availCache[cacheKey]     = bookedSlots;
-    availCacheTime[cacheKey] = Date.now();
-
-    renderTimeSlots(bookedSlots);
+    renderTimeSlots(data.slots);
 
   } catch (err) {
     console.warn('Could not load availability:', err);
@@ -305,12 +216,10 @@ async function loadAvailability(date) {
 
 function selectTrainer(name, specialty, baseRate, id) {
   bookingData.trainer = { id: id || null, name, specialty, baseRate: parseFloat(baseRate) };
-
   document.getElementById("summaryTrainer").textContent   = name;
   document.getElementById("summarySpecialty").textContent = specialty;
   document.getElementById("baseRate").textContent         = "₱" + Number(baseRate).toLocaleString('en-PH');
   updateTotalPrice();
-
   document.querySelectorAll(".trainer-option").forEach(o => o.classList.remove("selected"));
   document.querySelectorAll(".trainer-option").forEach(o => {
     if (o.querySelector("h3")?.textContent.trim() === name) o.classList.add("selected");
@@ -319,11 +228,9 @@ function selectTrainer(name, specialty, baseRate, id) {
 
 function selectSession(duration, minutes, multiplier) {
   bookingData.session = { duration, durationMinutes: parseInt(minutes), multiplier: parseFloat(multiplier) };
-
   document.getElementById("summaryDuration").textContent = duration;
   document.getElementById("multiplier").textContent      = "×" + multiplier;
   updateTotalPrice();
-
   document.querySelectorAll(".session-option").forEach(o => o.classList.remove("selected"));
   if (event && event.target) {
     const target = event.target.closest(".session-option");
@@ -335,47 +242,24 @@ function selectDate(displayLabel, isoValue, el) {
   bookingData.date      = displayLabel;
   bookingData.dateValue = isoValue;
   bookingData.time      = null;
-
   document.getElementById("summaryDate").textContent = displayLabel;
   document.getElementById("summaryTime").textContent = '-';
-
   document.querySelectorAll(".calendar-day").forEach(d => d.classList.remove("selected"));
-  if (el) {
-    el.classList.add("selected");
-  } else {
-    document.querySelectorAll(".calendar-day[data-iso]").forEach(d => {
-      if (d.dataset.iso === isoValue) d.classList.add("selected");
-    });
-  }
-
-  // Bust cache for this date so fresh data is fetched
-  const trainerId = bookingData.trainer.id;
-  if (trainerId) {
-    delete availCache[`${trainerId}::${isoValue}`];
-    delete availCacheTime[`${trainerId}::${isoValue}`];
-  }
-
+  if (el) el.classList.add("selected");
+  else document.querySelectorAll(".calendar-day[data-iso]").forEach(d => {
+    if (d.dataset.iso === isoValue) d.classList.add("selected");
+  });
   loadAvailability(isoValue);
 }
 
 function selectTime(time) {
   const slot = event?.target?.closest(".time-slot");
-  if (slot?.classList.contains("unavailable")) {
-    showPopUP("This time slot is unavailable. Please select another time.");
-    return;
-  }
-
+  if (slot?.classList.contains("unavailable")) { showPopUP("This time slot is unavailable. Please select another time."); return; }
   bookingData.time = time;
   document.getElementById("summaryTime").textContent = time;
-
   document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
-  if (slot) {
-    slot.classList.add("selected");
-  } else {
-    document.querySelectorAll(".time-slot").forEach(s => {
-      if (s.textContent.trim().startsWith(time)) s.classList.add("selected");
-    });
-  }
+  if (slot) slot.classList.add("selected");
+  else document.querySelectorAll(".time-slot").forEach(s => { if (s.textContent.trim().startsWith(time)) s.classList.add("selected"); });
 }
 
 function updateTotalPrice() {
@@ -385,35 +269,29 @@ function updateTotalPrice() {
   }
 }
 
-// ─── Pre-select trainer from URL param ───────────────────────────────────────
-
 async function preselectTrainerFromURL() {
   const params    = new URLSearchParams(window.location.search);
   const trainerId = parseInt(params.get('trainer_id'));
   if (!trainerId) return;
-
   try {
     const res  = await fetch('api/trainers/list.php');
     const data = await res.json();
     const t    = data.trainers?.find(tr => tr.id === trainerId);
     if (!t) return;
     setTimeout(() => selectTrainer(t.full_name, t.specialty, t.session_rate, t.id), 600);
-  } catch (err) {
-    console.warn('Could not pre-select trainer:', err);
-  }
+  } catch (err) { console.warn('Could not pre-select trainer:', err); }
 }
 
 preselectTrainerFromURL();
+function prepareTrainerSubmit() {}
 
-function prepareTrainerSubmit() { /* no-op */ }
-
-// ─── AJAX form submission ─────────────────────────────────────────────────────
+// ─── Form submission ──────────────────────────────────────────────────────────
 
 document.getElementById("trainerBookingForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
-  if (!bookingData.trainer.name)              { showPopUP("Please go back and select a trainer."); return; }
-  if (!bookingData.session.duration)          { showPopUP("Please go back and select a session duration."); return; }
+  if (!bookingData.trainer.name)                   { showPopUP("Please go back and select a trainer."); return; }
+  if (!bookingData.session.duration)               { showPopUP("Please go back and select a session duration."); return; }
   if (!bookingData.dateValue || !bookingData.time) { showPopUP("Please go back and select a date and time."); return; }
 
   const fitnessLevel = document.getElementById("fitness_level").value;
@@ -436,23 +314,17 @@ document.getElementById("trainerBookingForm").addEventListener("submit", async f
 
   let trainerIdInput = document.getElementById("hidden_trainer_id");
   if (!trainerIdInput) {
-    trainerIdInput      = document.createElement('input');
-    trainerIdInput.type = 'hidden';
-    trainerIdInput.id   = 'hidden_trainer_id';
-    trainerIdInput.name = 'trainer_id';
+    trainerIdInput = document.createElement('input');
+    trainerIdInput.type = 'hidden'; trainerIdInput.id = 'hidden_trainer_id'; trainerIdInput.name = 'trainer_id';
     this.appendChild(trainerIdInput);
   }
   trainerIdInput.value = bookingData.trainer.id || '';
 
   showLoading("Confirming your session...");
-
   try {
-    const formData = new FormData(this);
-    const res      = await fetch("api/bookings/book-trainer.php", { method: "POST", body: formData });
-    const result   = await res.json();
-
+    const res    = await fetch("api/bookings/book-trainer.php", { method: "POST", body: new FormData(this) });
+    const result = await res.json();
     hideLoading();
-
     if (result.success) {
       document.querySelectorAll(".step-content").forEach(c => c.classList.remove("active"));
       document.getElementById("successMessage").classList.add("active");
