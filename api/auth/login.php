@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../config.php';
 require_method('POST');
 
 $email    = sanitize_email($_POST['email'] ?? '');
@@ -22,29 +22,29 @@ if ($admin && password_verify($password, $admin['password_hash'])) {
     $_SESSION['admin_role'] = $admin['role'];
     $_SESSION['admin_name'] = $admin['first_name'] . ' ' . $admin['last_name'];
 
-    // Check if this admin user is also a trainer (match by first_name + last_name)
+    // Check if this admin user is also a trainer (case-insensitive, trimmed match)
     $trainerStmt = $pdo->prepare(
         "SELECT id, specialty, image_url FROM trainers
-         WHERE first_name = ? AND last_name = ? AND status = 'active'
+         WHERE LOWER(TRIM(first_name)) = LOWER(TRIM(?))
+         AND LOWER(TRIM(last_name)) = LOWER(TRIM(?))
+         AND status = 'active'
          LIMIT 1"
     );
     $trainerStmt->execute([$admin['first_name'], $admin['last_name']]);
     $trainer = $trainerStmt->fetch();
 
     if ($trainer) {
-        // Set trainer session so trainer-dashboard.php works immediately
         $_SESSION['trainer_id']        = $trainer['id'];
         $_SESSION['trainer_name']      = $admin['first_name'] . ' ' . $admin['last_name'];
         $_SESSION['trainer_specialty'] = $trainer['specialty'];
         $_SESSION['trainer_image']     = $trainer['image_url'];
 
         success('Login successful.', [
-            'role'       => $admin['role'],
+            'role'       => 'trainer',
             'is_trainer' => true,
         ]);
     }
 
-    // Not a trainer — regular admin/staff redirect
     success('Login successful.', [
         'role'       => $admin['role'],
         'is_trainer' => false,
