@@ -79,16 +79,14 @@
             </div>
           </div>
 
-          <!-- Step 2: Select Date & Time (combined, like book-trainer schedule step) -->
+          <!-- Step 2: Select Date & Time -->
           <div id="step2" class="step-content">
             <h2 class="section-title">Select Date &amp; Time</h2>
 
-            <!-- Date picker: next 7 days as a horizontal strip -->
             <div class="date-selector" style="margin-bottom: 28px;">
               <div class="date-grid"></div>
             </div>
 
-            <!-- Time slots: loaded dynamically once a date is picked -->
             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">
               Available Time Slots
             </h3>
@@ -190,9 +188,9 @@
           </div>
           <div class="summary-price">
             <div class="price-label">Total Price</div>
-            <div class="price-value">FREE</div>
-            <div style="font-size: 0.85rem; color: #666; margin-top: 5px">
-              Included in Premium Plan
+            <div class="price-value" id="summaryPrice">—</div>
+            <div style="font-size: 0.85rem; color: #666; margin-top: 5px" id="summaryPriceNote">
+              Loading...
             </div>
           </div>
         </div>

@@ -9,6 +9,9 @@ let bookingData = {
   scheduleId: null,
 };
 
+// Tracks the member's plan so the summary always shows the correct price
+let memberPlan = null;
+
 render('#pop-up', 'warning', renderPopUP);
 window.closePopUp           = closePopUp;
 window.nextStep             = nextStep;
@@ -27,6 +30,44 @@ function toISODate(d) {
 
 function formatDisplayDate(d) {
   return `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+}
+
+// ─── Load member plan and update price summary ────────────────────────────────
+
+async function loadMemberPlan() {
+  try {
+    const res  = await fetch('api/auth/check-session.php');
+    const data = await res.json();
+    if (!data.success || !data.member) return;
+    memberPlan = data.member.plan;
+    updatePriceSummary();
+  } catch (e) {
+    console.warn('Could not load member plan:', e);
+  }
+}
+
+function updatePriceSummary() {
+  const priceEl = document.getElementById('summaryPrice');
+  const noteEl  = document.getElementById('summaryPriceNote');
+  if (!priceEl || !noteEl) return;
+
+  if (!memberPlan) {
+    priceEl.textContent = '—';
+    noteEl.textContent  = 'Loading...';
+    return;
+  }
+
+  if (memberPlan === 'BASIC PLAN') {
+    priceEl.textContent = '₱200';
+    priceEl.style.color = '#ff6b35';
+    noteEl.textContent  = 'Basic Plan booking fee';
+  } else {
+    priceEl.textContent = 'FREE';
+    priceEl.style.color = '#ff6b35';
+    noteEl.textContent  = `Included in ${memberPlan
+      .toLowerCase()
+      .replace(/\b\w/g, c => c.toUpperCase())}`;
+  }
 }
 
 // ─── Build date grid (next 7 days) ───────────────────────────────────────────
@@ -55,7 +96,7 @@ function buildDateGrid() {
   }
 }
 
-// ─── Fetch schedules — always fresh, no cache ────────────────────────────────
+// ─── Fetch schedules ──────────────────────────────────────────────────────────
 
 async function fetchSchedulesForDate(isoDate, className) {
   try {
@@ -249,4 +290,6 @@ document.getElementById("bookingForm").addEventListener("submit", async function
   }
 });
 
+// ─── Init ─────────────────────────────────────────────────────────────────────
 buildDateGrid();
+loadMemberPlan();
