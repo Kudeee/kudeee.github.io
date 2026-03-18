@@ -54,15 +54,12 @@ async function loadMemberData() {
       const daysEl = document.getElementById('daysRemaining');
       if (daysEl) daysEl.textContent = daysLeft + ' Days';
 
-      // ── Initialise auto-renew toggle ──────────────────────────────────────
-      // is_recurring defaults to 1 (on) if the field doesn't exist yet in DB
       const isRecurring = sub.is_recurring !== undefined ? sub.is_recurring : 1;
       if (typeof window.initAutoRenewToggle === 'function') {
         window.initAutoRenewToggle(isRecurring);
       }
     }
 
-    // Header user info
     try {
       const userNameEl = document.querySelector('.user-profile div div:first-child');
       const userPlanEl = document.querySelector('.user-profile div div:last-child');
@@ -231,6 +228,11 @@ document.getElementById('CancelBooking').addEventListener('click', () => {
 // ─── Booked Trainers ──────────────────────────────────────────────────────────
 let pendingCancelId = null;
 
+/**
+ * ── buildTrainerBookingItem ────────────────────────────────────────────────────
+ * Builds one trainer booking card HTML string.
+ * Now includes a Reschedule button that opens the reschedule modal.
+ */
 function buildTrainerBookingItem(b) {
   const initials = b.trainer_name
     ? b.trainer_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -249,6 +251,7 @@ function buildTrainerBookingItem(b) {
   if (isRecurring)   badges.push(`<span class="tb-badge tb-badge-recurring" id="badge-rec-${b.booking_id}">↻ Weekly</span>`);
   if (b.date_label === 'Today') badges.push(`<span class="tb-badge tb-badge-today">Today</span>`);
 
+  // ── Recurring toggle button ────────────────────────────────────────────────
   const recurringBtn = isRecurring
     ? `<button class="tb-action-btn tb-btn-unrecurring" id="rec-btn-${b.booking_id}"
          onclick="toggleRecurring(${b.booking_id}, 0)" title="Remove weekly repeat">
@@ -259,6 +262,21 @@ function buildTrainerBookingItem(b) {
          ↻ Make Weekly
        </button>`;
 
+  // ── Reschedule button ──────────────────────────────────────────────────────
+  // Uses trainer_id from the API response; falls back gracefully if absent.
+  const trainerId   = b.trainer_id || 0;
+  const trainerName = (b.trainer_name || '').replace(/'/g, "\\'");
+  const bookingDate = b.booking_date || '';
+  const bookingTime = (b.booking_time || '').replace(/'/g, "\\'");
+
+  const rescheduleBtn = `<button
+    class="tb-action-btn tb-btn-reschedule"
+    onclick="openRescheduleModal(${b.booking_id}, ${trainerId}, '${trainerName}', '${bookingDate}', '${bookingTime}')"
+    title="Reschedule this session">
+    ↺ Reschedule
+  </button>`;
+
+  // ── Cancel button ──────────────────────────────────────────────────────────
   const cancelBtn = `<button class="tb-action-btn tb-btn-cancel"
       onclick="openTrainerCancelModal(${b.booking_id}, '${b.trainer_name.replace(/'/g,"\\'")}', '${b.date_label}', '${b.time_label}')"
       title="Cancel this session">
@@ -277,6 +295,7 @@ function buildTrainerBookingItem(b) {
       </div>
       <div class="trainer-actions">
         ${recurringBtn}
+        ${rescheduleBtn}
         ${cancelBtn}
       </div>
       <div class="trainer-booking-price">
@@ -465,6 +484,11 @@ async function loadTrainerBookings() {
   }
 }
 
+// ─── Refresh trainer bookings after a successful reschedule ──────────────────
+window.addEventListener('trainerSessionRescheduled', function () {
+  loadTrainerBookings();
+});
+
 // ─── Events helpers ───────────────────────────────────────────────────────────
 const MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
@@ -641,7 +665,7 @@ async function loadAllEvents() {
     if (!data.events?.length) {
       container.innerHTML = `
         <div class="events-empty">
-          <div class="events-empty-icon">🎉</div>
+          <div class="events-empty-icon"></div>
           <p>No upcoming events at the moment.</p>
           <p style="margin-top:6px;color:#bbb;font-size:0.85rem;">Check back soon!</p>
         </div>`;
