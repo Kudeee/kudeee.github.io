@@ -31,13 +31,13 @@ if ($booking_type === 'class') {
         error('Booking not found or already cancelled.');
     }
 
-    // Enforce 2-hour cancellation rule
+    // Enforce 24-hour cancellation rule (changed from 2 hours)
     if ($booking['scheduled_at']) {
         $classTime  = new DateTime($booking['scheduled_at']);
         $now        = new DateTime();
         $diff       = ($classTime->getTimestamp() - $now->getTimestamp()) / 3600;
-        if ($diff < 2) {
-            error('Cancellations must be made at least 2 hours before the class starts.');
+        if ($diff < 24) {
+            error('Cancellations must be made at least 24 hours before the class starts.');
         }
     }
 
@@ -49,6 +49,45 @@ if ($booking_type === 'class') {
     if ($booking['class_schedule_id']) {
         $pdo->prepare("UPDATE class_schedules SET current_participants = GREATEST(current_participants - 1, 0) WHERE id = ?")
             ->execute([$booking['class_schedule_id']]);
+    }
+
+    // ── Refund logic: issue a refund record if a payment exists ──────────────
+    $payStmt = $pdo->prepare("
+        SELECT id, amount, method
+        FROM payments
+        WHERE reference_id = ?
+          AND type = 'class_booking'
+          AND status = 'completed'
+        LIMIT 1
+    ");
+    $payStmt->execute([$booking_id]);
+    $payment = $payStmt->fetch();
+
+    if ($payment && (float)$payment['amount'] > 0) {
+        // Mark the original payment as refunded
+        $pdo->prepare("UPDATE payments SET status = 'refunded' WHERE id = ?")
+            ->execute([$payment['id']]);
+
+        // Insert a refund record so it appears in the member's payment history
+        $refund_txn = 'REF-' . date('Ymd') . '-' . str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT);
+        $pdo->prepare("
+            INSERT INTO payments
+                (member_id, type, amount, method, transaction_id, reference_id, status, description, created_at)
+            VALUES
+                (?, 'refund', ?, ?, ?, ?, 'completed', ?, NOW())
+        ")->execute([
+            $member['id'],
+            $payment['amount'],
+            $payment['method'],
+            $refund_txn,
+            $booking_id,
+            "Refund — member cancelled class booking (Booking #$booking_id)",
+        ]);
+
+        success('Class booking cancelled and payment refunded.', [
+            'refund_amount' => $payment['amount'],
+            'refund_txn'    => $refund_txn,
+        ]);
     }
 
     success('Class booking cancelled successfully.');
@@ -97,7 +136,7 @@ if ($booking_type === 'class') {
         $pdo->prepare("UPDATE payments SET status = 'refunded' WHERE id = ?")
             ->execute([$payment['id']]);
 
-        // Insert a refund record so it appears in the member's payment history
+        // Insert a separate refund record so it shows in payment history
         $refund_txn = 'REF-' . date('Ymd') . '-' . str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT);
         $pdo->prepare("
             INSERT INTO payments
