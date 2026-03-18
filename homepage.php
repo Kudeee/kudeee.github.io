@@ -19,6 +19,100 @@
     .scroll-area::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 3px; }
     .scroll-area::-webkit-scrollbar-thumb { background: #ff6b35; border-radius: 3px; }
 
+    /* ── Auto-Renew Toggle (inside status snapshot) ── */
+    .auto-renew-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .auto-renew-info {
+      flex: 1;
+    }
+
+    .auto-renew-info .ar-label {
+      font-size: 0.82rem;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
+    }
+
+    .auto-renew-info .ar-value {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      transition: color 0.2s;
+    }
+
+    .auto-renew-info .ar-value.on  { color: #2e7d32; }
+    .auto-renew-info .ar-value.off { color: #999; }
+
+    /* Toggle switch */
+    .ar-switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .ar-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .ar-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #d0d0d0;
+      border-radius: 26px;
+      transition: background 0.25s;
+    }
+
+    .ar-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 4px;
+      top: 4px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.25s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .ar-switch input:checked + .ar-slider {
+      background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+    }
+
+    .ar-switch input:checked + .ar-slider::before {
+      transform: translateX(22px);
+    }
+
+    .ar-switch.loading .ar-slider {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    /* ── Saving feedback toast ── */
+    .ar-saving {
+      font-size: 0.75rem;
+      color: #ff6b35;
+      font-weight: 600;
+      margin-top: 3px;
+      min-height: 16px;
+      transition: opacity 0.2s;
+    }
+
     /* ── Booked Trainers section ── */
     .trainers-section {
       background: #fff;
@@ -428,6 +522,26 @@
             </div>
           </div>
         </div>
+
+        <!-- ── Auto-Renew Toggle ── -->
+        <div class="auto-renew-row" id="autoRenewRow" style="display:none;">
+          <div class="auto-renew-info">
+            <div class="ar-label">Auto-Renew</div>
+            <div class="ar-value on" id="arValueText">Enabled — renews automatically</div>
+            <div class="ar-saving" id="arSaving"></div>
+          </div>
+          <label class="ar-switch" id="arSwitchLabel" title="Toggle auto-renew">
+            <input
+              type="checkbox"
+              id="autoRenewToggle"
+              checked
+              onchange="handleAutoRenewChange(this.checked)"
+            />
+            <span class="ar-slider"></span>
+          </label>
+        </div>
+        <!-- ── /Auto-Renew Toggle ── -->
+
       </div>
       <div class="status-actions">
         <button class="btn" onclick="location.href='payment.php?type=renew'">Renew Now</button>
@@ -616,6 +730,72 @@
   <script src="js/header.js"></script>
   <script src="components/loading.js"></script>
   <script type="module" src="js/homepage.js"></script>
+
+  <script>
+    /**
+     * Auto-renew toggle handler on the homepage.
+     * Called when the toggle is changed. Debounced to avoid spamming the API.
+     */
+    let _arDebounce = null;
+
+    async function handleAutoRenewChange(isOn) {
+      const switchLabel = document.getElementById('arSwitchLabel');
+      const valueText   = document.getElementById('arValueText');
+      const saving      = document.getElementById('arSaving');
+
+      // Immediate UI update
+      if (valueText) {
+        valueText.textContent = isOn
+          ? 'Enabled — renews automatically'
+          : 'Disabled — expires without renewal';
+        valueText.className = 'ar-value ' + (isOn ? 'on' : 'off');
+      }
+      if (saving) saving.textContent = 'Saving…';
+      if (switchLabel) switchLabel.classList.add('loading');
+
+      clearTimeout(_arDebounce);
+      _arDebounce = setTimeout(async () => {
+        try {
+          const fd = new FormData();
+          fd.append('recurring', isOn ? 1 : 0);
+
+          const res    = await fetch('api/user/membership/toggle-recurring.php', { method: 'POST', body: fd });
+          const result = await res.json();
+
+          if (saving) saving.textContent = result.success ? (isOn ? '✓ Auto-renew enabled' : '✓ Auto-renew disabled') : '⚠ Could not save';
+          setTimeout(() => { if (saving) saving.textContent = ''; }, 2800);
+
+        } catch (err) {
+          if (saving) saving.textContent = '⚠ Network error';
+          setTimeout(() => { if (saving) saving.textContent = ''; }, 2800);
+        } finally {
+          if (switchLabel) switchLabel.classList.remove('loading');
+        }
+      }, 500);
+    }
+
+    /**
+     * Called from homepage.js after member data is loaded,
+     * to initialise the toggle with the correct state.
+     */
+    window.initAutoRenewToggle = function(isRecurring) {
+      const row    = document.getElementById('autoRenewRow');
+      const toggle = document.getElementById('autoRenewToggle');
+      const text   = document.getElementById('arValueText');
+
+      if (!row || !toggle) return;
+
+      row.style.display = 'flex';
+      toggle.checked    = !!isRecurring;
+
+      if (text) {
+        text.textContent  = isRecurring
+          ? 'Enabled — renews automatically'
+          : 'Disabled — expires without renewal';
+        text.className    = 'ar-value ' + (isRecurring ? 'on' : 'off');
+      }
+    };
+  </script>
 </body>
 
 </html>

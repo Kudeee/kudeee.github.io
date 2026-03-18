@@ -53,6 +53,13 @@ async function loadMemberData() {
 
       const daysEl = document.getElementById('daysRemaining');
       if (daysEl) daysEl.textContent = daysLeft + ' Days';
+
+      // ── Initialise auto-renew toggle ──────────────────────────────────────
+      // is_recurring defaults to 1 (on) if the field doesn't exist yet in DB
+      const isRecurring = sub.is_recurring !== undefined ? sub.is_recurring : 1;
+      if (typeof window.initAutoRenewToggle === 'function') {
+        window.initAutoRenewToggle(isRecurring);
+      }
     }
 
     // Header user info
@@ -82,12 +89,9 @@ function updateUpgradeButton(currentPlan) {
 }
 
 // ─── Booking Carousel ─────────────────────────────────────────────────────────
-let allBookings    = [];   // all upcoming bookings from API
-let carouselIndex  = 0;   // currently displayed booking index
+let allBookings    = [];
+let carouselIndex  = 0;
 
-/**
- * Fetch ALL upcoming bookings and store them; render the first one.
- */
 async function loadAllUpcomingBookings() {
   try {
     const res  = await fetch('api/user/schedule/all-upcoming.php');
@@ -109,9 +113,6 @@ async function loadAllUpcomingBookings() {
   }
 }
 
-/**
- * Render the booking at `index` into the next-action-section.
- */
 function renderCarouselSlide(index) {
   const booking = allBookings[index];
   if (!booking) return;
@@ -128,16 +129,9 @@ function renderCarouselSlide(index) {
   if (trainerEl)  trainerEl.textContent  = booking.trainer_name || '—';
   if (durationEl) durationEl.textContent = booking.duration_label;
 
-  // Store current booking for cancel action
   currentBooking = booking;
-
-  // Update counter badge
   updateCarouselCounter();
-
-  // Update prev/next button states
   updateCarouselButtons();
-
-  // Animate slide in
   animateSlide();
 }
 
@@ -145,7 +139,6 @@ function animateSlide() {
   const content = document.querySelector('.next-action-content');
   if (!content) return;
   content.classList.remove('carousel-slide-in');
-  // Force reflow then re-add class
   void content.offsetWidth;
   content.classList.add('carousel-slide-in');
 }
@@ -153,10 +146,7 @@ function animateSlide() {
 function updateCarouselCounter() {
   const counterEl = document.getElementById('carouselCounter');
   if (!counterEl) return;
-  if (allBookings.length <= 1) {
-    counterEl.style.display = 'none';
-    return;
-  }
+  if (allBookings.length <= 1) { counterEl.style.display = 'none'; return; }
   counterEl.style.display = '';
   counterEl.textContent = `${carouselIndex + 1} / ${allBookings.length}`;
 }
@@ -164,29 +154,19 @@ function updateCarouselCounter() {
 function updateCarouselButtons() {
   const prevBtn = document.getElementById('carouselPrev');
   const nextBtn = document.getElementById('carouselNext');
-
   if (!prevBtn || !nextBtn) return;
-
-  // Hide nav entirely if only 1 booking
   const navEl = document.getElementById('carouselNav');
   if (navEl) navEl.style.display = allBookings.length > 1 ? 'flex' : 'none';
-
   prevBtn.disabled = carouselIndex <= 0;
   nextBtn.disabled = carouselIndex >= allBookings.length - 1;
 }
 
 window.carouselPrev = function () {
-  if (carouselIndex > 0) {
-    carouselIndex--;
-    renderCarouselSlide(carouselIndex);
-  }
+  if (carouselIndex > 0) { carouselIndex--; renderCarouselSlide(carouselIndex); }
 };
 
 window.carouselNext = function () {
-  if (carouselIndex < allBookings.length - 1) {
-    carouselIndex++;
-    renderCarouselSlide(carouselIndex);
-  }
+  if (carouselIndex < allBookings.length - 1) { carouselIndex++; renderCarouselSlide(carouselIndex); }
 };
 
 function renderEmptyNextClass() {
@@ -204,11 +184,9 @@ function renderEmptyNextClass() {
   }
 }
 
-// ─── Next booking (legacy — now delegates to carousel) ────────────────────────
 let currentBooking = null;
 
 async function loadNextBooking() {
-  // Delegated to loadAllUpcomingBookings
   await loadAllUpcomingBookings();
 }
 
@@ -228,7 +206,6 @@ document.getElementById('CancelBooking').addEventListener('click', () => {
       const result = await res.json();
       hideLoading();
       if (result.success) {
-        // Remove cancelled booking from local array and re-render
         allBookings.splice(carouselIndex, 1);
         if (allBookings.length === 0) {
           renderEmptyNextClass();
@@ -252,8 +229,6 @@ document.getElementById('CancelBooking').addEventListener('click', () => {
 });
 
 // ─── Booked Trainers ──────────────────────────────────────────────────────────
-
-// Holds the booking_id queued for cancellation
 let pendingCancelId = null;
 
 function buildTrainerBookingItem(b) {
@@ -268,14 +243,12 @@ function buildTrainerBookingItem(b) {
   const price = Number(b.total_price).toLocaleString('en-PH');
   const isRecurring = parseInt(b.recurring) === 1;
 
-  // Badges (info only — no action buttons here)
   const badges = [];
   if (b.specialty)   badges.push(`<span class="tb-badge tb-badge-specialty">${b.specialty}</span>`);
   if (b.focus_label) badges.push(`<span class="tb-badge tb-badge-focus">${b.focus_label}</span>`);
   if (isRecurring)   badges.push(`<span class="tb-badge tb-badge-recurring" id="badge-rec-${b.booking_id}">↻ Weekly</span>`);
   if (b.date_label === 'Today') badges.push(`<span class="tb-badge tb-badge-today">Today</span>`);
 
-  // Recurring toggle button
   const recurringBtn = isRecurring
     ? `<button class="tb-action-btn tb-btn-unrecurring" id="rec-btn-${b.booking_id}"
          onclick="toggleRecurring(${b.booking_id}, 0)" title="Remove weekly repeat">
@@ -313,7 +286,6 @@ function buildTrainerBookingItem(b) {
     </div>`;
 }
 
-// ─── Toggle recurring ─────────────────────────────────────────────────────────
 async function toggleRecurring(bookingId, newValue) {
   const btn = document.getElementById(`rec-btn-${bookingId}`);
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
@@ -332,7 +304,6 @@ async function toggleRecurring(bookingId, newValue) {
       return;
     }
 
-    // Swap button appearance in-place (no full reload)
     if (btn) {
       btn.disabled = false;
       if (newValue === 1) {
@@ -348,7 +319,6 @@ async function toggleRecurring(bookingId, newValue) {
       }
     }
 
-    // Add / remove the recurring badge
     const badgesEl = document.getElementById(`badges-${bookingId}`);
     if (badgesEl) {
       const existingBadge = document.getElementById(`badge-rec-${bookingId}`);
@@ -363,7 +333,6 @@ async function toggleRecurring(bookingId, newValue) {
       }
     }
 
-    // Brief flash on the card to confirm the change
     const card = document.getElementById(`trainer-booking-${bookingId}`);
     if (card) {
       card.style.borderColor = newValue ? '#a5d6a7' : '#ffcc80';
@@ -377,7 +346,6 @@ async function toggleRecurring(bookingId, newValue) {
   }
 }
 
-// ─── Cancel trainer booking ───────────────────────────────────────────────────
 function openTrainerCancelModal(bookingId, trainerName, dateLabel, timeLabel) {
   pendingCancelId = bookingId;
   const desc = document.getElementById('trainerCancelDesc');
@@ -397,7 +365,6 @@ async function confirmTrainerCancel() {
   const bookingId = pendingCancelId;
   closeTrainerCancelModal();
 
-  // Optimistically dim the card
   const card = document.getElementById(`trainer-booking-${bookingId}`);
   if (card) { card.style.opacity = '0.45'; card.style.pointerEvents = 'none'; }
 
@@ -413,21 +380,19 @@ async function confirmTrainerCancel() {
     hideLoading();
 
     if (result.success) {
-      // Animate out then remove
       if (card) {
         card.style.transition = 'all 0.35s ease';
         card.style.maxHeight  = card.offsetHeight + 'px';
         card.style.overflow   = 'hidden';
         requestAnimationFrame(() => {
-          card.style.maxHeight  = '0';
-          card.style.padding    = '0';
+          card.style.maxHeight    = '0';
+          card.style.padding      = '0';
           card.style.marginBottom = '0';
-          card.style.opacity    = '0';
+          card.style.opacity      = '0';
         });
         setTimeout(() => card.remove(), 370);
       }
 
-      // Check if scroll area is now empty
       setTimeout(() => {
         const scroll = document.getElementById('trainerBookingsScroll');
         if (scroll && !scroll.querySelector('.trainer-booking-item')) {
@@ -445,7 +410,6 @@ async function confirmTrainerCancel() {
       }, 400);
 
     } else {
-      // Restore card on failure
       if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
       render('#pop-up', 'warning', renderPopUP);
       window.closePopUp = closePopUp;
@@ -458,7 +422,6 @@ async function confirmTrainerCancel() {
   }
 }
 
-// Expose for inline onclick
 window.toggleRecurring         = toggleRecurring;
 window.openTrainerCancelModal  = openTrainerCancelModal;
 window.closeTrainerCancelModal = closeTrainerCancelModal;
@@ -483,7 +446,7 @@ async function loadTrainerBookings() {
     if (!data.bookings || !data.bookings.length) {
       container.innerHTML = `
         <div class="trainers-empty">
-          <div class="trainers-empty-icon">🏋️</div>
+          <div class="trainers-empty-icon"></div>
           <p>You haven't booked any trainer sessions yet.</p>
           <p style="margin-top:6px;">
             <a href="book-trainer-page.php" style="color:#ff6b35;font-weight:600;text-decoration:none;">
@@ -503,7 +466,6 @@ async function loadTrainerBookings() {
 }
 
 // ─── Events helpers ───────────────────────────────────────────────────────────
-
 const MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
 function fmtEventDate(dateStr) {
@@ -554,15 +516,13 @@ function buildEventItem(ev, showRegisterBtn) {
     </div>`;
 }
 
-// ─── Event registration modal ─────────────────────────────────────────────────
-
 function registerEvent(eventId, name, dateStr, location, fee) {
-  document.getElementById('eventModalId').value      = eventId;
-  document.getElementById('eventModalName').textContent    = name;
+  document.getElementById('eventModalId').value           = eventId;
+  document.getElementById('eventModalName').textContent   = name;
   document.getElementById('eventModalLocation').textContent = location || '—';
 
   const { day, month } = fmtEventDate(dateStr);
-  document.getElementById('eventModalDate').textContent = `${month} ${day}`;
+  document.getElementById('eventModalDate').textContent   = `${month} ${day}`;
 
   const feeNum = parseFloat(fee) || 0;
   document.getElementById('eventModalFee').textContent = feeNum > 0
@@ -630,7 +590,6 @@ async function submitEventRegistration() {
   }
 }
 
-// ─── Load My Events ───────────────────────────────────────────────────────────
 async function loadMyEvents() {
   const container = document.getElementById('myEventsScroll');
   if (!container) return;
@@ -649,7 +608,7 @@ async function loadMyEvents() {
     if (!data.events?.length) {
       container.innerHTML = `
         <div class="events-empty">
-          <div class="events-empty-icon">📅</div>
+          <div class="events-empty-icon"></div>
           <p>You haven't registered for any upcoming events.</p>
           <p style="margin-top:6px;"><a href="#" onclick="switchTab('all');return false;" style="color:#ff6b35;font-weight:600;">Browse all events →</a></p>
         </div>`;
@@ -664,7 +623,6 @@ async function loadMyEvents() {
   }
 }
 
-// ─── Load All Events ──────────────────────────────────────────────────────────
 async function loadAllEvents() {
   const container = document.getElementById('allEventsScroll');
   if (!container) return;
@@ -698,7 +656,6 @@ async function loadAllEvents() {
   }
 }
 
-// ─── Tab switcher ─────────────────────────────────────────────────────────────
 let allEventsLoaded = false;
 
 function switchTab(tab) {

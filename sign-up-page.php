@@ -5,6 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/sign-up-page.css" />
     <title>Sign Up</title>
+    <style>
+      /* ── Recurring toggle card ─────────────────────────────────── */
+      .recurring-toggle-card {
+        margin: 20px 0 8px;
+        border: 2px solid #e5e5e5;
+        border-radius: 14px;
+        padding: 18px 20px;
+        transition: border-color 0.2s, background 0.2s;
+        background: #fafafa;
+      }
+
+      .recurring-toggle-card.is-on {
+        border-color: #ff6b35;
+        background: #fff7f2;
+      }
+
+      .recurring-toggle-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .recurring-toggle-label {
+        flex: 1;
+      }
+
+      .recurring-toggle-label strong {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 3px;
+      }
+
+      .recurring-toggle-label span {
+        font-size: 0.82rem;
+        color: #777;
+        line-height: 1.5;
+      }
+
+      /* Toggle switch */
+      .rt-switch {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      .rt-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        margin: 0;
+        padding: 0;
+      }
+
+      .rt-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #d0d0d0;
+        border-radius: 28px;
+        transition: background 0.25s;
+      }
+
+      .rt-slider::before {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        left: 4px;
+        top: 4px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.25s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      }
+
+      .rt-switch input:checked + .rt-slider {
+        background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+      }
+
+      .rt-switch input:checked + .rt-slider::before {
+        transform: translateX(24px);
+      }
+
+      .recurring-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 10px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #e8f5e9;
+        color: #2e7d32;
+        transition: all 0.2s;
+      }
+
+      .recurring-badge.off {
+        background: #f5f5f5;
+        color: #999;
+      }
+
+      .recurring-badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
@@ -128,9 +242,6 @@
           <!-- ─── PAGE 3: Membership Plan ──────────────────────── -->
           <div class="page" id="second-last-page" style="display: none">
             <h3>Choose your Membership Plan</h3>
-            <!-- Subscription card radios injected by subcriptionCards.js.
-                 Each radio has: name="membership_plan" value="BASIC PLAN|PREMIUM PLAN|VIP PLAN"
-                 and data-price / data-billing attributes. -->
             <div class="selection-cards"></div>
 
             <div class="form-btn">
@@ -141,9 +252,34 @@
 
           <!-- ─── PAGE 4: Payment Method ────────────────────────── -->
           <div class="page" id="last-page" style="display: none">
-            <!-- Payment fields injected by payment-methods.js.
-                 Each field carries name="payment_method", name="card_number", etc. -->
+            <!-- Payment fields injected by payment-methods.js -->
             <div class="payment-method-js"></div>
+
+            <!-- ── Recurring Subscription Toggle ──────────────────── -->
+            <div class="recurring-toggle-card is-on" id="recurringCard">
+              <div class="recurring-toggle-header">
+                <div class="recurring-toggle-label">
+                  <strong>Auto-Renew Subscription</strong>
+                  <span>Automatically renew your membership each billing cycle so you never lose access.</span>
+                </div>
+                <label class="rt-switch" title="Toggle auto-renew">
+                  <input
+                    type="checkbox"
+                    id="signup_recurring"
+                    name="is_recurring"
+                    value="1"
+                    checked
+                    onchange="updateRecurringUI(this.checked)"
+                  />
+                  <span class="rt-slider"></span>
+                </label>
+              </div>
+              <div class="recurring-badge" id="recurringBadge">
+                <span class="recurring-badge-dot"></span>
+                Auto-renew ON — you can turn this off anytime from your account
+              </div>
+            </div>
+            <!-- ── /Recurring Toggle ────────────────────────────── -->
 
             <div class="form-btn">
               <button class="btn" id="last-prev-btn" type="button">Back</button>
@@ -160,6 +296,19 @@
               <span class="price">₱899</span>
             </div>
 
+            <!-- Auto-renew status in receipt -->
+            <div class="reciept-row" id="receiptRecurringRow">
+              <span>Auto-Renew <br /><small>Billing preference</small></span>
+              <span class="price" id="receiptRecurringVal" style="color:#2e7d32;font-size:0.88rem;">Enabled ✓</span>
+            </div>
+
+            <!-- Hidden fields populated by JS -->
+            <input type="hidden" name="selected_plan"    id="hidden_selected_plan"    value="" />
+            <input type="hidden" name="billing_cycle"    id="hidden_billing_cycle"    value="monthly" />
+            <input type="hidden" name="plan_price"       id="hidden_plan_price"       value="" />
+            <!-- is_recurring is already sent as a checkbox; this mirrors it for clarity -->
+            <input type="hidden" name="signup_recurring_mirror" id="hidden_recurring" value="1" />
+
             <label class="discount-label" for="discount_code">Apply Discount Code</label>
             <div class="discount-box">
               <input
@@ -169,11 +318,6 @@
                 placeholder="Code"
               />
             </div>
-
-            <!-- Hidden fields populated by JS when plan/billing are selected -->
-            <input type="hidden" name="selected_plan"    id="hidden_selected_plan"    value="" />
-            <input type="hidden" name="billing_cycle"    id="hidden_billing_cycle"    value="monthly" />
-            <input type="hidden" name="plan_price"       id="hidden_plan_price"       value="" />
 
             <div class="total">
               <span>Total</span>
@@ -207,7 +351,6 @@
               <p>Join Society Fit and train smarter every day</p>
             </div>
           </div>
-
           <div class="slide">
             <img src="assests/images/car7.jpg" alt="" />
             <div class="slide-text">
@@ -215,7 +358,6 @@
               <p>Your transformation starts with one step</p>
             </div>
           </div>
-
           <div class="slide">
             <img src="assests/images/car11.jpg" alt="" />
             <div class="slide-text">
@@ -234,5 +376,38 @@
     <script src="components/loading.js"></script>
     <script src="js/carousel.js"></script>
     <script type="module" src="components/subcriptionCards.js"></script>
+
+    <script>
+      /**
+       * updateRecurringUI — called when the toggle changes.
+       * Updates the card style, badge text, receipt row, and hidden field.
+       */
+      function updateRecurringUI(isOn) {
+        const card   = document.getElementById('recurringCard');
+        const badge  = document.getElementById('recurringBadge');
+        const mirror = document.getElementById('hidden_recurring');
+        const recVal = document.getElementById('receiptRecurringVal');
+
+        if (isOn) {
+          card.classList.add('is-on');
+          badge.classList.remove('off');
+          badge.innerHTML = '<span class="recurring-badge-dot"></span> Auto-renew ON — you can turn this off anytime from your account';
+          if (mirror) mirror.value = '1';
+          if (recVal) { recVal.textContent = 'Enabled ✓'; recVal.style.color = '#2e7d32'; }
+        } else {
+          card.classList.remove('is-on');
+          badge.classList.add('off');
+          badge.innerHTML = '<span class="recurring-badge-dot"></span> Auto-renew OFF — you\'ll need to renew manually before expiry';
+          if (mirror) mirror.value = '0';
+          if (recVal) { recVal.textContent = 'Disabled'; recVal.style.color = '#999'; }
+        }
+      }
+
+      // Sync recurring state when navigating to the receipt page
+      document.getElementById('last-next-btn').addEventListener('click', function() {
+        const isOn = document.getElementById('signup_recurring')?.checked ?? true;
+        updateRecurringUI(isOn);
+      });
+    </script>
   </body>
 </html>
